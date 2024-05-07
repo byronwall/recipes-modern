@@ -1,6 +1,7 @@
 import { useParams } from "next/navigation";
 import { H1, H2, H3 } from "~/components/ui/typography";
 import { api } from "~/trpc/server";
+import { useData } from "./useData";
 
 export default async function Recipe({ params }) {
   // get id
@@ -10,16 +11,7 @@ export default async function Recipe({ params }) {
 
   const recipe = await api.post.getRecipe({ id });
 
-  const allData = await api.post.getRecipes();
-
-  // create a lookup for ingredients by id
-  const ingredientsById = allData.ingredients.reduce(
-    (acc, ingredient) => {
-      acc[ingredient.id] = ingredient;
-      return acc;
-    },
-    {} as Record<number, (typeof allData.ingredients)[0]>,
-  );
+  const { ingredientsById } = await useData();
 
   return (
     <div>

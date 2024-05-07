@@ -14,12 +14,10 @@ export default async function Home() {
   const session = await getServerAuthSession();
 
   return (
-    <div>
-      <Button>Click me</Button>
-
+    <div className="flex flex-col gap-4">
       <Input placeholder="Search" />
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
         {recipes.recipes.map((recipe) => (
           <Card key={recipe.name} className="h-40">
             <CardTitle className="p-2">
