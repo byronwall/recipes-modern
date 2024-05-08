@@ -1,7 +1,7 @@
 import { api } from "~/trpc/server";
 
 export async function useData() {
-  const allData = await api.post.getRecipes();
+  const allData = await api.recipe.getRecipes();
 
   // create a lookup for ingredients by id
   const ingredientsById = allData.ingredients.reduce(

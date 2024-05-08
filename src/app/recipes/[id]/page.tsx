@@ -1,5 +1,4 @@
-import { useParams } from "next/navigation";
-import { H1, H2, H3 } from "~/components/ui/typography";
+import { H2, H3 } from "~/components/ui/typography";
 import { api } from "~/trpc/server";
 import { useData } from "./useData";
 
@@ -9,7 +8,7 @@ export default async function Recipe({ params }) {
 
   console.log("parmas", params);
 
-  const recipe = await api.post.getRecipe({ id });
+  const recipe = await api.recipe.getRecipe({ id });
 
   const { ingredientsById } = await useData();
 

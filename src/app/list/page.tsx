@@ -1,9 +1,12 @@
 import { H2 } from "~/components/ui/typography";
 import { api } from "~/trpc/server";
 import { useData } from "../recipes/[id]/useData";
+import { useEnforceAuth } from "../useEnforceAuth";
 
 export default async function ListPage() {
-  const { shoppingList } = await api.post.getRecipes();
+  await useEnforceAuth();
+
+  const { shoppingList } = await api.recipe.getRecipes();
 
   console.log("shoppingList", shoppingList);
 

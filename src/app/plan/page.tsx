@@ -1,7 +1,10 @@
 import { H1 } from "~/components/ui/typography";
 import { useData } from "../recipes/[id]/useData";
+import { useEnforceAuth } from "../useEnforceAuth";
 
 export default async function PlanPage() {
+  await useEnforceAuth();
+
   const { allData, recipesById } = await useData();
 
   const plans = allData.plannedMeals;

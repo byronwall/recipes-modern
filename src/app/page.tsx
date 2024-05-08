@@ -1,17 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 
-import { CreatePost } from "~/app/_components/create-post";
-import { Button } from "~/components/ui/button";
 import { Card, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
-import { H1 } from "~/components/ui/typography";
-import { getServerAuthSession } from "~/server/auth";
 import { api } from "~/trpc/server";
+import { useEnforceAuth } from "./useEnforceAuth";
 
 export default async function Home() {
-  const recipes = await api.post.getRecipes();
-  const session = await getServerAuthSession();
+  const recipes = await api.recipe.getRecipes();
+
+  await useEnforceAuth();
 
   return (
     <div className="flex flex-col gap-4">
