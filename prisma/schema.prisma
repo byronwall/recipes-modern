@@ -153,6 +153,9 @@ model User {
     accounts      Account[]
     sessions      Session[]
 
+    // password auth
+    password String?
+
     // non-auth related
     UserExtras   UserExtras[]
     Recipe       Recipe[]
