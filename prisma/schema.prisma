@@ -14,16 +14,107 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+model UserExtras {
+    id Int @id @default(autoincrement())
 
-    createdBy   User   @relation(fields: [createdById], references: [id])
-    createdById String
+    // User relation
+    userId String
+    User   User   @relation(fields: [userId], references: [id])
 
-    @@index([name])
+    // kroger API
+    krogerUserAccessToken  String
+    krogerUserRefreshToken String
+}
+
+model Recipe {
+    id               Int               @id @default(autoincrement())
+    name             String
+    description      String
+    ingredientGroups IngredientGroup[]
+    stepGroups       StepGroup[]
+
+    rootId       Int?
+    PlannedMeal  PlannedMeal[]
+    ShoppingList ShoppingList[]
+
+    userId String
+    User   User   @relation(fields: [userId], references: [id])
+}
+
+model IngredientGroup {
+    id    Int    @id @default(autoincrement())
+    title String
+
+    ingredients Ingredient[]
+
+    recipeId Int
+    Recipe   Recipe @relation(fields: [recipeId], references: [id])
+}
+
+model Ingredient {
+    id Int @id @default(autoincrement())
+
+    ingredient String
+    amount     String
+    modifier   String
+    unit       String
+
+    plu        String
+    isGoodName Boolean
+    aisle      String?
+    comments   String?
+
+    // link to recipes
+    group   IngredientGroup @relation(fields: [groupId], references: [id])
+    groupId Int
+
+    // link to shopping list
+    ShoppingList   ShoppingList? @relation(fields: [shoppingListId], references: [id])
+    shoppingListId Int?
+}
+
+model StepGroup {
+    id Int @id @default(autoincrement())
+
+    title String
+
+    // ordered steps for the group
+    steps String[]
+
+    recipeId Int
+    Recipe   Recipe @relation(fields: [recipeId], references: [id])
+}
+
+model PlannedMeal {
+    id Int @id @default(autoincrement())
+
+    date             DateTime
+    isMade           Boolean
+    isOnShoppingList Boolean
+    scale            Int
+
+    recipeId Int
+    Recipe   Recipe @relation(fields: [recipeId], references: [id])
+
+    // link to user
+    userId String
+    User   User   @relation(fields: [userId], references: [id])
+}
+
+model ShoppingList {
+    id Int @id @default(autoincrement())
+
+    isBought Boolean
+
+    recipeId Int
+    Recipe   Recipe @relation(fields: [recipeId], references: [id])
+
+    // ordered ingredients
+    ingredients Ingredient[]
+
+    // link to user
+    userId String
+    User   User   @relation(fields: [userId], references: [id])
 }
 
 // Necessary for Next auth
@@ -61,7 +152,12 @@ model User {
     image         String?
     accounts      Account[]
     sessions      Session[]
-    posts         Post[]
+
+    // non-auth related
+    UserExtras   UserExtras[]
+    Recipe       Recipe[]
+    PlannedMeal  PlannedMeal[]
+    ShoppingList ShoppingList[]
 }
 
 model VerificationToken {
