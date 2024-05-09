@@ -1,13 +1,12 @@
-import { H1 } from "~/components/ui/typography";
+import { H1, H2 } from "~/components/ui/typography";
 import { useData } from "../recipes/[id]/useData";
 import { useEnforceAuth } from "../useEnforceAuth";
+import { api } from "~/trpc/server";
 
 export default async function PlanPage() {
   await useEnforceAuth();
 
-  const { allData, recipesById } = await useData();
-
-  const plans = allData.plannedMeals;
+  const plans = await api.recipe.getMealPlans();
 
   const plansThisMonth = plans.filter((plan) => {
     const date = new Date(plan.date);
@@ -22,19 +21,29 @@ export default async function PlanPage() {
     <div>
       <H1>Plan</H1>
 
+      <H2>Plans this month</H2>
       <ul>
         {plansThisMonth.map((plan) => (
           <li key={plan.id}>
             {plan.recipeId}
-            {recipesById[plan.recipeId]?.name}
-            {plan.date}
+            {plan.Recipe.name}
+            {plan.date.toISOString()}
             {plan.isMade ? "made" : "not made"}
           </li>
         ))}
       </ul>
 
-      {/* show 7 boxes, for current week */}
-      {/* for each box, show a dropdown of recipes, and a date picker */}
+      <H2>All Meal Plans</H2>
+      <ul>
+        {plans.map((plan) => (
+          <li key={plan.id}>
+            {plan.recipeId}
+            {plan.Recipe.name}
+            {plan.date.toISOString()}
+            {plan.isMade ? "made" : "not made"}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

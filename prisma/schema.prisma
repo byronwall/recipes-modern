@@ -33,7 +33,6 @@ model Recipe {
     ingredientGroups IngredientGroup[]
     stepGroups       StepGroup[]
 
-    rootId       Int?
     PlannedMeal  PlannedMeal[]
     ShoppingList ShoppingList[]
 
@@ -42,8 +41,10 @@ model Recipe {
 }
 
 model IngredientGroup {
-    id    Int    @id @default(autoincrement())
+    id Int @id @default(autoincrement())
+
     title String
+    order Int
 
     ingredients Ingredient[]
 
@@ -55,11 +56,11 @@ model Ingredient {
     id Int @id @default(autoincrement())
 
     ingredient String
-    amount     String
-    modifier   String
-    unit       String
+    amount     String?
+    modifier   String?
+    unit       String?
 
-    plu        String
+    plu        String?
     isGoodName Boolean
     aisle      String?
     comments   String?
@@ -77,6 +78,7 @@ model StepGroup {
     id Int @id @default(autoincrement())
 
     title String
+    order Int
 
     // ordered steps for the group
     steps String[]

@@ -1,4 +1,4 @@
-import { H2, H3 } from "~/components/ui/typography";
+import { H2, H3, H4 } from "~/components/ui/typography";
 import { api } from "~/trpc/server";
 import { useData } from "./useData";
 
@@ -6,11 +6,12 @@ export default async function Recipe({ params }) {
   // get id
   const { id } = params;
 
-  console.log("parmas", params);
-
   const recipe = await api.recipe.getRecipe({ id });
+  console.log("parmas", params, recipe);
 
-  const { ingredientsById } = await useData();
+  if (!recipe) {
+    return <div>Recipe not found</div>;
+  }
 
   return (
     <div>
@@ -21,10 +22,8 @@ export default async function Recipe({ params }) {
         {recipe?.ingredientGroups.map((ingredient, idx) => (
           <li key={idx}>
             {ingredient.ingredients.map((i) => (
-              <div key={i.ingredientId}>
-                {/* this is awful - need to get the ingredient separately */}
-                {i.amount} {i.unit} {i.name}{" "}
-                {ingredientsById[i.ingredientId]?.name}
+              <div key={i.id}>
+                {i.amount} {i.unit} {i.ingredient}
               </div>
             ))}
           </li>
@@ -35,10 +34,10 @@ export default async function Recipe({ params }) {
       <p>
         {recipe?.stepGroups.map((group) => (
           <div key={group.title}>
-            <H3>{group.name}</H3>
+            <H4>{group.title}</H4>
             <ol>
               {group.steps.map((step) => (
-                <li key={step}>{step.description}</li>
+                <li key={step}>{step}</li>
               ))}
             </ol>
           </div>
