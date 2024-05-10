@@ -55,6 +55,8 @@ model IngredientGroup {
 model Ingredient {
     id Int @id @default(autoincrement())
 
+    rawInput String @default("")
+
     ingredient String
     amount     String?
     modifier   String?
