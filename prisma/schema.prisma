@@ -63,7 +63,7 @@ model Ingredient {
     unit       String?
 
     plu        String?
-    isGoodName Boolean
+    isGoodName Boolean? @default(false)
     aisle      String?
     comments   String?
 
