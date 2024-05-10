@@ -1,7 +1,6 @@
 import { H1, H2 } from "~/components/ui/typography";
-import { useData } from "../recipes/[id]/useData";
-import { useEnforceAuth } from "../useEnforceAuth";
 import { api } from "~/trpc/server";
+import { useEnforceAuth } from "../useEnforceAuth";
 
 export default async function PlanPage() {
   await useEnforceAuth();
