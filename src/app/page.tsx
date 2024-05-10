@@ -16,6 +16,8 @@ export default async function Home() {
       <MigrateButtons />
       <Input placeholder="Search" />
 
+      <Link href="/recipes/new">New Recipe</Link>
+
       <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
         {recipes.map((recipe) => (
           <Card key={recipe.name} className="h-40">

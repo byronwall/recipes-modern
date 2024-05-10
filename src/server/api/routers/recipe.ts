@@ -1,4 +1,4 @@
-import { Contrail_One } from "next/font/google";
+import { IngredientGroup as IGP, Ingredient as IG } from "@prisma/client";
 import { z } from "zod";
 
 import {
@@ -44,6 +44,91 @@ export const recipeRouter = createTRPCRouter({
 
     return plannedMeals;
   }),
+
+  /*
+  type NewRecipe = {
+  title: string;
+  ingredients: string;
+  steps: string;
+};
+*/
+  createRecipeFromTextInput: protectedProcedure
+    .input(
+      z.object({
+        title: z.string(),
+        description: z.string(),
+        ingredients: z.string(),
+        steps: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const userId = ctx.session.user.id;
+
+      // Initial setup, start by breaking the input into lines
+      const lines = input.ingredients.split("\n");
+
+      // Initialize an empty array to hold group objects
+
+      const ingredientGroups = splitTextIntoHeaderAndItems(
+        input.ingredients,
+      ).map((group, index) => ({
+        title: group.title,
+        order: index,
+        ingredients: group.items.map((item) => {
+          return {
+            ingredient: item,
+            rawInput: item,
+          };
+        }),
+      }));
+
+      const stepGroups = splitTextIntoHeaderAndItems(input.steps).map(
+        (group, index) => ({
+          title: group.title,
+          order: index,
+          steps: group.items,
+        }),
+      );
+
+      // Creating the recipe along with ingredient groups and step groups in a single command
+      const newRecipe = await db.recipe.create({
+        data: {
+          name: input.title,
+          description: input.description,
+          userId,
+          ingredientGroups: {
+            create: ingredientGroups.map((group) => ({
+              title: group.title,
+              order: group.order,
+              ingredients: {
+                create: group.ingredients,
+              },
+            })),
+          },
+          stepGroups: {
+            create: stepGroups.map((group) => ({
+              title: group.title,
+              order: group.order,
+              steps: group.steps,
+            })),
+          },
+        },
+        include: {
+          ingredientGroups: {
+            include: {
+              ingredients: true,
+            },
+          },
+          stepGroups: {
+            include: {
+              Recipe: true,
+            },
+          },
+        },
+      });
+
+      return newRecipe;
+    }),
 
   // code below is related to migrating old data structures to new database
   migrateRecipes: protectedProcedure.mutation(async ({ ctx }) => {
@@ -213,4 +298,43 @@ export interface IngredientAmount {
   ingredientId: number;
   modifier: string;
   unit: string;
+}
+
+function splitTextIntoHeaderAndItems(text: string) {
+  const lines = text.split("\n");
+
+  const headerRegEx = /^\[(.+?)\]$/;
+
+  const groups: { title: string; items: string[] }[] = [];
+
+  let currentGroup: { title: string; items: string[] } | null = null;
+
+  for (const _line of lines) {
+    const line = _line.trim();
+
+    if (!line) {
+      continue;
+    }
+
+    const headerMatch = line.match(headerRegEx);
+
+    if (headerMatch) {
+      if (currentGroup) {
+        groups.push(currentGroup);
+      }
+
+      currentGroup = {
+        title: headerMatch[1] ?? "Unknown",
+        items: [],
+      };
+    } else if (currentGroup) {
+      currentGroup.items.push(line);
+    }
+  }
+
+  if (currentGroup) {
+    groups.push(currentGroup);
+  }
+
+  return groups;
 }
