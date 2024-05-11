@@ -17,7 +17,9 @@ export default async function Recipe({ params }) {
     <div>
       <H2>{recipe.name}</H2>
 
-      <RecipeActions recipeId={recipe.id} />
+      <div className="flex gap-2">
+        <RecipeActions recipeId={recipe.id} />
+      </div>
 
       <H3>ingredients</H3>
       <ul>
@@ -33,7 +35,7 @@ export default async function Recipe({ params }) {
       </ul>
 
       <H3>instructions</H3>
-      <p>
+      <div>
         {recipe?.stepGroups.map((group) => (
           <div key={group.title}>
             <H4>{group.title}</H4>
@@ -44,7 +46,7 @@ export default async function Recipe({ params }) {
             </ol>
           </div>
         ))}
-      </p>
+      </div>
     </div>
   );
 }
