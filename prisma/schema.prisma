@@ -92,10 +92,11 @@ model StepGroup {
 model PlannedMeal {
     id Int @id @default(autoincrement())
 
-    date             DateTime
-    isMade           Boolean
-    isOnShoppingList Boolean
-    scale            Int
+    date DateTime
+
+    isMade           Boolean @default(false)
+    isOnShoppingList Boolean @default(false)
+    scale            Int     @default(1)
 
     recipeId Int
     Recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)

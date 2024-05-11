@@ -137,6 +137,30 @@ export const recipeRouter = createTRPCRouter({
       return recipe;
     }),
 
+  addRecipeToMealPlan: protectedProcedure
+    .input(z.object({ recipeId: z.coerce.number(), date: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const userId = ctx.session.user.id;
+
+      const recipe = await db.recipe.findUnique({
+        where: { id: input.recipeId },
+      });
+
+      if (!recipe) {
+        throw new Error("Recipe not found");
+      }
+
+      const plannedMeal = await db.plannedMeal.create({
+        data: {
+          date: input.date,
+          recipeId: input.recipeId,
+          userId,
+        },
+      });
+
+      return plannedMeal;
+    }),
+
   // code below is related to migrating old data structures to new database
   migrateRecipes: protectedProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
