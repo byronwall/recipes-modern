@@ -64,9 +64,6 @@ export const recipeRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const userId = ctx.session.user.id;
 
-      // Initial setup, start by breaking the input into lines
-      const lines = input.ingredients.split("\n");
-
       // Initialize an empty array to hold group objects
 
       const ingredientGroups = splitTextIntoHeaderAndItems(
@@ -128,6 +125,16 @@ export const recipeRouter = createTRPCRouter({
       });
 
       return newRecipe;
+    }),
+
+  deleteRecipe: protectedProcedure
+    .input(z.object({ id: z.coerce.number() }))
+    .mutation(async ({ input }) => {
+      const recipe = await db.recipe.delete({
+        where: { id: input.id },
+      });
+
+      return recipe;
     }),
 
   // code below is related to migrating old data structures to new database

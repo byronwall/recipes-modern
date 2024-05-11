@@ -49,7 +49,7 @@ model IngredientGroup {
     ingredients Ingredient[]
 
     recipeId Int
-    Recipe   Recipe @relation(fields: [recipeId], references: [id])
+    Recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 }
 
 model Ingredient {
@@ -68,11 +68,11 @@ model Ingredient {
     comments   String?
 
     // link to recipes
-    group   IngredientGroup @relation(fields: [groupId], references: [id])
+    group   IngredientGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
     groupId Int
 
     // link to shopping list
-    ShoppingList   ShoppingList? @relation(fields: [shoppingListId], references: [id])
+    ShoppingList   ShoppingList? @relation(fields: [shoppingListId], references: [id], onDelete: SetNull)
     shoppingListId Int?
 }
 
@@ -86,7 +86,7 @@ model StepGroup {
     steps String[]
 
     recipeId Int
-    Recipe   Recipe @relation(fields: [recipeId], references: [id])
+    Recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 }
 
 model PlannedMeal {
@@ -98,7 +98,7 @@ model PlannedMeal {
     scale            Int
 
     recipeId Int
-    Recipe   Recipe @relation(fields: [recipeId], references: [id])
+    Recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 
     // link to user
     userId String
@@ -111,7 +111,7 @@ model ShoppingList {
     isBought Boolean
 
     recipeId Int
-    Recipe   Recipe @relation(fields: [recipeId], references: [id])
+    Recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 
     // ordered ingredients
     ingredients Ingredient[]
