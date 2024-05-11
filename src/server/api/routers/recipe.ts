@@ -161,6 +161,16 @@ export const recipeRouter = createTRPCRouter({
       return plannedMeal;
     }),
 
+  deleteMealPlan: protectedProcedure
+    .input(z.object({ id: z.coerce.number() }))
+    .mutation(async ({ input }) => {
+      const plannedMeal = await db.plannedMeal.delete({
+        where: { id: input.id },
+      });
+
+      return plannedMeal;
+    }),
+
   // code below is related to migrating old data structures to new database
   migrateRecipes: protectedProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;

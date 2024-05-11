@@ -1,6 +1,7 @@
 import { H1, H2 } from "~/components/ui/typography";
 import { api } from "~/trpc/server";
 import { useEnforceAuth } from "../useEnforceAuth";
+import { PlanCard } from "./PlanCard";
 
 export default async function PlanPage() {
   await useEnforceAuth();
@@ -21,28 +22,18 @@ export default async function PlanPage() {
       <H1>Plan</H1>
 
       <H2>Plans this month</H2>
-      <ul>
+      <div className="flex flex-wrap gap-2">
         {plansThisMonth.map((plan) => (
-          <li key={plan.id}>
-            {plan.recipeId}
-            {plan.Recipe.name}
-            {plan.date.toISOString()}
-            {plan.isMade ? "made" : "not made"}
-          </li>
+          <PlanCard key={plan.id} plan={plan} />
         ))}
-      </ul>
+      </div>
 
       <H2>All Meal Plans</H2>
-      <ul>
+      <div className="">
         {plans.map((plan) => (
-          <li key={plan.id}>
-            {plan.recipeId}
-            {plan.Recipe.name}
-            {plan.date.toISOString()}
-            {plan.isMade ? "made" : "not made"}
-          </li>
+          <PlanCard key={plan.id} plan={plan} />
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
