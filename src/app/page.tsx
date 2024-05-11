@@ -4,7 +4,8 @@ import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/server";
 import { useEnforceAuth } from "./useEnforceAuth";
 import { MigrateButtons } from "./MigrateButtons";
-import { RecipeCard } from "./RecipeCard";
+import { Recipe } from "@prisma/client";
+import { RecipeList } from "./RecipeList";
 
 export default async function Home() {
   const recipes = await api.recipe.getRecipes();
@@ -14,15 +15,10 @@ export default async function Home() {
   return (
     <div className="flex flex-col gap-4">
       <MigrateButtons />
-      <Input placeholder="Search" />
 
       <Link href="/recipes/new">New Recipe</Link>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
-        {recipes.map((recipe) => (
-          <RecipeCard key={recipe.id} recipe={recipe} />
-        ))}
-      </div>
+      <RecipeList recipes={recipes} />
     </div>
   );
 }
