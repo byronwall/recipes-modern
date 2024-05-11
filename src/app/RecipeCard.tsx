@@ -4,6 +4,13 @@ import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Card, CardTitle } from "~/components/ui/card";
 import { useRecipeActions } from "./useRecipeActions";
+import { type Recipe } from "@prisma/client";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
+import { Calendar } from "~/components/ui/calendar";
 
 export function RecipeCard({ recipe }: { recipe: Recipe }) {
   const { handleDelete } = useRecipeActions();
@@ -21,11 +28,42 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
         >
           Delete
         </Button>
+
+        <AddToMealPlanPopover recipeId={recipe.id} />
       </CardTitle>
     </Card>
   );
 }
-interface Recipe {
-  id: number;
-  name: string;
+
+function AddToMealPlanPopover(props: { recipeId: number }) {
+  const { recipeId } = props;
+
+  const { handleAddToMealPlan } = useRecipeActions();
+
+  if (!recipeId) {
+    return null;
+  }
+
+  return (
+    <div>
+      <Popover>
+        <PopoverTrigger>
+          <Button>Add to meal plan</Button>
+        </PopoverTrigger>
+        <PopoverContent>
+          <div>
+            <Calendar
+              mode="single"
+              onSelect={async (date) => {
+                if (!date) {
+                  return;
+                }
+                await handleAddToMealPlan(recipeId, date);
+              }}
+            />
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
 }

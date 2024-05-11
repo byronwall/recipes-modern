@@ -2,9 +2,9 @@
 import { api } from "~/trpc/react";
 
 export function useRecipeActions() {
-  const deleteRecipe = api.recipe.deleteRecipe.useMutation();
-
   const utils = api.useUtils();
+
+  const deleteRecipe = api.recipe.deleteRecipe.useMutation();
 
   const handleDelete = async (id: number) => {
     const shouldDelete = confirm(
@@ -19,5 +19,13 @@ export function useRecipeActions() {
     await utils.invalidate();
   };
 
-  return { handleDelete };
+  const addToMealPlan = api.recipe.addRecipeToMealPlan.useMutation();
+
+  const handleAddToMealPlan = async (recipeId: number, date: Date) => {
+    await addToMealPlan.mutateAsync({ recipeId, date });
+
+    await utils.invalidate();
+  };
+
+  return { handleDelete, handleAddToMealPlan };
 }

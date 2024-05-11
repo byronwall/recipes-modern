@@ -1,4 +1,3 @@
-import { IngredientGroup as IGP, Ingredient as IG } from "@prisma/client";
 import { z } from "zod";
 
 import {
@@ -138,10 +137,11 @@ export const recipeRouter = createTRPCRouter({
     }),
 
   addRecipeToMealPlan: protectedProcedure
-    .input(z.object({ recipeId: z.coerce.number(), date: z.string() }))
+    .input(z.object({ recipeId: z.coerce.number(), date: z.date() }))
     .mutation(async ({ input, ctx }) => {
       const userId = ctx.session.user.id;
 
+      // this check is not really needed, call below will fail anyways
       const recipe = await db.recipe.findUnique({
         where: { id: input.recipeId },
       });
