@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Card, CardTitle } from "~/components/ui/card";
-import { api } from "~/trpc/react";
+import { useRecipeActions } from "./useRecipeActions";
 
 export function RecipeCard({ recipe }: { recipe: Recipe }) {
   const { handleDelete } = useRecipeActions();
@@ -28,25 +28,4 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
 interface Recipe {
   id: number;
   name: string;
-}
-
-function useRecipeActions() {
-  const deleteRecipe = api.recipe.deleteRecipe.useMutation();
-
-  const utils = api.useUtils();
-
-  const handleDelete = async (id: number) => {
-    const shouldDelete = confirm(
-      "Are you sure you want to delete this recipe?",
-    );
-    if (!shouldDelete) {
-      return;
-    }
-
-    await deleteRecipe.mutateAsync({ id });
-
-    await utils.invalidate();
-  };
-
-  return { handleDelete };
 }

@@ -1,6 +1,6 @@
 import { H2, H3, H4 } from "~/components/ui/typography";
 import { api } from "~/trpc/server";
-import { useData } from "./useData";
+import { RecipeActions } from "./RecipeActions";
 
 export default async function Recipe({ params }) {
   // get id
@@ -16,6 +16,8 @@ export default async function Recipe({ params }) {
   return (
     <div>
       <H2>{recipe.name}</H2>
+
+      <RecipeActions recipeId={recipe.id} />
 
       <H3>ingredients</H3>
       <ul>
