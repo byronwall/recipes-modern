@@ -23,9 +23,9 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const trpcState = helpers.dehydrate().json;
-
-  console.log("trpcState", trpcState);
+  // types are a mess but .json is required for this to work
+  // might be due to transformer = superjson?
+  const trpcState = (helpers.dehydrate() as any).json;
 
   return (
     <html lang="en">
