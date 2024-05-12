@@ -4,6 +4,8 @@ import { Inter } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { MainPageWithNav } from "../components/MainPageWithNav";
+import { HydrationBoundary } from "@tanstack/react-query";
+import { helpers } from "~/trpc/server";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -21,11 +23,17 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const trpcState = helpers.dehydrate().json;
+
+  console.log("trpcState", trpcState);
+
   return (
     <html lang="en">
       <body className={`font-sans ${inter.variable}`}>
         <TRPCReactProvider>
-          <MainPageWithNav>{children}</MainPageWithNav>
+          <HydrationBoundary state={trpcState}>
+            <MainPageWithNav>{children}</MainPageWithNav>
+          </HydrationBoundary>
         </TRPCReactProvider>
       </body>
     </html>
