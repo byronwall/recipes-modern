@@ -3,8 +3,10 @@ import "server-only";
 import { headers } from "next/headers";
 import { cache } from "react";
 
-import { createCaller } from "~/server/api/root";
+import { appRouter, createCaller } from "~/server/api/root";
 import { createTRPCContext } from "~/server/api/trpc";
+import { createServerSideHelpers } from "@trpc/react-query/server";
+import superjson from "superjson";
 
 /**
  * This wraps the `createTRPCContext` helper and provides the required context for the tRPC API when
@@ -17,6 +19,12 @@ const createContext = cache(() => {
   return createTRPCContext({
     headers: heads,
   });
+});
+
+export const helpers = createServerSideHelpers({
+  router: appRouter,
+  ctx: await createContext(),
+  transformer: superjson, // optional - adds superjson serialization
 });
 
 export const api = createCaller(createContext);

@@ -1,24 +1,25 @@
 import Link from "next/link";
 
-import { Input } from "~/components/ui/input";
-import { api } from "~/trpc/server";
-import { useEnforceAuth } from "./useEnforceAuth";
+import { HydrationBoundary } from "@tanstack/react-query";
+import { helpers } from "~/trpc/server";
 import { MigrateButtons } from "./MigrateButtons";
-import { Recipe } from "@prisma/client";
 import { RecipeList } from "./RecipeList";
+import { useEnforceAuth } from "./useEnforceAuth";
 
 export default async function Home() {
-  const recipes = await api.recipe.getRecipes();
-
   await useEnforceAuth();
 
+  await helpers.recipe.getRecipes.prefetch();
+
   return (
-    <div className="flex flex-col gap-4">
-      <MigrateButtons />
+    <HydrationBoundary state={helpers.dehydrate().json}>
+      <div className="flex flex-col gap-4">
+        <MigrateButtons />
 
-      <Link href="/recipes/new">New Recipe</Link>
+        <Link href="/recipes/new">New Recipe</Link>
 
-      <RecipeList recipes={recipes} />
-    </div>
+        <RecipeList />
+      </div>
+    </HydrationBoundary>
   );
 }

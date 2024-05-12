@@ -71,9 +71,7 @@ model Ingredient {
     group   IngredientGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
     groupId Int
 
-    // link to shopping list
-    ShoppingList   ShoppingList? @relation(fields: [shoppingListId], references: [id], onDelete: SetNull)
-    shoppingListId Int?
+    ShoppingList ShoppingList[]
 }
 
 model StepGroup {
@@ -109,13 +107,18 @@ model PlannedMeal {
 model ShoppingList {
     id Int @id @default(autoincrement())
 
-    isBought Boolean
+    isBought Boolean? @default(false)
 
-    recipeId Int
-    Recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+    // linked recipe
+    recipeId Int?
+    Recipe   Recipe? @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 
-    // ordered ingredients
-    ingredients Ingredient[]
+    // ingredient link
+    ingredientId Int?
+    ingredient   Ingredient? @relation(fields: [ingredientId], references: [id])
+
+    // loose item
+    looseItem String?
 
     // link to user
     userId String

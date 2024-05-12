@@ -4,9 +4,12 @@ import { type Recipe } from "@prisma/client";
 import { useState } from "react";
 import { Input } from "~/components/ui/input";
 import { RecipeCard } from "./RecipeCard";
+import { api } from "~/trpc/react";
 
-export function RecipeList(props: { recipes: Recipe[] }) {
-  const { recipes } = props;
+const defaultRecipes: Recipe[] = [];
+
+export function RecipeList() {
+  const { data: recipes = defaultRecipes } = api.recipe.getRecipes.useQuery();
 
   const [search, setSearch] = useState("");
 
