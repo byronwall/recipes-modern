@@ -7,11 +7,13 @@ import { RecipeActions } from "./recipes/[id]/RecipeActions";
 
 export function RecipeCard({ recipe }: { recipe: Recipe }) {
   return (
-    <Card key={recipe.name} className="h-40">
+    <Card key={recipe.name} className="min-h-40">
       <CardTitle className="p-2">
         <Link href={`/recipes/${recipe.id}`}>{recipe.name}</Link>
 
-        <RecipeActions recipeId={recipe.id} />
+        <div className="flex flex-wrap gap-2">
+          <RecipeActions recipeId={recipe.id} />
+        </div>
       </CardTitle>
     </Card>
   );
