@@ -7,7 +7,8 @@ import { useShoppingListActions } from "../useShoppingListActions";
 export function ShoppingListCard(props: { item: ShoppingListItem }) {
   const { item } = props;
 
-  const { handleDeleteItem, handleMarkAsBought } = useShoppingListActions();
+  const { handleDeleteItem, handleMarkAsBought, handleUpdateIngredientAisle } =
+    useShoppingListActions();
 
   return (
     <div className="mb-2 border p-2">
@@ -31,6 +32,19 @@ export function ShoppingListCard(props: { item: ShoppingListItem }) {
         >
           Delete
         </Button>
+
+        {item.ingredient && (
+          <Button
+            onClick={async () => {
+              await handleUpdateIngredientAisle({
+                id: item.ingredient.id,
+                aisle: item.ingredient?.aisle,
+              });
+            }}
+          >
+            Update Aisle
+          </Button>
+        )}
       </div>
     </div>
   );

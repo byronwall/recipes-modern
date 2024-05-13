@@ -53,6 +53,20 @@ export function useShoppingListActions() {
     await markAsBought.mutateAsync({ id });
   };
 
+  const updateIngredientAisle = api.recipe.updateIngredientAisle.useMutation();
+
+  const handleUpdateIngredientAisle = async (input: {
+    id: number;
+    aisle?: string | null;
+  }) => {
+    const aisle = prompt("Enter new aisle", input.aisle ?? "");
+    if (!aisle) {
+      return;
+    }
+
+    await updateIngredientAisle.mutateAsync({ aisle, id: input.id });
+  };
+
   return {
     handleAddLooseItem,
     handleAddRecipe,
@@ -61,5 +75,6 @@ export function useShoppingListActions() {
     handleDeleteBought,
     handleDeleteRecipe,
     handleMarkAsBought,
+    handleUpdateIngredientAisle,
   };
 }

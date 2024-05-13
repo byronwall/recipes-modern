@@ -269,6 +269,19 @@ export const recipeRouter = createTRPCRouter({
       }
     }
   }),
+
+  updateIngredientAisle: protectedProcedure
+    .input(z.object({ id: z.coerce.number(), aisle: z.string() }))
+    .mutation(async ({ input }) => {
+      const ingredient = await db.ingredient.update({
+        where: { id: input.id },
+        data: {
+          aisle: input.aisle,
+        },
+      });
+
+      return ingredient;
+    }),
 });
 
 function splitTextIntoHeaderAndItems(text: string) {
