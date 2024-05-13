@@ -15,17 +15,27 @@ export function useRecipeActions() {
     }
 
     await deleteRecipe.mutateAsync({ id });
-
-    await utils.invalidate();
   };
 
   const addToMealPlan = api.recipe.addRecipeToMealPlan.useMutation();
 
   const handleAddToMealPlan = async (recipeId: number, date: Date) => {
     await addToMealPlan.mutateAsync({ recipeId, date });
-
-    await utils.invalidate();
   };
 
-  return { handleDelete, handleAddToMealPlan };
+  const deleteFromMealPlan = api.recipe.deleteMealPlan.useMutation();
+
+  const handleDeleteFromMealPlan = async (id: number) => {
+    const shouldDelete = confirm(
+      "Are you sure you want to delete this recipe from the meal plan?",
+    );
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    await deleteFromMealPlan.mutateAsync({ id });
+  };
+
+  return { handleDelete, handleAddToMealPlan, handleDeleteFromMealPlan };
 }
