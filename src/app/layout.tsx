@@ -6,6 +6,7 @@ import { TRPCReactProvider } from "~/trpc/react";
 import { MainPageWithNav } from "../components/MainPageWithNav";
 import { HydrationBoundary } from "@tanstack/react-query";
 import { helpers } from "~/trpc/server";
+import { TailwindIndicator } from "./TailwindIndicator";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -35,6 +36,7 @@ export default function RootLayout({
             <MainPageWithNav>{children}</MainPageWithNav>
           </HydrationBoundary>
         </TRPCReactProvider>
+        <TailwindIndicator />
       </body>
     </html>
   );
