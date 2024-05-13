@@ -6,13 +6,11 @@ import { ShoppingListCard } from "./ShoppingListCard";
 import { api } from "~/trpc/react";
 import { ShoppingRecipeItem } from "./ShoppingRecipeItem";
 import { useState } from "react";
-import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
+import { useRadioList } from "./useRadioList";
 
-const groupModes = ["recipe", "aisle"] as const;
-
-type GroupMode = (typeof groupModes)[number];
+export const groupModes = ["recipe", "aisle"] as const;
 
 export function ShoppingList() {
   const { data: shoppingList = [] } =
@@ -29,7 +27,7 @@ export function ShoppingList() {
     }
   }
 
-  const [groupMode, setGroupMode] = useState<GroupMode>("recipe");
+  const { groupMode, radioGroupComp } = useRadioList(groupModes, "recipe");
 
   const groupedShoppingList = shoppingList.reduce(
     (acc, item) => {
@@ -65,19 +63,8 @@ export function ShoppingList() {
         ))}
       </div>
       <H2>Group Mode</H2>
-      <div>
-        <RadioGroup
-          defaultValue={groupMode}
-          onValueChange={(value) => setGroupMode(value as GroupMode)}
-        >
-          {groupModes.map((mode) => (
-            <div key={mode} className="flex items-center space-x-2">
-              <RadioGroupItem value={mode} />
-              <Label>{mode}</Label>
-            </div>
-          ))}
-        </RadioGroup>
-      </div>
+      {radioGroupComp}
+
       <H2>Grouped List</H2>
       <div>
         {groupedKeys.map((key) => {
