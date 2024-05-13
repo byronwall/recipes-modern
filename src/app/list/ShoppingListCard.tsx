@@ -37,7 +37,7 @@ export function ShoppingListCard(props: { item: ShoppingListItem }) {
           <Button
             onClick={async () => {
               await handleUpdateIngredientAisle({
-                id: item.ingredient.id,
+                id: item.ingredient?.id,
                 aisle: item.ingredient?.aisle,
               });
             }}

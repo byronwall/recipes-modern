@@ -56,9 +56,13 @@ export function useShoppingListActions() {
   const updateIngredientAisle = api.recipe.updateIngredientAisle.useMutation();
 
   const handleUpdateIngredientAisle = async (input: {
-    id: number;
+    id?: number;
     aisle?: string | null;
   }) => {
+    if (!input.id) {
+      return;
+    }
+
     const aisle = prompt("Enter new aisle", input.aisle ?? "");
     if (!aisle) {
       return;
