@@ -30,7 +30,16 @@ export function RecipeClient(props: { id: number }) {
           <li key={idx}>
             {ingredient.ingredients.map((i) => (
               <div key={i.id}>
-                {i.amount} {i.unit} {i.ingredient}
+                <span className="rounded-sm bg-orange-200 px-1">
+                  {i.amount}
+                </span>{" "}
+                <span className="rounded-sm bg-red-200 px-1">{i.unit}</span>{" "}
+                <span className="rounded-sm bg-blue-200 px-1">
+                  {i.ingredient}
+                </span>
+                <span className={`rounded-sm bg-green-200 px-1`}>
+                  {i.modifier}
+                </span>
               </div>
             ))}
           </li>
@@ -44,7 +53,12 @@ export function RecipeClient(props: { id: number }) {
             <H4>{group.title}</H4>
             <ol>
               {group.steps.map((step) => (
-                <li key={step}>{step}</li>
+                <li
+                  key={step}
+                  className="m-1 list-inside list-decimal rounded-sm bg-yellow-100 p-1"
+                >
+                  {step}
+                </li>
               ))}
             </ol>
           </div>
