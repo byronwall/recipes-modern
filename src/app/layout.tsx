@@ -2,10 +2,10 @@ import "~/styles/globals.css";
 
 import { Inter } from "next/font/google";
 
+import { HydrationBoundary } from "@tanstack/react-query";
+import { getTrpcHelperState } from "~/trpc/helpers";
 import { TRPCReactProvider } from "~/trpc/react";
 import { MainPageWithNav } from "../components/MainPageWithNav";
-import { HydrationBoundary } from "@tanstack/react-query";
-import { helpers } from "~/trpc/server";
 import { TailwindIndicator } from "./TailwindIndicator";
 
 const inter = Inter({
@@ -19,14 +19,17 @@ export const metadata = {
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   // types are a mess but .json is required for this to work
   // might be due to transformer = superjson?
-  const trpcState = (helpers.dehydrate() as any).json;
+
+  // verify we have a request context
+
+  const trpcState = await getTrpcHelperState();
 
   return (
     <html lang="en">

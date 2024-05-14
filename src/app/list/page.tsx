@@ -1,5 +1,5 @@
 import { H2 } from "~/components/ui/typography";
-import { helpers } from "~/trpc/server";
+import { helpers } from "~/trpc/helpers";
 import { useEnforceAuth } from "../useEnforceAuth";
 import { ShoppingListActions } from "./ShoppingAddLoose";
 import { ShoppingList } from "./ShoppingList";
@@ -7,7 +7,7 @@ import { ShoppingList } from "./ShoppingList";
 export default async function ListPage() {
   await useEnforceAuth();
 
-  await helpers.shoppingList.getShoppingList.prefetch();
+  await (await helpers()).shoppingList.getShoppingList.prefetch();
 
   return (
     <div>
