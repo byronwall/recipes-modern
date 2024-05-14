@@ -1,52 +1,13 @@
-import { H2, H3, H4 } from "~/components/ui/typography";
-import { api } from "~/trpc/server";
-import { RecipeActions } from "./RecipeActions";
+import { useEnforceAuth } from "~/app/useEnforceAuth";
+import { helpers } from "~/trpc/server";
 
-export default async function Recipe({ params }) {
-  // get id
-  const { id } = params;
+export default async function Recipe({ params }: { params: { id: string } }) {
+  console.log("Recipe page", params);
 
-  const recipe = await api.recipe.getRecipe({ id });
-  console.log("parmas", params, recipe);
+  await useEnforceAuth();
 
-  if (!recipe) {
-    return <div>Recipe not found</div>;
-  }
+  await helpers.recipe.getRecipe.prefetch({ id: +params.id });
 
-  return (
-    <div>
-      <H2>{recipe.name}</H2>
-
-      <div className="flex gap-2">
-        <RecipeActions recipeId={recipe.id} />
-      </div>
-
-      <H3>ingredients</H3>
-      <ul>
-        {recipe?.ingredientGroups.map((ingredient, idx) => (
-          <li key={idx}>
-            {ingredient.ingredients.map((i) => (
-              <div key={i.id}>
-                {i.amount} {i.unit} {i.ingredient}
-              </div>
-            ))}
-          </li>
-        ))}
-      </ul>
-
-      <H3>instructions</H3>
-      <div>
-        {recipe?.stepGroups.map((group) => (
-          <div key={group.title}>
-            <H4>{group.title}</H4>
-            <ol>
-              {group.steps.map((step) => (
-                <li key={step}>{step}</li>
-              ))}
-            </ol>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  // return <RecipeClient id={+params.id} />;
+  return <div>Recipe page</div>;
 }

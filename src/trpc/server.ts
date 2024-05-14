@@ -13,12 +13,20 @@ import superjson from "superjson";
  * handling a tRPC call from a React Server Component.
  */
 const createContext = cache(() => {
-  const heads = new Headers(headers());
-  heads.set("x-trpc-source", "rsc");
+  console.warn("create context");
+  try {
+    const heads = new Headers(headers());
+    heads.set("x-trpc-source", "rsc");
 
-  return createTRPCContext({
-    headers: heads,
-  });
+    return createTRPCContext({
+      headers: heads,
+    });
+  } catch (e) {
+    console.error(e);
+    return createTRPCContext({
+      headers: new Headers(),
+    });
+  }
 });
 
 export const helpers = createServerSideHelpers({
@@ -27,4 +35,4 @@ export const helpers = createServerSideHelpers({
   transformer: superjson, // optional - adds superjson serialization
 });
 
-export const api = createCaller(createContext);
+const api = createCaller(createContext);

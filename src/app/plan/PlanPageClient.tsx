@@ -8,6 +8,7 @@ import { PlanCard } from "./PlanCard";
 import { useRecipeActions } from "../useRecipeActions";
 import { ReplyIcon } from "lucide-react";
 import { MealPlanThreeWeekView } from "./MealPlanThreeWeekView";
+import Link from "next/link";
 
 const renderModes = ["list", "calendar"] as const;
 
@@ -30,7 +31,6 @@ export function PlanPageClient(props: {
 
     return date >= fourteenDaysAgo && date <= fourteenDaysFromNow;
   });
-  plansThisMonth.sort((a, b) => a.date.getTime() - b.date.getTime());
 
   const { groupMode, radioGroupComp } = useRadioList(renderModes, "calendar");
 
@@ -65,10 +65,21 @@ export function PlanPageClient(props: {
 
               return (
                 <div className="">
-                  <p>{plan.Recipe.name}</p>
+                  <Link
+                    href={`/recipes/${plan.Recipe.id}`}
+                    className="font-bold"
+                  >
+                    {plan.Recipe.name}
+                  </Link>
+                  <p>
+                    {plan.isOnShoppingList
+                      ? "On shopping list"
+                      : "Not on shopping list"}
+                  </p>
                   <Button onClick={() => handleDeleteFromMealPlan(plan.id)}>
                     <ReplyIcon />
                   </Button>
+                  <Button></Button>
                 </div>
               );
             }}

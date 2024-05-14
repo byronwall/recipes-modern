@@ -1,9 +1,8 @@
 "use client";
+
 import { api } from "~/trpc/react";
 
 export function useRecipeActions() {
-  const utils = api.useUtils();
-
   const deleteRecipe = api.recipe.deleteRecipe.useMutation();
 
   const handleDelete = async (id: number) => {
