@@ -26,7 +26,7 @@ export function RecipeClient(props: { id: number }) {
 
       <H3>ingredients</H3>
       <ul>
-        {recipe?.ingredientGroups.map((ingredient, idx) => (
+        {recipe.ingredientGroups.map((ingredient, idx) => (
           <li key={idx}>
             {ingredient.ingredients.map((i) => (
               <div key={i.id}>
@@ -39,7 +39,7 @@ export function RecipeClient(props: { id: number }) {
 
       <H3>instructions</H3>
       <div>
-        {recipe?.stepGroups.map((group) => (
+        {recipe.stepGroups.map((group) => (
           <div key={group.title}>
             <H4>{group.title}</H4>
             <ol>
