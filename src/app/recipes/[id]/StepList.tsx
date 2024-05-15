@@ -7,6 +7,8 @@ import { Input } from "~/components/ui/input";
 import { produce } from "immer";
 import { Textarea } from "~/components/ui/textarea";
 import { useRecipeActions } from "~/app/useRecipeActions";
+import { cn } from "~/lib/utils";
+import { type StepGroup } from "@prisma/client";
 
 type StepListProps = {
   recipe: Recipe;
@@ -50,17 +52,9 @@ export function StepList({ recipe }: StepListProps) {
 }
 
 function StepListEditMode({ recipe }: StepListProps) {
-  type StepGroup = (typeof recipe)["stepGroups"][0];
-  type StepList = StepGroup["steps"][0];
-
   const [stepGroups, setStepGroups] = useState(recipe.stepGroups);
 
   const { updateStepGroups } = useRecipeActions();
-
-  // render as a list of text areas with auto sizing
-  // button to add new step
-  // button to delete step
-  // input to rename step group title
 
   function handleStepChange(groupIdx: number, stepIdx: number, value: string) {
     setStepGroups(
@@ -98,6 +92,18 @@ function StepListEditMode({ recipe }: StepListProps) {
     );
   }
 
+  function handleTitleChange(groupIdx: number, value: string) {
+    setStepGroups(
+      produce((draft) => {
+        const group = draft[groupIdx];
+        if (!group) {
+          return;
+        }
+        group.title = value;
+      }),
+    );
+  }
+
   async function handleSave() {
     const shouldSave = confirm("Are you sure you want to save these changes?");
 
@@ -111,34 +117,96 @@ function StepListEditMode({ recipe }: StepListProps) {
     });
   }
 
+  function handleToggleDeleteGroup(groupIdx: number) {
+    setStepGroups(
+      produce((draft) => {
+        // set the ID to negative to indicate that it should be deleted
+
+        const group = draft[groupIdx];
+
+        if (!group) {
+          return;
+        }
+
+        // if it's a new group, just remove it
+        if (group.id === 0) {
+          draft.splice(groupIdx, 1);
+          return;
+        }
+
+        group.id = -group.id;
+      }),
+    );
+  }
+
+  function handleAddNewGroup() {
+    setStepGroups(
+      produce((draft) => {
+        const newGroup: StepGroup = {
+          id: 0,
+          title: "New group",
+          steps: ["New step"],
+          order: draft.length,
+          recipeId: -1,
+        };
+
+        draft.push(newGroup as any);
+      }),
+    );
+  }
+
   return (
     <div>
       <Button onClick={handleSave}>Save</Button>
-      {stepGroups.map((group, groupIdx) => (
-        <div key={groupIdx}>
-          <Input value={group.title} className="text-lg font-bold" />
-          <ul>
-            {group.steps.map((step, stepIdx) => (
-              <li key={stepIdx} className="flex gap-1">
-                <Textarea
-                  value={step}
-                  onChange={(e) =>
-                    handleStepChange(groupIdx, stepIdx, e.target.value)
-                  }
-                  autoResize
-                />
-                <Button onClick={() => handleDeleteStep(groupIdx, stepIdx)}>
-                  Delete
+      <Button onClick={handleAddNewGroup}>Add group</Button>
+      {stepGroups.map((group, groupIdx) => {
+        const isDeleted = group.id < 0;
+        const isNew = group.id === 0;
+        return (
+          <div
+            key={groupIdx}
+            className={cn(
+              { "bg-red-100 opacity-80": isDeleted },
+              { "bg-green-100 opacity-80": isNew },
+              "m-2 rounded-lg p-2",
+            )}
+          >
+            <Input
+              value={group.title}
+              className="text-lg font-bold"
+              onChange={(e) => handleTitleChange(groupIdx, e.target.value)}
+            />
+            <Button
+              onClick={() => handleToggleDeleteGroup(groupIdx)}
+              className="text-red-500"
+            >
+              delete group
+            </Button>
+            <ul>
+              {group.steps.map((step, stepIdx) => (
+                <li key={stepIdx} className="flex gap-1">
+                  <Textarea
+                    value={step}
+                    onChange={(e) =>
+                      handleStepChange(groupIdx, stepIdx, e.target.value)
+                    }
+                    autoResize
+                  />
+                  <Button onClick={() => handleDeleteStep(groupIdx, stepIdx)}>
+                    Delete
+                  </Button>
+                </li>
+              ))}
+
+              <li>
+                <Button onClick={() => handleAddStep(groupIdx)}>
+                  Add step
                 </Button>
               </li>
-            ))}
-
-            <li>
-              <Button onClick={() => handleAddStep(groupIdx)}>Add step</Button>
-            </li>
-          </ul>
-        </div>
-      ))}
+            </ul>
+          </div>
+        );
+      })}
     </div>
   );
 }

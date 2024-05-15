@@ -143,6 +143,7 @@ export const recipeRouter = createTRPCRouter({
             id: z.coerce.number(),
             title: z.string(),
             steps: z.array(z.string()),
+            order: z.number(),
           }),
         ),
       }),
@@ -156,8 +157,31 @@ export const recipeRouter = createTRPCRouter({
         throw new Error("Recipe not found");
       }
 
+      const groupsToDelete = input.stepGroups.filter((group) => group.id < 0);
+
+      // delete groups with negative id
+      for (const group of groupsToDelete) {
+        await db.stepGroup.delete({
+          where: { id: -group.id },
+        });
+      }
+
+      // add new groups with id 0
+      const newGroups = input.stepGroups.filter((group) => group.id === 0);
+      for (const group of newGroups) {
+        await db.stepGroup.create({
+          data: {
+            title: group.title,
+            steps: group.steps,
+            order: group.order,
+            recipeId: recipe.id,
+          },
+        });
+      }
+
       // update the step groups
-      for (const group of input.stepGroups) {
+      const updatedGroups = input.stepGroups.filter((group) => group.id > 0);
+      for (const group of updatedGroups) {
         await db.stepGroup.update({
           where: { id: group.id },
           data: {
