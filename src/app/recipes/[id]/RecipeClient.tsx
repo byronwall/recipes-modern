@@ -1,8 +1,12 @@
 "use client";
 
-import { H2, H3, H4 } from "~/components/ui/typography";
+import { H2 } from "~/components/ui/typography";
 import { RecipeActions } from "./RecipeActions";
-import { api } from "~/trpc/react";
+import { type RouterOutputs, api } from "~/trpc/react";
+import { IngredientList } from "./IngredientList";
+import { StepList } from "./StepList";
+
+export type Recipe = NonNullable<RouterOutputs["recipe"]["getRecipe"]>;
 
 export function RecipeClient(props: { id: number }) {
   // get id
@@ -24,46 +28,9 @@ export function RecipeClient(props: { id: number }) {
         <RecipeActions recipeId={recipe.id} />
       </div>
 
-      <H3>ingredients</H3>
-      <ul>
-        {recipe.ingredientGroups.map((ingredient, idx) => (
-          <li key={idx}>
-            {ingredient.ingredients.map((i) => (
-              <div key={i.id}>
-                <span className="rounded-sm bg-orange-200 px-1">
-                  {i.amount}
-                </span>{" "}
-                <span className="rounded-sm bg-red-200 px-1">{i.unit}</span>{" "}
-                <span className="rounded-sm bg-blue-200 px-1">
-                  {i.ingredient}
-                </span>
-                <span className={`rounded-sm bg-green-200 px-1`}>
-                  {i.modifier}
-                </span>
-              </div>
-            ))}
-          </li>
-        ))}
-      </ul>
+      <IngredientList recipe={recipe} />
 
-      <H3>instructions</H3>
-      <div>
-        {recipe.stepGroups.map((group) => (
-          <div key={group.title}>
-            <H4>{group.title}</H4>
-            <ol>
-              {group.steps.map((step) => (
-                <li
-                  key={step}
-                  className="m-1 list-inside list-decimal rounded-sm bg-yellow-100 p-1"
-                >
-                  {step}
-                </li>
-              ))}
-            </ol>
-          </div>
-        ))}
-      </div>
+      <StepList recipe={recipe} />
     </div>
   );
 }

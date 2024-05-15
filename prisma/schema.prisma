@@ -58,11 +58,11 @@ model Ingredient {
     rawInput String @default("")
 
     ingredient String
-    amount     String?
-    modifier   String?
-    unit       String?
+    amount     String @default("")
+    modifier   String @default("")
+    unit       String @default("")
 
-    plu        String?
+    plu        String   @default("")
     isGoodName Boolean? @default(false)
     aisle      String?
     comments   String?

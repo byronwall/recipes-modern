@@ -36,5 +36,16 @@ export function useRecipeActions() {
     await deleteFromMealPlan.mutateAsync({ id });
   };
 
-  return { handleDelete, handleAddToMealPlan, handleDeleteFromMealPlan };
+  const updateIngredientGroups =
+    api.recipe.updateIngredientGroups.useMutation();
+
+  const updateStepGroups = api.recipe.updateStepGroups.useMutation();
+
+  return {
+    handleDelete,
+    handleAddToMealPlan,
+    handleDeleteFromMealPlan,
+    updateIngredientGroups,
+    updateStepGroups,
+  };
 }

@@ -45,6 +45,131 @@ export const recipeRouter = createTRPCRouter({
     return plannedMeals;
   }),
 
+  updateIngredientGroups: protectedProcedure
+    .input(
+      z.object({
+        recipeId: z.coerce.number(),
+        ingredientGroups: z.array(
+          z.object({
+            id: z.coerce.number(),
+            title: z.string(),
+            ingredients: z.array(
+              z.object({
+                id: z.coerce.number(),
+                ingredient: z.string(),
+                amount: z.string().optional(),
+                modifier: z.string().optional(),
+                unit: z.string().optional(),
+              }),
+            ),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const recipe = await db.recipe.findUnique({
+        where: { id: input.recipeId },
+      });
+
+      if (!recipe) {
+        throw new Error("Recipe not found");
+      }
+
+      // update the ingredient groups
+      for (const group of input.ingredientGroups) {
+        await db.ingredientGroup.update({
+          where: { id: group.id },
+          data: {
+            title: group.title,
+          },
+        });
+
+        // add new ingredients with id 0
+        const newIngredients = group.ingredients.filter(
+          (ingredient) => ingredient.id === 0,
+        );
+
+        for (const ingredient of newIngredients) {
+          await db.ingredient.create({
+            data: {
+              ingredient: ingredient.ingredient,
+              amount: ingredient.amount,
+              modifier: ingredient.modifier,
+              unit: ingredient.unit,
+              groupId: group.id,
+            },
+          });
+        }
+
+        const deletedIngredients = group.ingredients.filter(
+          (ingredient) => ingredient.id < 0,
+        );
+
+        // delete ingredients with negative id
+        for (const ingredient of deletedIngredients) {
+          await db.ingredient.delete({
+            where: { id: -ingredient.id },
+          });
+        }
+
+        // update the ingredients
+        const updatedIngredients = group.ingredients.filter(
+          (ingredient) => ingredient.id > 0,
+        );
+        for (const ingredient of updatedIngredients) {
+          // skip new ingredients
+
+          await db.ingredient.update({
+            where: { id: ingredient.id },
+            data: {
+              ingredient: ingredient.ingredient,
+              amount: ingredient.amount,
+              modifier: ingredient.modifier,
+              unit: ingredient.unit,
+            },
+          });
+        }
+      }
+
+      return recipe;
+    }),
+
+  updateStepGroups: protectedProcedure
+    .input(
+      z.object({
+        recipeId: z.coerce.number(),
+        stepGroups: z.array(
+          z.object({
+            id: z.coerce.number(),
+            title: z.string(),
+            steps: z.array(z.string()),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const recipe = await db.recipe.findUnique({
+        where: { id: input.recipeId },
+      });
+
+      if (!recipe) {
+        throw new Error("Recipe not found");
+      }
+
+      // update the step groups
+      for (const group of input.stepGroups) {
+        await db.stepGroup.update({
+          where: { id: group.id },
+          data: {
+            title: group.title,
+            steps: group.steps,
+          },
+        });
+      }
+
+      return recipe;
+    }),
+
   /*
   type NewRecipe = {
   title: string;
