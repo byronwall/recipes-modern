@@ -11,7 +11,7 @@ export function RecipeActions(props: { recipeId: number }) {
 
   const { handleDelete } = useRecipeActions();
 
-  const { cookingMode, toggleCookingMode } = useCookingMode();
+  const { cookingMode, toggleCookingMode, reset } = useCookingMode();
 
   return (
     <>
@@ -34,6 +34,8 @@ export function RecipeActions(props: { recipeId: number }) {
       <Button onClick={toggleCookingMode}>
         {cookingMode ? "Exit cooking mode" : "Enter cooking mode"}
       </Button>
+
+      {cookingMode && <Button onClick={reset}>Reset cooking mode</Button>}
     </>
   );
 }

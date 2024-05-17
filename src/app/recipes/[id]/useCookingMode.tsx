@@ -5,7 +5,7 @@ import { create } from "zustand";
 type IngredientId = number;
 type StepId = string; // groupIdx-stepIdx
 
-type CookingTimer = {
+export type CookingTimer = {
   id: number; // will be a +Date.now() value
   startTime: number;
   endTime: number;
@@ -27,15 +27,35 @@ type CookingModeActions = {
 
   addTimer: (timer: CookingTimer) => void;
   removeTimer: (timerId: number) => void;
+  changeTimerDescription: (timerId: number, description: string) => void;
+
+  reset: () => void;
 };
 
 export const useCookingMode = create<CookingModeStore & CookingModeActions>(
   (set, get) => ({
     cookingMode: false,
+    reset: () => {
+      set({
+        ingredients: {},
+        steps: {},
+        timers: [],
+      });
+    },
     toggleCookingMode: () => {
       set(
         produce((draft: CookingModeStore) => {
           draft.cookingMode = !draft.cookingMode;
+        }),
+      );
+    },
+
+    changeTimerDescription: (timerId, description) => {
+      set(
+        produce((draft: CookingModeStore) => {
+          const timer = draft.timers.find((timer) => timer.id === timerId);
+          if (!timer) return;
+          timer.description = description;
         }),
       );
     },

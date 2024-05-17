@@ -36,7 +36,7 @@ export function StepList({ recipe }: StepListProps) {
                 <div key={step} className="flex items-center gap-2">
                   {cookingMode && (
                     <Checkbox
-                      checked={steps[id]}
+                      checked={steps[id] ?? false}
                       onCheckedChange={() =>
                         toggleStepStatus(`${group.id}-${idx}`)
                       }

@@ -5,6 +5,7 @@ import { RecipeActions } from "./RecipeActions";
 import { type RouterOutputs, api } from "~/trpc/react";
 import { IngredientList } from "./IngredientList";
 import { StepList } from "./StepList";
+import { TimerZone } from "./TimerZone";
 
 export type Recipe = NonNullable<RouterOutputs["recipe"]["getRecipe"]>;
 
@@ -20,7 +21,7 @@ export function RecipeClient(props: { id: number }) {
   }
 
   return (
-    <div>
+    <div className="relative">
       <H2>{recipe.name}</H2>
 
       <div className="flex flex-wrap gap-2">
@@ -31,7 +32,7 @@ export function RecipeClient(props: { id: number }) {
 
       <StepList recipe={recipe} />
 
-      {/* TOOD: add section for timers when in cooking mode */}
+      <TimerZone />
     </div>
   );
 }

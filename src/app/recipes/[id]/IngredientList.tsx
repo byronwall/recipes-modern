@@ -26,7 +26,7 @@ export function IngredientList({ recipe }: IngredientListProps) {
             <div key={idx} className="flex items-center gap-2">
               {cookingMode && (
                 <Checkbox
-                  checked={ingredients[i.id]}
+                  checked={ingredients[i.id] ?? false}
                   onCheckedChange={() => toggleIngredientStatus(i.id)}
                   id={`ingredient-${i.id}`}
                   className="h-8 w-8"
