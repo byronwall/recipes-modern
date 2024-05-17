@@ -9,12 +9,16 @@ import { Textarea } from "~/components/ui/textarea";
 import { useRecipeActions } from "~/app/useRecipeActions";
 import { cn } from "~/lib/utils";
 import { type StepGroup } from "@prisma/client";
+import { useCookingMode } from "./useCookingMode";
+import { Checkbox } from "~/components/ui/checkbox";
 
 type StepListProps = {
   recipe: Recipe;
 };
 export function StepList({ recipe }: StepListProps) {
   const [isEditing, setIsEditing] = useState(false);
+
+  const { cookingMode, toggleStepStatus, steps } = useCookingMode();
 
   if (!recipe) {
     return null;
@@ -26,14 +30,33 @@ export function StepList({ recipe }: StepListProps) {
         <div key={group.title}>
           <H4>{group.title}</H4>
           <ol>
-            {group.steps.map((step) => (
-              <li
-                key={step}
-                className="m-1 list-inside list-decimal rounded-sm bg-yellow-100 p-1"
-              >
-                {step}
-              </li>
-            ))}
+            {group.steps.map((step, idx) => {
+              const id = `${group.id}-${idx}`;
+              return (
+                <div key={step} className="flex items-center gap-2">
+                  {cookingMode && (
+                    <Checkbox
+                      checked={steps[id]}
+                      onCheckedChange={() =>
+                        toggleStepStatus(`${group.id}-${idx}`)
+                      }
+                      className="h-8 w-8"
+                      id={`step-${id}`}
+                    />
+                  )}
+                  <label
+                    htmlFor={`step-${id}`}
+                    className={cn("flex gap-1 break-words text-lg", {
+                      "text-xl": cookingMode,
+                    })}
+                  >
+                    <li className="m-1 list-inside list-decimal rounded-sm bg-yellow-100 p-1">
+                      {step}
+                    </li>
+                  </label>
+                </div>
+              );
+            })}
           </ol>
         </div>
       ))}
@@ -43,9 +66,11 @@ export function StepList({ recipe }: StepListProps) {
   return (
     <>
       <H3>instructions</H3>
-      <Button onClick={() => setIsEditing(!isEditing)}>
-        {isEditing ? "Done" : "Edit"}
-      </Button>
+      {!cookingMode && (
+        <Button onClick={() => setIsEditing(!isEditing)}>
+          {isEditing ? "Done" : "Edit"}
+        </Button>
+      )}
       {isEditing ? <StepListEditMode recipe={recipe} /> : mainComp}
     </>
   );

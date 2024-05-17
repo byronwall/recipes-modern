@@ -4,24 +4,36 @@ import { Button } from "~/components/ui/button";
 import { useRecipeActions } from "~/app/useRecipeActions";
 import { AddRecipeToShoppingList } from "~/app/AddRecipeToShoppingList";
 import { AddToMealPlanPopover } from "~/app/AddToMealPlanPopover";
+import { useCookingMode } from "./useCookingMode";
 
 export function RecipeActions(props: { recipeId: number }) {
   const { recipeId } = props;
 
   const { handleDelete } = useRecipeActions();
+
+  const { cookingMode, toggleCookingMode } = useCookingMode();
+
   return (
     <>
-      <Button
-        onClick={async () => {
-          await handleDelete(props.recipeId);
-        }}
-      >
-        Delete
+      {!cookingMode && (
+        <>
+          <Button
+            onClick={async () => {
+              await handleDelete(props.recipeId);
+            }}
+          >
+            Delete
+          </Button>
+
+          <AddToMealPlanPopover recipeId={recipeId} />
+
+          <AddRecipeToShoppingList recipeId={recipeId} />
+        </>
+      )}
+
+      <Button onClick={toggleCookingMode}>
+        {cookingMode ? "Exit cooking mode" : "Enter cooking mode"}
       </Button>
-
-      <AddToMealPlanPopover recipeId={recipeId} />
-
-      <AddRecipeToShoppingList recipeId={recipeId} />
     </>
   );
 }

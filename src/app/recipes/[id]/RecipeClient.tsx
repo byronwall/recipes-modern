@@ -9,7 +9,6 @@ import { StepList } from "./StepList";
 export type Recipe = NonNullable<RouterOutputs["recipe"]["getRecipe"]>;
 
 export function RecipeClient(props: { id: number }) {
-  // get id
   const { id } = props;
 
   const { data: recipe } = api.recipe.getRecipe.useQuery({
@@ -24,13 +23,15 @@ export function RecipeClient(props: { id: number }) {
     <div>
       <H2>{recipe.name}</H2>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <RecipeActions recipeId={recipe.id} />
       </div>
 
       <IngredientList recipe={recipe} />
 
       <StepList recipe={recipe} />
+
+      {/* TOOD: add section for timers when in cooking mode */}
     </div>
   );
 }
