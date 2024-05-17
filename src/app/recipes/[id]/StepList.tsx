@@ -50,7 +50,7 @@ export function StepList({ recipe }: StepListProps) {
                       "text-xl": cookingMode,
                     })}
                   >
-                    <li className="m-1 list-inside list-decimal rounded-sm bg-yellow-100 p-1">
+                    <li className="m-1 list-inside list-decimal rounded-sm bg-gray-100 p-1">
                       {step}
                     </li>
                   </label>

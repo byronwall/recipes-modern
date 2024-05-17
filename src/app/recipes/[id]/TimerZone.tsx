@@ -51,7 +51,7 @@ export function TimerZone() {
   if (!cookingMode) return null;
 
   return (
-    <div className="fixed bottom-0 right-0 min-h-10 w-full bg-orange-200 p-1 shadow-lg">
+    <div className="sticky bottom-0 right-0 -mx-4 -mb-4 min-h-10 w-screen bg-orange-200 px-4 py-2 shadow-lg">
       <div className="flex gap-2 text-xl">
         <Button onClick={handleNewTimer}>Add Timer</Button>
 
