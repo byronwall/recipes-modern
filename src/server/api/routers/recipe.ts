@@ -431,6 +431,42 @@ export const recipeRouter = createTRPCRouter({
 
       return ingredient;
     }),
+
+  addMealPlanToShoppingList: protectedProcedure
+    .input(z.object({ id: z.coerce.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const userId = ctx.session.user.id;
+
+      const plannedMeal = await db.plannedMeal.update({
+        where: { id: input.id },
+        data: {
+          isOnShoppingList: true,
+        },
+      });
+
+      const recipeId = plannedMeal.recipeId;
+
+      // get ingredient groups for that recipe
+      const ingredientGroups = await db.ingredientGroup.findMany({
+        where: { recipeId },
+      });
+
+      // get all ingredients in those groups
+      const ingredients = await db.ingredient.findMany({
+        where: { groupId: { in: ingredientGroups.map((group) => group.id) } },
+      });
+
+      // add all ingredients to the shopping list
+      for (const ingredient of ingredients) {
+        await db.shoppingList.create({
+          data: {
+            ingredientId: ingredient.id,
+            userId,
+            recipeId,
+          },
+        });
+      }
+    }),
 });
 
 function splitTextIntoHeaderAndItems(text: string) {

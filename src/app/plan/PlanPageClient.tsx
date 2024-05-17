@@ -34,7 +34,8 @@ export function PlanPageClient(props: {
 
   const { groupMode, radioGroupComp } = useRadioList(renderModes, "calendar");
 
-  const { handleAddToMealPlan, handleDeleteFromMealPlan } = useRecipeActions();
+  const { handleAddToMealPlan, handleDeleteFromMealPlan, addMealPlanToList } =
+    useRecipeActions();
 
   return (
     <div>
@@ -77,9 +78,15 @@ export function PlanPageClient(props: {
                       : "Not on shopping list"}
                   </p>
                   <Button onClick={() => handleDeleteFromMealPlan(plan.id)}>
-                    <ReplyIcon />
+                    Delete
                   </Button>
-                  <Button></Button>
+                  <Button
+                    onClick={() =>
+                      addMealPlanToList.mutateAsync({ id: plan.id })
+                    }
+                  >
+                    Add to list
+                  </Button>
                 </div>
               );
             }}

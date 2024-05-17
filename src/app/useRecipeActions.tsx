@@ -41,11 +41,14 @@ export function useRecipeActions() {
 
   const updateStepGroups = api.recipe.updateStepGroups.useMutation();
 
+  const addMealPlanToList = api.recipe.addMealPlanToShoppingList.useMutation();
+
   return {
     handleDelete,
     handleAddToMealPlan,
     handleDeleteFromMealPlan,
     updateIngredientGroups,
     updateStepGroups,
+    addMealPlanToList,
   };
 }
