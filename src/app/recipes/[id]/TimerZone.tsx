@@ -51,22 +51,22 @@ export function TimerZone() {
   if (!cookingMode) return null;
 
   return (
-    <div className="sticky bottom-0 right-0 -mx-4 -mb-4 min-h-10 w-screen bg-orange-200 px-4 py-2 shadow-lg">
-      <div className="flex gap-2 text-xl">
+    <div className="sticky bottom-0 right-0 -mx-4 -mb-4 min-h-10 w-screen max-w-full bg-purple-100 px-4 py-2 shadow-lg md:w-full">
+      <div className="flex items-center justify-start gap-2 text-xl">
         <Button onClick={handleNewTimer}>Add Timer</Button>
 
         <Input
           type="number"
           value={minutes}
           onChange={(e) => setMinutes(e.target.value)}
-          className="text-2xl"
+          className="w-20 text-2xl"
         />
         <span> : </span>
         <Input
           type="number"
           value={seconds}
           onChange={(e) => setSeconds(e.target.value)}
-          className="text-2xl"
+          className="w-20 text-2xl"
         />
       </div>
 
