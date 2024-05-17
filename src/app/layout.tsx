@@ -33,7 +33,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`font-sans ${inter.variable}`}>
+      <body className={`font-sans ${inter.variable} mb-10`}>
         <TRPCReactProvider>
           <HydrationBoundary state={trpcState}>
             <MainPageWithNav>{children}</MainPageWithNav>

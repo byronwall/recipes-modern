@@ -8,7 +8,7 @@ import { Input } from "~/components/ui/input";
 export function TimerZone() {
   const { cookingMode, timers, addTimer } = useCookingMode();
 
-  const [_, setDummy] = useState(0); // force re-render
+  const [, setDummy] = useState(0); // force re-render
 
   const [minutes, setMinutes] = useState("5");
   const [seconds, setSeconds] = useState("0");
@@ -28,8 +28,8 @@ export function TimerZone() {
   }, [cookingMode]);
 
   function handleNewTimer() {
-    const minutesInt = parseInt(minutes, 10);
-    const secondsInt = parseInt(seconds, 10);
+    const minutesInt = parseInt(minutes || "0", 10);
+    const secondsInt = parseInt(seconds || "0", 10);
 
     if (isNaN(minutesInt) || isNaN(secondsInt)) {
       return;
