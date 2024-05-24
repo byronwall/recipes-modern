@@ -55,9 +55,17 @@ export function KrogerSearchPopup({ ingredient }: Props) {
     });
   };
 
+  async function searchOnOpen(isOpen: boolean) {
+    if (!isOpen) return;
+
+    if (ingredient) {
+      await searchKroger();
+    }
+  }
+
   return (
     <div>
-      <Dialog>
+      <Dialog onOpenChange={(isOpen) => searchOnOpen(isOpen)}>
         <DialogContent className="max-h-[80vh] w-[800px] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Kroger Search for {ingredient}</DialogTitle>
