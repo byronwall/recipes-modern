@@ -1,6 +1,10 @@
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+} from "~/server/api/trpc";
 import { db } from "~/server/db";
 
 export const userRouter = createTRPCRouter({
@@ -26,4 +30,19 @@ export const userRouter = createTRPCRouter({
 
       return user;
     }),
+
+  getKrogerStatus: protectedProcedure.query(async ({ input, ctx }) => {
+    const userId = ctx.session.user.id;
+
+    const user = await db.userExtras.findUnique({
+      where: {
+        userId,
+      },
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+    return user;
+  }),
 });

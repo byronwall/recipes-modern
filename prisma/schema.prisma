@@ -17,8 +17,8 @@ datasource db {
 model UserExtras {
     id Int @id @default(autoincrement())
 
-    // User relation
-    userId String
+    // User relation - unique
+    userId String @unique
     User   User   @relation(fields: [userId], references: [id])
 
     // kroger API

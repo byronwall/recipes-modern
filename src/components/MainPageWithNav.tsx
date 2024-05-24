@@ -19,6 +19,10 @@ export async function MainPageWithNav(props: { children: React.ReactNode }) {
           <Link href="/list" className="text-3xl">
             list
           </Link>
+          {/* kroger link */}
+          <Link href="/kroger" className="text-3xl">
+            kroger
+          </Link>
         </div>
         {/* sign out */}
         {session && (
