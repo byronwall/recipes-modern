@@ -1,11 +1,16 @@
-import { type API_KrogerSearch, type KrogerProduct } from "~/app/kroger/model";
+import {
+  type API_KrogerProdRes,
+  type API_KrogerSearch,
+  type KrogerProduct,
+} from "~/app/kroger/model";
 import { env } from "~/env";
 import { db } from "./db";
+import { getKrogerAccessToken } from "./api/routers/getKrogerAccessToken";
 
 export async function doOAuth(
   isRefresh: boolean,
-  accessCode?: string,
   userId?: string,
+  accessCode?: string,
 ): Promise<boolean> {
   const config = {
     client: {
@@ -101,38 +106,48 @@ export async function doOAuth(
 
 export async function doKrogerSearch(
   postData: API_KrogerSearch,
+  userId: string,
   shouldRetry: boolean,
 ): Promise<KrogerProduct[]> {
   const url = encodeURI(
     `https://api.kroger.com/v1/products?filter.term=${postData.filterTerm}&filter.locationId=02100086`,
   );
 
+  const accessToken = await getKrogerAccessToken(userId);
+
   try {
+    console.log(
+      "****** attempting search, url",
+      url,
+      "accessToken",
+      accessToken,
+    );
     const response = await fetch(url, {
       headers: {
         Accept: "application/json",
-        Authorization: `Bearer ${process.env.USER_ACCESS_TOKEN}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
-    const search = await response.json();
+
+    const search = (await response.json()) as API_KrogerProdRes;
+
+    console.log("search", { response, search });
 
     if (response.ok) {
       console.log("data", search);
-      return search;
+      return search.data;
+    }
+
+    if (response.status === 401 && shouldRetry) {
+      console.log("401 error");
+      const isAuth = await doOAuth(true, userId, undefined);
+
+      if (isAuth) {
+        return await doKrogerSearch(postData, userId, false);
+      }
     }
   } catch (error: any) {
     console.error(error, "**** error on search");
-
-    if (
-      error.response?.data?.error === "API-401: Invalid Access Token" &&
-      shouldRetry
-    ) {
-      const isAuth = await doOAuth(true);
-
-      if (isAuth) {
-        return await doKrogerSearch(postData, false);
-      }
-    }
   }
 
   return [];

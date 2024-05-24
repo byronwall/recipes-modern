@@ -3,6 +3,9 @@
 import { Button } from "~/components/ui/button";
 import { type RouterOutputs } from "~/trpc/react";
 import { useShoppingListActions } from "../useShoppingListActions";
+import { KrogerSearchPopup } from "./KrogerSearchPopup";
+
+type ShoppingListItem = RouterOutputs["shoppingList"]["getShoppingList"][0];
 
 export function ShoppingListCard(props: { item: ShoppingListItem }) {
   const { item } = props;
@@ -45,8 +48,8 @@ export function ShoppingListCard(props: { item: ShoppingListItem }) {
             Update Aisle
           </Button>
         )}
+        <KrogerSearchPopup ingredient={item.ingredient?.ingredient} />
       </div>
     </div>
   );
 }
-type ShoppingListItem = RouterOutputs["shoppingList"]["getShoppingList"][0];

@@ -3,7 +3,7 @@
 import { api } from "~/trpc/react";
 
 export function UserKrogerStatus() {
-  const { data: userStatus } = api.user.getKrogerStatus.useQuery();
+  const { data: userStatus } = api.kroger.getKrogerStatus.useQuery();
 
   return (
     <div>

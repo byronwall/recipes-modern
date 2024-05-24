@@ -22,9 +22,13 @@ export async function GET(req: NextRequest) {
   const postData = req.nextUrl.searchParams;
   const code = postData.get("code");
 
+  if (!code) {
+    return new Response("error occurred during auth");
+  }
+
   console.log(new Date(), "kroger auth", code);
 
-  const didAuth = await doOAuth(false, code, session.user.id);
+  const didAuth = await doOAuth(false, session.user.id, code);
 
   console.log(new Date(), "kroger auth", didAuth);
 
