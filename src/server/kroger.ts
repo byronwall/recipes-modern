@@ -110,7 +110,7 @@ export async function doKrogerSearch(
   shouldRetry: boolean,
 ): Promise<KrogerProduct[]> {
   const url = encodeURI(
-    `https://api.kroger.com/v1/products?filter.term=${postData.filterTerm}&filter.locationId=02100086`,
+    `https://api.kroger.com/v1/products?filter.term=${postData.filterTerm}&filter.locationId=02100086&filter.fulfillment=ais`,
   );
 
   const accessToken = await getKrogerAccessToken(userId);
