@@ -11,7 +11,7 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
       <CardTitle className="p-2">
         <Link href={`/recipes/${recipe.id}`}>{recipe.name}</Link>
       </CardTitle>
-      <div className="flex flex-wrap gap-1 p-1">
+      <div className="flex gap-1 p-1">
         <RecipeActions recipeId={recipe.id} />
       </div>
     </Card>

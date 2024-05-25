@@ -24,7 +24,7 @@ export function RecipeList() {
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search"
       />
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-2">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-2">
         {filteredRecipes.map((recipe) => (
           <RecipeCard key={recipe.id} recipe={recipe} />
         ))}

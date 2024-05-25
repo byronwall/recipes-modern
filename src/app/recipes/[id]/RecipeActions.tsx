@@ -22,18 +22,19 @@ export function RecipeActions(props: { recipeId: number }) {
     <>
       {!cookingMode && (
         <>
+          <AddToMealPlanPopover recipeId={recipeId} />
+
+          <AddRecipeToShoppingList recipeId={recipeId} />
+
           <Button
             onClick={async () => {
               await handleDelete(props.recipeId);
             }}
-            variant={"destructive"}
+            variant={"destructive-outline"}
           >
             <Trash />
+            Delete
           </Button>
-
-          <AddToMealPlanPopover recipeId={recipeId} />
-
-          <AddRecipeToShoppingList recipeId={recipeId} />
         </>
       )}
 
