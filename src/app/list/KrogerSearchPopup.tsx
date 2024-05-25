@@ -62,7 +62,9 @@ export function KrogerSearchPopup({ ingredient }: Props) {
         </DialogTrigger>
         <DialogContent className="max-h-[80vh]  max-w-4xl shrink-0  overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Kroger Search for {ingredient}</DialogTitle>
+            <DialogTitle className="text-2xl">
+              Kroger Search for <span className="underline">{ingredient}</span>
+            </DialogTitle>
           </DialogHeader>
 
           <form onSubmit={(e) => e.preventDefault()}>
