@@ -13,6 +13,7 @@ import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 import { type KrogerProduct } from "../kroger/model";
 import { KrogerItemDisplay } from "./KrogerItemDisplay";
+import { Search } from "lucide-react";
 
 type Props = {
   ingredient?: string;
@@ -79,6 +80,7 @@ export function KrogerSearchPopup({ ingredient }: Props) {
                 onClick={searchKroger}
                 disabled={searchMutation.isPending}
               >
+                <Search size={24} />
                 Search
               </Button>
             </div>
@@ -95,11 +97,9 @@ export function KrogerSearchPopup({ ingredient }: Props) {
           )}
 
           <div className="grid-cols-auto-fit-260 grid gap-2">
-            {searchResults.map((result) => {
-              return (
-                <KrogerItemDisplay key={result.productId} result={result} />
-              );
-            })}
+            {searchResults.map((result) => (
+              <KrogerItemDisplay key={result.productId} result={result} />
+            ))}
           </div>
         </DialogContent>
       </Dialog>

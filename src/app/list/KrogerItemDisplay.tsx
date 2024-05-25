@@ -8,6 +8,7 @@ import { formatMoney } from "./formatMoney";
 import { useState } from "react";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
+import { ShoppingCart } from "lucide-react";
 
 type KrogerItemDisplayProps = {
   result: KrogerProduct;
@@ -90,6 +91,7 @@ export function KrogerItemDisplay({ result }: KrogerItemDisplayProps) {
           onClick={() => handleAddToCart(result.upc)}
           disabled={addToCartMutation.isPending}
         >
+          <ShoppingCart size={20} />
           cart
         </Button>
       </div>
