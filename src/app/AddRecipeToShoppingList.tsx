@@ -1,6 +1,7 @@
 "use client";
 import { Button } from "~/components/ui/button";
 import { useShoppingListActions } from "./useShoppingListActions";
+import { ShoppingBasket } from "lucide-react";
 
 export function AddRecipeToShoppingList(props: { recipeId: number }) {
   const { recipeId } = props;
@@ -12,7 +13,8 @@ export function AddRecipeToShoppingList(props: { recipeId: number }) {
         await handleAddRecipe(recipeId);
       }}
     >
-      Add to shopping list
+      <ShoppingBasket />
+      List
     </Button>
   );
 }

@@ -10,11 +10,10 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
     <Card key={recipe.name} className="min-h-40">
       <CardTitle className="p-2">
         <Link href={`/recipes/${recipe.id}`}>{recipe.name}</Link>
-
-        <div className="flex flex-wrap gap-2">
-          <RecipeActions recipeId={recipe.id} />
-        </div>
       </CardTitle>
+      <div className="flex flex-wrap gap-1 p-1">
+        <RecipeActions recipeId={recipe.id} />
+      </div>
     </Card>
   );
 }

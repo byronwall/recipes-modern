@@ -4,6 +4,8 @@ import { helpers } from "~/trpc/helpers";
 import { MigrateButtons } from "./MigrateButtons";
 import { RecipeList } from "./RecipeList";
 import { useEnforceAuth } from "./useEnforceAuth";
+import { Button } from "~/components/ui/button";
+import { Plus } from "lucide-react";
 
 export default async function Home() {
   await useEnforceAuth();
@@ -11,10 +13,15 @@ export default async function Home() {
   await (await helpers()).recipe.getRecipes.prefetch();
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full flex-col gap-4">
       <MigrateButtons />
 
-      <Link href="/recipes/new">New Recipe</Link>
+      <Link href="/recipes/new">
+        <Button>
+          <Plus />
+          New Recipe
+        </Button>
+      </Link>
 
       <RecipeList />
     </div>

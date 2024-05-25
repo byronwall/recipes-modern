@@ -7,6 +7,7 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { Calendar } from "~/components/ui/calendar";
+import { CalendarPlus } from "lucide-react";
 
 export function AddToMealPlanPopover(props: { recipeId: number }) {
   const { recipeId } = props;
@@ -21,7 +22,10 @@ export function AddToMealPlanPopover(props: { recipeId: number }) {
     <div>
       <Popover>
         <PopoverTrigger asChild>
-          <Button>Add to meal plan</Button>
+          <Button>
+            <CalendarPlus />
+            Plan
+          </Button>
         </PopoverTrigger>
         <PopoverContent>
           <div>
