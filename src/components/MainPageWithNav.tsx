@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getServerAuthSession } from "~/server/auth";
+import { NavLink } from "./NavLink";
 
 export async function MainPageWithNav(props: { children: React.ReactNode }) {
   const { children } = props;
@@ -9,22 +10,17 @@ export async function MainPageWithNav(props: { children: React.ReactNode }) {
   return (
     <main className="m-auto flex min-h-screen max-w-4xl flex-col items-start gap-4 p-4">
       <div className="flex w-full items-center justify-between">
-        <div className="flex items-end gap-4 font-bold tracking-tight">
-          <Link href="/" className="text-4xl">
+        <div className="flex items-end gap-6 font-bold tracking-tight">
+          <NavLink href="/" className="text-4xl">
             recipes
-          </Link>
-          <Link href="/plan" className="text-3xl">
-            plan
-          </Link>
-          <Link href="/list" className="text-3xl">
-            list
-          </Link>
-          {/* kroger link */}
-          <Link href="/kroger" className="text-3xl">
-            kroger
-          </Link>
+          </NavLink>
+          <NavLink href="/plan">plan</NavLink>
+
+          <NavLink href="/list">list</NavLink>
+
+          <NavLink href="/kroger">kroger</NavLink>
         </div>
-        {/* sign out */}
+
         {session && (
           <Link href="/api/auth/signout" className="text-lg">
             sign out
