@@ -20,6 +20,9 @@ export const shoppingListRouter = createTRPCRouter({
           },
         },
       },
+      orderBy: {
+        id: "asc",
+      },
     });
 
     return shoppingList;

@@ -2,6 +2,7 @@
 
 import { Button } from "~/components/ui/button";
 import { useShoppingListActions } from "../useShoppingListActions";
+import { Plus } from "lucide-react";
 
 export function ShoppingListActions() {
   const { handleAddLooseItem, handleDeleteAll, handleDeleteBought } =
@@ -14,6 +15,7 @@ export function ShoppingListActions() {
           await handleAddLooseItem();
         }}
       >
+        <Plus />
         Add loose item
       </Button>
 
@@ -21,6 +23,7 @@ export function ShoppingListActions() {
         onClick={async () => {
           await handleDeleteAll();
         }}
+        variant="destructive-outline"
       >
         Delete all
       </Button>
@@ -29,6 +32,7 @@ export function ShoppingListActions() {
         onClick={async () => {
           await handleDeleteBought();
         }}
+        variant="destructive-outline"
       >
         Delete bought
       </Button>

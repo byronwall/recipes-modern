@@ -57,15 +57,16 @@ export function ShoppingList() {
   return (
     <>
       <H2>Recipes included</H2>
-      <div>
+      <div className="flex flex-col gap-2">
         {Object.entries(recipeNameById).map(([id, name]) => (
           <ShoppingRecipeItem key={id} id={id} name={name} />
         ))}
       </div>
-      <H2>Group Mode</H2>
-      {radioGroupComp}
+      <div className="flex  items-center gap-4">
+        <H2>Group Mode</H2>
+        {radioGroupComp}
+      </div>
 
-      <H2>Grouped List</H2>
       <div>
         {groupedKeys.map((key) => {
           const items = groupedShoppingList[key]!;
@@ -97,7 +98,11 @@ export function ShoppingList() {
               {isVisible ? (
                 <div>
                   {items.map((item) => (
-                    <ShoppingListCard key={item.id} item={item} />
+                    <ShoppingListCard
+                      key={item.id}
+                      item={item}
+                      displayMode={groupMode as any}
+                    />
                   ))}
                 </div>
               ) : null}

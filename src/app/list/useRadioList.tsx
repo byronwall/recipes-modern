@@ -8,19 +8,23 @@ export function useRadioList(items: readonly string[], defaultValue: string) {
   const [groupMode, setGroupMode] = useState(defaultValue);
 
   const radioGroupComp = (
-    <div>
-      <RadioGroup
-        defaultValue={groupMode}
-        onValueChange={(value) => setGroupMode(value)}
-      >
-        {items.map((mode) => (
-          <div key={mode} className="flex items-center space-x-2">
-            <RadioGroupItem value={mode} />
-            <Label>{mode}</Label>
-          </div>
-        ))}
-      </RadioGroup>
-    </div>
+    <RadioGroup
+      defaultValue={groupMode}
+      onValueChange={(value) => setGroupMode(value)}
+      className="flex gap-2"
+    >
+      {items.map((mode) => (
+        <div key={mode} className="flex items-center space-x-2">
+          <RadioGroupItem value={mode} className="h-6 w-6" id={mode} />
+          <Label
+            className="cursor-pointer text-lg font-medium hover:bg-gray-100"
+            htmlFor={mode}
+          >
+            {mode}
+          </Label>
+        </div>
+      ))}
+    </RadioGroup>
   );
   return { groupMode, radioGroupComp };
 }
