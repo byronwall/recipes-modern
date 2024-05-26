@@ -67,7 +67,7 @@ export function ShoppingList() {
         {radioGroupComp}
       </div>
 
-      <div>
+      <div className="flex flex-col gap-6">
         {groupedKeys.map((key) => {
           const items = groupedShoppingList[key]!;
           const isVisible = !hiddenKeys.includes(key);
@@ -96,7 +96,7 @@ export function ShoppingList() {
                 </Label>
               </div>
               {isVisible ? (
-                <div>
+                <div className="pl-8">
                   {items.map((item) => (
                     <ShoppingListCard
                       key={item.id}
