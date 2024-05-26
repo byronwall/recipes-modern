@@ -1,14 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { H1, H2 } from "~/components/ui/typography";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useRadioList } from "../list/useRadioList";
-import { PlanCard } from "./PlanCard";
 import { useRecipeActions } from "../useRecipeActions";
-import { ReplyIcon } from "lucide-react";
 import { MealPlanThreeWeekView } from "./MealPlanThreeWeekView";
-import Link from "next/link";
+import { PlanCard } from "./PlanCard";
+import { RecipePickerPopover } from "./RecipePickerPopover";
 
 const renderModes = ["list", "calendar"] as const;
 
@@ -20,7 +20,7 @@ export function PlanPageClient(props: {
   const { data: plans = initPlans } = api.recipe.getMealPlans.useQuery();
 
   // TODO: this filtering should be done on the server
-  const plansThisMonth = plans.filter((plan) => {
+  const _plansThisMonth = plans.filter((plan) => {
     // filter within -14 days and +14 days
     const date = new Date(plan.date);
     const now = new Date();
@@ -30,6 +30,11 @@ export function PlanPageClient(props: {
     fourteenDaysFromNow.setDate(now.getDate() + 14);
 
     return date >= fourteenDaysAgo && date <= fourteenDaysFromNow;
+  });
+
+  // sort by date
+  const plansThisMonth = _plansThisMonth.sort((a, b) => {
+    return a?.date?.getTime() - b?.date?.getTime();
   });
 
   const { groupMode, radioGroupComp } = useRadioList(renderModes, "calendar");
@@ -50,6 +55,14 @@ export function PlanPageClient(props: {
           {plansThisMonth.map((plan) => (
             <PlanCard key={plan.id} plan={plan} />
           ))}
+
+          <div className="flex min-h-28 w-[276px] items-center justify-center rounded border border-gray-200">
+            <RecipePickerPopover
+              onRecipeSelected={async (recipeId) => {
+                await handleAddToMealPlan(recipeId, new Date());
+              }}
+            />
+          </div>
         </div>
       )}
 

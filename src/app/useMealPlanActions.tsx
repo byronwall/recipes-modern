@@ -3,9 +3,7 @@
 import { api } from "~/trpc/react";
 
 export function useMealPlanActions() {
-  const utils = api.useUtils();
-
-  const deletePlan = api.recipe.deleteMealPlan.useMutation();
+  const deletePlan = api.mealPlan.deleteMealPlan.useMutation();
 
   const handleDelete = async (id: number) => {
     const shouldDelete = confirm(
@@ -16,9 +14,13 @@ export function useMealPlanActions() {
     }
 
     await deletePlan.mutateAsync({ id });
-
-    await utils.invalidate();
   };
 
-  return { handleDelete };
+  const updatePlan = api.mealPlan.updateMealPlan.useMutation();
+
+  const handleUpdate = async (id: number, isMade: boolean) => {
+    await updatePlan.mutateAsync({ id, isMade });
+  };
+
+  return { handleDelete, handleUpdate };
 }
