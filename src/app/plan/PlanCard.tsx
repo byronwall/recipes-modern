@@ -9,12 +9,14 @@ import { H4 } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useMealPlanActions } from "../useMealPlanActions";
-import { Trash } from "lucide-react";
+import { ShoppingBasket, Trash } from "lucide-react";
+import { useRecipeActions } from "../useRecipeActions";
 
 export function PlanCard(props: { plan: PlannedMealWithRecipe }) {
   const { plan } = props;
 
   const { handleDelete } = useMealPlanActions();
+  const { addMealPlanToList } = useRecipeActions();
 
   const updatePlan = api.mealPlan.updateMealPlan.useMutation();
 
@@ -28,11 +30,11 @@ export function PlanCard(props: { plan: PlannedMealWithRecipe }) {
         "bg-gray-200 text-gray-700": plan.isMade,
       })}
     >
-      <div className="flex gap-4 ">
+      <div className="flex gap-2 ">
         <Popover>
           <PopoverTrigger className="">
-            <div className="flex  flex-1 flex-col items-center justify-center  ">
-              <div className="text-2xl font-bold">{shortMonth}</div>
+            <div className="flex  flex-1 flex-col items-center justify-center border-r px-2  ">
+              <div className="text-lg font-semibold">{shortMonth}</div>
               <div className="text-4xl font-bold">
                 {new Date(plan.date).getDate()}
               </div>
@@ -69,7 +71,12 @@ export function PlanCard(props: { plan: PlannedMealWithRecipe }) {
               variant="destructive-outline"
             >
               <Trash size={16} />
-              Delete
+            </Button>
+            <Button
+              onClick={() => addMealPlanToList.mutateAsync({ id: plan.id })}
+              disabled={addMealPlanToList.isPending || plan.isOnShoppingList}
+            >
+              <ShoppingBasket />
             </Button>
             <Button
               onClick={() => {

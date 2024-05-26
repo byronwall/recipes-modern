@@ -9,6 +9,7 @@ import {
 import { useState } from "react";
 import { Input } from "~/components/ui/input";
 import { Plus } from "lucide-react";
+import { H1, H3 } from "~/components/ui/typography";
 
 export function RecipePickerPopover(props: {
   onRecipeSelected: (recipeId: number) => void;
@@ -24,12 +25,14 @@ export function RecipePickerPopover(props: {
   return (
     <div>
       <Popover>
-        <PopoverContent className="max-h-[300px] w-72 overflow-y-auto p-4">
+        <PopoverContent className="max-h-[400px] w-72 overflow-y-auto p-4">
           <div className="flex flex-col gap-2">
+            <H3>add recipe to meal plan</H3>
             <Input
               placeholder="Search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              className="text-lg"
             />
             {filteredRecipes.map((recipe) => (
               <Button

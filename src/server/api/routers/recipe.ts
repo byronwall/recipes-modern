@@ -40,6 +40,7 @@ export const recipeRouter = createTRPCRouter({
     const plannedMeals = db.plannedMeal.findMany({
       where: { userId },
       include: { Recipe: true },
+      orderBy: { date: "asc" },
     });
 
     return plannedMeals;

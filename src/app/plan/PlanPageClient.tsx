@@ -1,16 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { Button } from "~/components/ui/button";
-import { H1, H2 } from "~/components/ui/typography";
+import { H1 } from "~/components/ui/typography";
 import { api, type RouterOutputs } from "~/trpc/react";
-import { useRadioList } from "../list/useRadioList";
 import { useRecipeActions } from "../useRecipeActions";
-import { MealPlanThreeWeekView } from "./MealPlanThreeWeekView";
 import { PlanCard } from "./PlanCard";
 import { RecipePickerPopover } from "./RecipePickerPopover";
-
-const renderModes = ["list", "calendar"] as const;
 
 export function PlanPageClient(props: {
   plans: RouterOutputs["recipe"]["getMealPlans"];
@@ -34,81 +28,38 @@ export function PlanPageClient(props: {
 
   // sort by date
   const plansThisMonth = _plansThisMonth.sort((a, b) => {
+    // verify they are dates
+    if (!a?.date || !b?.date) {
+      return 0;
+    }
+
+    // type guard for dates
+    if (!(a.date instanceof Date) || !(b.date instanceof Date)) {
+      return 0;
+    }
+
     return a?.date?.getTime() - b?.date?.getTime();
   });
 
-  const { groupMode, radioGroupComp } = useRadioList(renderModes, "calendar");
-
-  const { handleAddToMealPlan, handleDeleteFromMealPlan, addMealPlanToList } =
-    useRecipeActions();
+  const { handleAddToMealPlan } = useRecipeActions();
 
   return (
-    <div>
-      <H1>Plan</H1>
+    <div className="flex flex-col gap-4">
+      <H1>Planned Meals</H1>
 
-      <H2>Render mode</H2>
-      <div className="flex gap-2">{radioGroupComp}</div>
+      <div className="flex flex-wrap gap-2">
+        {plansThisMonth.map((plan) => (
+          <PlanCard key={plan.id} plan={plan} />
+        ))}
 
-      <H2>Plans this month</H2>
-      {groupMode === "list" && (
-        <div className="flex flex-wrap gap-2">
-          {plansThisMonth.map((plan) => (
-            <PlanCard key={plan.id} plan={plan} />
-          ))}
-
-          <div className="flex min-h-28 w-[276px] items-center justify-center rounded border border-gray-200">
-            <RecipePickerPopover
-              onRecipeSelected={async (recipeId) => {
-                await handleAddToMealPlan(recipeId, new Date());
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {groupMode === "calendar" && (
-        <div>
-          <MealPlanThreeWeekView
-            itemRenderer={(date) => {
-              const plan = plans.find(
-                (plan) => plan.date.toDateString() === date.toDateString(),
-              );
-              if (!plan) {
-                return null;
-              }
-
-              return (
-                <div className="">
-                  <Link
-                    href={`/recipes/${plan.Recipe.id}`}
-                    className="font-bold"
-                  >
-                    {plan.Recipe.name}
-                  </Link>
-                  <p>
-                    {plan.isOnShoppingList
-                      ? "On shopping list"
-                      : "Not on shopping list"}
-                  </p>
-                  <Button onClick={() => handleDeleteFromMealPlan(plan.id)}>
-                    Delete
-                  </Button>
-                  <Button
-                    onClick={() =>
-                      addMealPlanToList.mutateAsync({ id: plan.id })
-                    }
-                  >
-                    Add to list
-                  </Button>
-                </div>
-              );
-            }}
-            onAction={async (date, recipeId) => {
-              await handleAddToMealPlan(recipeId, date);
+        <div className="flex min-h-28 w-[276px] items-center justify-center rounded border border-gray-200">
+          <RecipePickerPopover
+            onRecipeSelected={async (recipeId) => {
+              await handleAddToMealPlan(recipeId, new Date());
             }}
           />
         </div>
-      )}
+      </div>
     </div>
   );
 }
