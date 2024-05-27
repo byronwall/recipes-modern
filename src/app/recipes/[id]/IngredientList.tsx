@@ -8,6 +8,7 @@ import { IngredientListEditMode } from "./IngredientListEditMode";
 import { useCookingMode } from "./useCookingMode";
 import { Checkbox } from "~/components/ui/checkbox";
 import { cn } from "~/lib/utils";
+import { Ban, Edit } from "lucide-react";
 
 export interface IngredientListProps {
   recipe: Recipe;
@@ -49,15 +50,28 @@ export function IngredientList({ recipe }: IngredientListProps) {
     </ul>
   );
 
+  const cancelBtn = (
+    <Button onClick={() => setIsEditing(!isEditing)} variant="outline">
+      <Ban />
+      Cancel
+    </Button>
+  );
   return (
     <>
-      <H3>ingredients</H3>
-      {!cookingMode && (
-        <Button onClick={() => setIsEditing(!isEditing)}>
-          {isEditing ? "Done" : "Edit"}
-        </Button>
+      <div className="flex items-center gap-4">
+        <H3>ingredients</H3>
+        {!cookingMode && !isEditing && (
+          <Button onClick={() => setIsEditing(!isEditing)}>
+            <Edit />
+            Edit
+          </Button>
+        )}
+      </div>
+      {isEditing ? (
+        <IngredientListEditMode recipe={recipe} cancelButton={cancelBtn} />
+      ) : (
+        mainComp
       )}
-      {isEditing ? <IngredientListEditMode recipe={recipe} /> : mainComp}
     </>
   );
 }

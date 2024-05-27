@@ -21,7 +21,7 @@ export function RecipeClient(props: { id: number }) {
   }
 
   return (
-    <div className="relative">
+    <div className="relative space-y-2">
       <H2>{recipe.name}</H2>
 
       <div className="flex flex-wrap gap-2">

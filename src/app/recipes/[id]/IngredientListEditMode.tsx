@@ -6,8 +6,16 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { cn } from "~/lib/utils";
 import { type IngredientListProps } from "./IngredientList";
+import { Plus, Save } from "lucide-react";
 
-export function IngredientListEditMode({ recipe }: IngredientListProps) {
+type AddlProps = {
+  cancelButton: React.ReactNode;
+};
+
+export function IngredientListEditMode({
+  recipe,
+  cancelButton,
+}: IngredientListProps & AddlProps) {
   const [ingredientGroups, setIngredientGroups] = useState(
     recipe.ingredientGroups,
   );
@@ -127,17 +135,17 @@ export function IngredientListEditMode({ recipe }: IngredientListProps) {
   }
 
   return (
-    <div>
-      <div>
-        <Button onClick={handleSave}>Save</Button>
+    <div className="space-y-2">
+      <div className="flex items-center gap-4">
+        <Button onClick={handleSave}>
+          <Save />
+          Save
+        </Button>
+        {cancelButton}
       </div>
 
       {ingredientGroups.map((igGroup, gIdx) => (
         <div key={gIdx}>
-          <Button onClick={() => handleAddIngredient(gIdx)}>
-            Add Ingredient
-          </Button>
-
           <Input
             className="text-2xl"
             value={igGroup.title}
@@ -224,7 +232,10 @@ export function IngredientListEditMode({ recipe }: IngredientListProps) {
                     />
                   </td>
                   <td>
-                    <Button onClick={() => handleDeleteIngredient(gIdx, iIdx)}>
+                    <Button
+                      onClick={() => handleDeleteIngredient(gIdx, iIdx)}
+                      variant="destructive-outline"
+                    >
                       Delete
                     </Button>
                   </td>
@@ -232,6 +243,11 @@ export function IngredientListEditMode({ recipe }: IngredientListProps) {
               );
             })}
           </table>
+
+          <Button onClick={() => handleAddIngredient(gIdx)} variant="secondary">
+            <Plus />
+            Add Ingredient to Group
+          </Button>
         </div>
       ))}
     </div>
