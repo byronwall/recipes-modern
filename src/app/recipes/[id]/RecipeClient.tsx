@@ -21,7 +21,7 @@ export function RecipeClient(props: { id: number }) {
   }
 
   return (
-    <div className="relative space-y-2">
+    <div className="relative w-full space-y-2">
       <H2>{recipe.name}</H2>
 
       <div className="flex flex-wrap gap-2">
@@ -32,7 +32,7 @@ export function RecipeClient(props: { id: number }) {
 
       <StepList recipe={recipe} />
 
-      <TimerZone />
+      {/* <TimerZone /> */}
     </div>
   );
 }

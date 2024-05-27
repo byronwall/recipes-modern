@@ -6,7 +6,7 @@ import { AddToMealPlanPopover } from "~/app/AddToMealPlanPopover";
 import { useRecipeActions } from "~/app/useRecipeActions";
 import { Button } from "~/components/ui/button";
 import { useCookingMode } from "./useCookingMode";
-import { Trash } from "lucide-react";
+import { ChefHat, ListRestart, Trash, X } from "lucide-react";
 
 export function RecipeActions(props: { recipeId: number }) {
   const { recipeId } = props;
@@ -40,11 +40,26 @@ export function RecipeActions(props: { recipeId: number }) {
 
       {shouldShowCookingMode && (
         <>
-          <Button onClick={toggleCookingMode}>
-            {cookingMode ? "Exit cooking mode" : "Enter cooking mode"}
-          </Button>
+          {!cookingMode && (
+            <Button onClick={toggleCookingMode}>
+              <ChefHat />
+              Enter cooking mode
+            </Button>
+          )}
 
-          {cookingMode && <Button onClick={reset}>Reset cooking mode</Button>}
+          {cookingMode && (
+            <Button onClick={toggleCookingMode}>
+              <X />
+              Exit cooking mode
+            </Button>
+          )}
+
+          {cookingMode && (
+            <Button onClick={reset} variant="secondary">
+              <ListRestart />
+              Reset cooking mode
+            </Button>
+          )}
         </>
       )}
     </>

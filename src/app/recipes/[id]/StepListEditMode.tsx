@@ -1,15 +1,24 @@
 "use client";
+
+import { type StepGroup } from "@prisma/client";
+import { produce } from "immer";
+import { ListPlus, ListX, Plus, Save, Trash } from "lucide-react";
 import { useState } from "react";
+import { useRecipeActions } from "~/app/useRecipeActions";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { produce } from "immer";
 import { Textarea } from "~/components/ui/textarea";
-import { useRecipeActions } from "~/app/useRecipeActions";
 import { cn } from "~/lib/utils";
-import { type StepGroup } from "@prisma/client";
 import { type StepListProps } from "./StepList";
 
-export function StepListEditMode({ recipe }: StepListProps) {
+type AddlProps = {
+  cancelButton: React.ReactNode;
+};
+
+export function StepListEditMode({
+  recipe,
+  cancelButton,
+}: StepListProps & AddlProps) {
   const [stepGroups, setStepGroups] = useState(recipe.stepGroups);
 
   const { updateStepGroups } = useRecipeActions();
@@ -115,8 +124,11 @@ export function StepListEditMode({ recipe }: StepListProps) {
   return (
     <div className="w-full">
       <div className="flex gap-1">
-        <Button onClick={handleSave}>Save</Button>
-        <Button onClick={handleAddNewGroup}>Add group</Button>
+        <Button onClick={handleSave}>
+          <Save />
+          Save
+        </Button>
+        {cancelButton}
       </div>
       {stepGroups.map((group, groupIdx) => {
         const isDeleted = group.id < 0;
@@ -137,15 +149,19 @@ export function StepListEditMode({ recipe }: StepListProps) {
                 onChange={(e) => handleTitleChange(groupIdx, e.target.value)}
                 placeholder="Group Title"
               />
-              <Button onClick={() => handleToggleDeleteGroup(groupIdx)}>
-                delete group
+              <Button
+                onClick={() => handleToggleDeleteGroup(groupIdx)}
+                variant="destructive-outline"
+              >
+                <ListX />
+                Delete Group
               </Button>
             </div>
             <ul className="flex list-inside list-decimal flex-col gap-2 p-2">
               {group.steps.map((step, stepIdx) => (
                 <li
                   key={stepIdx}
-                  className="flex flex-col items-center gap-1 bg-gray-50 p-1 md:flex-row"
+                  className="ml-4 flex flex-col items-center gap-1 border-l-2 bg-gray-50 p-1 pl-4 md:flex-row"
                 >
                   <Textarea
                     value={step}
@@ -155,14 +171,28 @@ export function StepListEditMode({ recipe }: StepListProps) {
                     autoResize
                     className="w-full text-lg"
                   />
-                  <Button onClick={() => handleDeleteStep(groupIdx, stepIdx)}>
-                    Delete
+                  <Button
+                    onClick={() => handleDeleteStep(groupIdx, stepIdx)}
+                    variant="destructive-outline"
+                  >
+                    <Trash />
                   </Button>
                 </li>
               ))}
 
-              <Button onClick={() => handleAddStep(groupIdx)}>Add step</Button>
+              <Button
+                className="ml-4 self-start"
+                onClick={() => handleAddStep(groupIdx)}
+              >
+                <Plus />
+                Add step
+              </Button>
             </ul>
+
+            <Button onClick={handleAddNewGroup}>
+              <ListPlus />
+              Add New Group
+            </Button>
           </div>
         );
       })}

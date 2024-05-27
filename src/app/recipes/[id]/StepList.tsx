@@ -7,6 +7,7 @@ import { cn } from "~/lib/utils";
 import { useCookingMode } from "./useCookingMode";
 import { Checkbox } from "~/components/ui/checkbox";
 import { StepListEditMode } from "./StepListEditMode";
+import { Ban, Edit } from "lucide-react";
 
 export type StepListProps = {
   recipe: Recipe;
@@ -46,7 +47,7 @@ export function StepList({ recipe }: StepListProps) {
                       "text-xl": cookingMode,
                     })}
                   >
-                    <li className="m-1 list-inside list-decimal rounded-sm bg-gray-100 p-1">
+                    <li className="m-1 list-inside list-decimal rounded-sm  p-1">
                       {step}
                     </li>
                   </label>
@@ -59,15 +60,30 @@ export function StepList({ recipe }: StepListProps) {
     </div>
   );
 
+  const cancelBtn = (
+    <Button onClick={() => setIsEditing(!isEditing)} variant="outline">
+      <Ban />
+      Cancel
+    </Button>
+  );
+
   return (
     <>
-      <H3>instructions</H3>
-      {!cookingMode && (
-        <Button onClick={() => setIsEditing(!isEditing)}>
-          {isEditing ? "Discard Edits" : "Edit"}
-        </Button>
+      <div className="flex gap-4">
+        <H3>instructions</H3>
+        {!isEditing && !cookingMode && (
+          <Button onClick={() => setIsEditing(!isEditing)}>
+            <Edit />
+            Edit
+          </Button>
+        )}
+      </div>
+
+      {isEditing ? (
+        <StepListEditMode recipe={recipe} cancelButton={cancelBtn} />
+      ) : (
+        mainComp
       )}
-      {isEditing ? <StepListEditMode recipe={recipe} /> : mainComp}
     </>
   );
 }
