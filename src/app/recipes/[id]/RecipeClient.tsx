@@ -1,11 +1,10 @@
 "use client";
 
 import { H2 } from "~/components/ui/typography";
-import { RecipeActions } from "./RecipeActions";
-import { type RouterOutputs, api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { IngredientList } from "./IngredientList";
+import { RecipeActions } from "./RecipeActions";
 import { StepList } from "./StepList";
-import { TimerZone } from "./TimerZone";
 
 export type Recipe = NonNullable<RouterOutputs["recipe"]["getRecipe"]>;
 
@@ -31,8 +30,6 @@ export function RecipeClient(props: { id: number }) {
       <IngredientList recipe={recipe} />
 
       <StepList recipe={recipe} />
-
-      {/* <TimerZone /> */}
     </div>
   );
 }
