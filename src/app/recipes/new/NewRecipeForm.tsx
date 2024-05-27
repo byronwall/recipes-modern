@@ -82,7 +82,12 @@ export function NewRecipeForm() {
         </div>
       </div>
 
-      <Button type="submit" className="self-center" size="lg">
+      <Button
+        type="submit"
+        className="self-center"
+        size="lg"
+        disabled={createRecipeMutation.isPending}
+      >
         <Plus />
         Create Recipe!
       </Button>
