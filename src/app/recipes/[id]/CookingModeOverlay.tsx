@@ -11,6 +11,8 @@ import { H4 } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 import { type Recipe } from "./RecipeClient";
 import { useCookingMode } from "./useCookingMode";
+import { Button } from "~/components/ui/button";
+import { ListRestart } from "lucide-react";
 
 type Props = {
   recipe: Recipe;
@@ -24,19 +26,20 @@ export function CookingModeOverlay({ recipe }: Props) {
     ingredients,
     cookingMode,
     steps,
+    reset,
   } = useCookingMode();
 
   return (
     <Dialog open={cookingMode} onOpenChange={toggleCookingMode}>
       <DialogContent className="flex h-screen w-screen flex-col bg-white">
-        <p
-          className={cn(
-            "truncate text-center text-3xl font-bold",
-            "border-b border-gray-200",
-          )}
-        >
-          {recipe.name}
+        <p className=" flex items-center justify-center gap-4  truncate text-center text-xl font-bold">
+          <Button onClick={reset} variant="secondary">
+            <ListRestart />
+            Reset
+          </Button>
+          <span>Cooking Mode</span>
         </p>
+
         <ResizablePanelGroup
           direction="vertical"
           className="min-h-[200px] max-w-md flex-1 rounded-lg border"
@@ -56,7 +59,11 @@ export function CookingModeOverlay({ recipe }: Props) {
                         className="h-8 w-8"
                       />
                       <label
-                        className="flex gap-1 break-words text-lg"
+                        className={cn("flex gap-1 break-words text-lg", {
+                          "text-xl": !ingredients[i.id],
+                          "truncate bg-gray-200 text-gray-400 line-through":
+                            ingredients[i.id],
+                        })}
                         htmlFor={`ingredient-${i.id}`}
                       >
                         {[i.amount, i.unit, i.ingredient, i.modifier]
@@ -94,7 +101,9 @@ export function CookingModeOverlay({ recipe }: Props) {
                             <label
                               htmlFor={`step-${id}`}
                               className={cn("flex gap-1 break-words text-lg", {
-                                "text-xl": cookingMode,
+                                "text-xl": !steps[id],
+                                "truncate bg-gray-200 text-gray-400 line-through":
+                                  steps[id],
                               })}
                             >
                               <li className="m-1 list-inside list-decimal rounded-sm  p-1">

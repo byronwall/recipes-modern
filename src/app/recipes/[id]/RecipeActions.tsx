@@ -46,20 +46,6 @@ export function RecipeActions(props: { recipeId: number }) {
               Enter cooking mode
             </Button>
           )}
-
-          {cookingMode && (
-            <Button onClick={toggleCookingMode}>
-              <X />
-              Exit cooking mode
-            </Button>
-          )}
-
-          {cookingMode && (
-            <Button onClick={reset} variant="secondary">
-              <ListRestart />
-              Reset
-            </Button>
-          )}
         </>
       )}
     </>
