@@ -1,22 +1,17 @@
 "use client";
 
+import { Ban, Edit } from "lucide-react";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { H3, H4 } from "~/components/ui/typography";
-import { type Recipe } from "./RecipeClient";
 import { IngredientListEditMode } from "./IngredientListEditMode";
-import { useCookingMode } from "./useCookingMode";
-import { Checkbox } from "~/components/ui/checkbox";
-import { cn } from "~/lib/utils";
-import { Ban, Edit } from "lucide-react";
+import { type Recipe } from "./RecipeClient";
 
 export interface IngredientListProps {
   recipe: Recipe;
 }
 export function IngredientList({ recipe }: IngredientListProps) {
   const [isEditing, setIsEditing] = useState(false);
-
-  const { toggleIngredientStatus, ingredients, cookingMode } = useCookingMode();
 
   const mainComp = (
     <ul>
@@ -25,18 +20,8 @@ export function IngredientList({ recipe }: IngredientListProps) {
           <H4>{ingredient.title}</H4>
           {ingredient.ingredients.map((i) => (
             <div key={idx} className="flex items-center gap-2">
-              {cookingMode && (
-                <Checkbox
-                  checked={ingredients[i.id] ?? false}
-                  onCheckedChange={() => toggleIngredientStatus(i.id)}
-                  id={`ingredient-${i.id}`}
-                  className="h-8 w-8"
-                />
-              )}
               <label
-                className={cn("flex gap-1 break-words text-lg", {
-                  "text-xl": cookingMode,
-                })}
+                className="flex gap-1 break-words text-lg"
                 htmlFor={`ingredient-${i.id}`}
               >
                 {[i.amount, i.unit, i.ingredient, i.modifier]
@@ -60,7 +45,7 @@ export function IngredientList({ recipe }: IngredientListProps) {
     <>
       <div className="flex items-center gap-4">
         <H3>ingredients</H3>
-        {!cookingMode && !isEditing && (
+        {!isEditing && (
           <Button onClick={() => setIsEditing(!isEditing)}>
             <Edit />
             Edit

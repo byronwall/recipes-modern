@@ -5,6 +5,7 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { IngredientList } from "./IngredientList";
 import { RecipeActions } from "./RecipeActions";
 import { StepList } from "./StepList";
+import { CookingModeOverlay } from "./CookingModeOverlay";
 
 export type Recipe = NonNullable<RouterOutputs["recipe"]["getRecipe"]>;
 
@@ -30,6 +31,8 @@ export function RecipeClient(props: { id: number }) {
       <IngredientList recipe={recipe} />
 
       <StepList recipe={recipe} />
+
+      <CookingModeOverlay recipe={recipe} />
     </div>
   );
 }
