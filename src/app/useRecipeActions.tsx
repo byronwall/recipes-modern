@@ -22,7 +22,7 @@ export function useRecipeActions() {
     await addToMealPlan.mutateAsync({ recipeId, date });
   };
 
-  const deleteFromMealPlan = api.recipe.deleteMealPlan.useMutation();
+  const deleteFromMealPlan = api.mealPlan.deleteMealPlan.useMutation();
 
   const handleDeleteFromMealPlan = async (id: number) => {
     const shouldDelete = confirm(

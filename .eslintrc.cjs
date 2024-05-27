@@ -41,6 +41,7 @@ const config = {
     "@typescript-eslint/no-explicit-any": "warn",
     "@typescript-eslint/no-unsafe-argument": "warn",
     "@typescript-eslint/prefer-nullish-coalescing": "warn",
+    "@typescript-eslint/no-empty-interface": "warn",
   },
 };
 module.exports = config;

@@ -8,7 +8,7 @@ import { doOAuth } from "~/server/kroger";
 export async function GET(req: NextRequest) {
   console.log(new Date(), "kroger auth", req.nextUrl.searchParams);
 
-  const session = await getServerAuthSession(req);
+  const session = await getServerAuthSession();
 
   console.log(new Date(), "kroger auth", session);
 
