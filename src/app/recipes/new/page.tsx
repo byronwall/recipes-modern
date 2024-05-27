@@ -3,7 +3,7 @@ import { NewRecipeForm } from "./NewRecipeForm";
 
 export default async function NewRecipePage() {
   return (
-    <div>
+    <div className="w-full space-y-4">
       <H1>Create New Recipe</H1>
       <NewRecipeForm />
     </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -16,10 +17,12 @@ type NewRecipe = {
 
 const defaultIngredients = `[Main Ingredients]
 1 cup of flour
+
 `;
 
 const defaultSteps = `[Main Steps]
-1. Mix flour with water
+Mix flour with water
+
 `;
 
 export function NewRecipeForm() {
@@ -33,36 +36,56 @@ export function NewRecipeForm() {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="flex w-[600px] flex-col gap-2"
-    >
-      <H3>Title</H3>
-      <Input defaultValue="My Recipe" {...register("title")} />
+    <form onSubmit={handleSubmit(onSubmit)} className="flex  flex-col gap-8">
+      <div className="flex items-center gap-4">
+        <H3 className="w-36">Title</H3>
+        <Input
+          defaultValue="My Recipe"
+          {...register("title")}
+          placeholder="Title of the recipe"
+          className="w-full text-lg font-bold"
+        />
+      </div>
 
-      <H3>Description</H3>
-      <Textarea
-        autoResize
-        placeholder="A short description of the recipe"
-        {...register("description")}
-      />
+      <div className="flex items-center gap-4">
+        <H3 className="w-36">Description</H3>
+        <Textarea
+          autoResize
+          placeholder="A short description of the recipe"
+          className="text-lg"
+          {...register("description")}
+        />
+      </div>
 
-      <H3>Ingredients</H3>
+      <div className="flex items-center gap-4">
+        <H3 className="w-36">Ingredients</H3>
+        <Textarea
+          autoResize
+          defaultValue={defaultIngredients}
+          className="text-lg"
+          {...register("ingredients")}
+        />
+      </div>
 
-      <Textarea
-        autoResize
-        defaultValue={defaultIngredients}
-        {...register("ingredients")}
-      />
+      <div className="flex items-center gap-4">
+        <H3 className="w-36">Steps</H3>
+        <div className="w-full">
+          <p className="mb-2 text-sm text-muted-foreground">
+            Step numbers automatically created for new lines.
+          </p>
+          <Textarea
+            defaultValue={defaultSteps}
+            {...register("steps")}
+            className="text-lg"
+            autoResize
+          />
+        </div>
+      </div>
 
-      <H3>Steps</H3>
-      <p className="mb-2 text-sm text-muted-foreground">
-        Step numbers automatically created for new lines.
-      </p>
-
-      <Textarea defaultValue={defaultSteps} {...register("steps")} />
-
-      <Button type="submit">Create Recipe!</Button>
+      <Button type="submit" className="self-center" size="lg">
+        <Plus />
+        Create Recipe!
+      </Button>
     </form>
   );
 }
