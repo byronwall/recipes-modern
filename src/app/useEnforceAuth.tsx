@@ -4,7 +4,7 @@ import { getServerAuthSession } from "~/server/auth";
 export async function useEnforceAuth() {
   const session = await getServerAuthSession();
 
-  console.log("session", session);
+  console.log("check session, enforce auth", session);
   if (!session) {
     redirect("/auth");
   }

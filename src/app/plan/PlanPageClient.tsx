@@ -1,17 +1,13 @@
 "use client";
 
 import { H1 } from "~/components/ui/typography";
-import { api, type RouterOutputs } from "~/trpc/react";
+import { api } from "~/trpc/react";
 import { useRecipeActions } from "../useRecipeActions";
 import { PlanCard } from "./PlanCard";
 import { RecipePickerPopover } from "./RecipePickerPopover";
 
-export function PlanPageClient(props: {
-  plans: RouterOutputs["recipe"]["getMealPlans"];
-}) {
-  const { plans: initPlans } = props;
-
-  const { data: plans = initPlans } = api.recipe.getMealPlans.useQuery();
+export function PlanPageClient() {
+  const { data: plans = [] } = api.recipe.getMealPlans.useQuery();
 
   // TODO: this filtering should be done on the server
   const _plansThisMonth = plans.filter((plan) => {

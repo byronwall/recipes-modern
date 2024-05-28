@@ -5,7 +5,7 @@ import { PlanPageClient } from "./PlanPageClient";
 export default async function PlanPage() {
   await useEnforceAuth();
 
-  const plans = await (await helpers()).recipe.getMealPlans.fetch();
+  await (await helpers()).recipe.getMealPlans.prefetch();
 
-  return <PlanPageClient plans={plans} />;
+  return <PlanPageClient />;
 }
