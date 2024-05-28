@@ -1,11 +1,10 @@
 import Link from "next/link";
 
+import { Plus } from "lucide-react";
+import { Button } from "~/components/ui/button";
 import { helpers } from "~/trpc/helpers";
-import { MigrateButtons } from "./MigrateButtons";
 import { RecipeList } from "./RecipeList";
 import { useEnforceAuth } from "./useEnforceAuth";
-import { Button } from "~/components/ui/button";
-import { Plus } from "lucide-react";
 
 export default async function Home() {
   await useEnforceAuth();
@@ -14,9 +13,7 @@ export default async function Home() {
 
   return (
     <div className="flex w-full flex-col gap-4">
-      <MigrateButtons />
-
-      <Link href="/recipes/new">
+      <Link href="/recipes/new" className="self-start">
         <Button>
           <Plus />
           New Recipe
