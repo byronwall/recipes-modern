@@ -18,4 +18,4 @@ RUN npx prisma generate && npm run build && npm cache clean --force
 EXPOSE 3000
 
 # Start the app
-CMD ["npm", "start-prod"]
+CMD ["npm", "run", "start-prod"]
