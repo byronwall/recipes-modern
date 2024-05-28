@@ -13,8 +13,9 @@ import { useRadioList } from "./useRadioList";
 export const groupModes = ["recipe", "aisle"] as const;
 
 export function ShoppingList() {
-  const { data: shoppingList = [] } =
-    api.shoppingList.getShoppingList.useQuery();
+  const { data: _shoppingList } = api.shoppingList.getShoppingList.useQuery();
+
+  const shoppingList = _shoppingList ?? [];
 
   // group by recipe name + ID
   const recipesIncluded = shoppingList.filter((item) => item.Recipe);
