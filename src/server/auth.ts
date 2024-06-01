@@ -56,6 +56,7 @@ export const authOptions: NextAuthOptions = {
   },
   jwt: {
     secret: "secretCode",
+    maxAge: 4 * 365 * 24 * 60 * 60, // 4 years
   },
   session: {
     strategy: "jwt",
