@@ -14,6 +14,7 @@ import { Input } from "~/components/ui/input";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { api } from "~/trpc/react";
+import { useRouter } from "next/navigation";
 
 export function LoginForm(props: { mode: "login" | "signup" }) {
   const createUserMutation = api.user.createUser.useMutation();
@@ -21,13 +22,23 @@ export function LoginForm(props: { mode: "login" | "signup" }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  // redirect hook
+  const router = useRouter();
+
   async function handleClick() {
     if (props.mode === "login") {
-      await signIn("credentials", {
+      const result = await signIn("credentials", {
         email,
         password,
-        redirect: true,
+        redirect: false,
       });
+
+      if (result?.ok) {
+        router.push("/");
+        return;
+      }
+
+      alert("Invalid login, try again");
     } else {
       await createUserMutation.mutateAsync({
         email,
@@ -39,6 +50,8 @@ export function LoginForm(props: { mode: "login" | "signup" }) {
         password,
         redirect: false,
       });
+
+      router.push("/");
     }
   }
 
