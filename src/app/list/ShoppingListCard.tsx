@@ -27,7 +27,7 @@ export function ShoppingListCard(props: {
 
   return (
     <div className="mb-2 border p-2">
-      <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+      <div className="flex w-full flex-col justify-between gap-2 sm:flex-row sm:items-center">
         <div className="flex items-center gap-2 ">
           <Checkbox
             checked={item.isBought ?? false}
@@ -40,8 +40,11 @@ export function ShoppingListCard(props: {
           <Label
             htmlFor={`checkbox-${item.id}`}
             className={cn(
-              "shrink-0 cursor-pointer text-xl font-semibold hover:bg-gray-100",
-              { "line-through": item.isBought ?? false },
+              "cursor-pointer break-words text-xl font-semibold hover:bg-gray-100",
+              {
+                "text-lg font-normal text-gray-400 line-through":
+                  item.isBought ?? false,
+              },
             )}
           >
             {ingredientLabel}
