@@ -55,7 +55,10 @@ export function ShoppingListCard(props: {
         </div>
 
         <div className="flex gap-2">
-          <KrogerSearchPopup ingredient={item.ingredient?.ingredient} />
+          <KrogerSearchPopup
+            originalListItemId={item.id}
+            ingredient={item.ingredient?.ingredient}
+          />
           {item.ingredient && (
             <Button
               onClick={async () => {

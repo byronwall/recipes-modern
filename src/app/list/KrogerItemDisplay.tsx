@@ -12,9 +12,15 @@ import { ShoppingCart } from "lucide-react";
 
 type KrogerItemDisplayProps = {
   result: KrogerProduct;
+  originalListItemId?: number;
+  onCloseModal?: () => void;
 };
 
-export function KrogerItemDisplay({ result }: KrogerItemDisplayProps) {
+export function KrogerItemDisplay({
+  result,
+  originalListItemId,
+  onCloseModal,
+}: KrogerItemDisplayProps) {
   const hasPromo = (result.items[0]?.price?.promo ?? 0) > 0;
   const displayPrice = hasPromo
     ? result.items[0]?.price?.promo
@@ -40,7 +46,12 @@ export function KrogerItemDisplay({ result }: KrogerItemDisplayProps) {
           quantity,
         },
       ],
+      listItemId: originalListItemId,
     });
+
+    if (onCloseModal) {
+      onCloseModal();
+    }
   };
 
   return (

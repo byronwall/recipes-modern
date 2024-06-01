@@ -14,15 +14,20 @@ import { api } from "~/trpc/react";
 import { type KrogerProduct } from "../kroger/model";
 import { KrogerItemDisplay } from "./KrogerItemDisplay";
 import { Search } from "lucide-react";
+import { Switch } from "~/components/ui/switch";
 
 type Props = {
   ingredient?: string;
+  originalListItemId?: number;
 };
 
-export function KrogerSearchPopup({ ingredient }: Props) {
+export function KrogerSearchPopup({ ingredient, originalListItemId }: Props) {
   const [searchIngredient, setSearchIngredient] = useState<string>(
     ingredient ?? "",
   );
+
+  // this will determine if the original item is marked as bought
+  const [shouldMarkAsBought, setShouldMarkAsBought] = useState(true);
 
   const [searchResults, setSearchResults] = useState<KrogerProduct[]>([]);
 
@@ -55,18 +60,38 @@ export function KrogerSearchPopup({ ingredient }: Props) {
     }
   }
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   return (
-    <Dialog onOpenChange={(isOpen) => searchOnOpen(isOpen)}>
+    <Dialog
+      onOpenChange={async (isOpen) => {
+        setIsModalOpen(isOpen);
+        await searchOnOpen(isOpen);
+      }}
+      open={isModalOpen}
+    >
       <DialogTrigger asChild>
-        <Button>
+        <Button onClick={() => setIsModalOpen(true)}>
           <Search />
           Search Kroger
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[80vh]  max-w-4xl shrink-0  overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">
-            Kroger Search for <span className="underline">{ingredient}</span>
+          <DialogTitle className="flex items-center justify-between gap-2 text-2xl">
+            <p>
+              Kroger Search for <span className="underline">{ingredient}</span>
+            </p>
+            <div className="flex items-center gap-2 text-lg">
+              <Switch
+                checked={shouldMarkAsBought}
+                onCheckedChange={setShouldMarkAsBought}
+                id="shouldMarkAsBought"
+              />
+              <label htmlFor="shouldMarkAsBought">
+                Mark as bought after add
+              </label>
+            </div>
           </DialogTitle>
         </DialogHeader>
 
@@ -95,9 +120,16 @@ export function KrogerSearchPopup({ ingredient }: Props) {
           <p>No results found</p>
         )}
 
-        <div className="grid-cols-auto-fit-260 grid gap-2">
+        <div className="grid grid-cols-auto-fit-260 gap-2">
           {searchResults.map((result) => (
-            <KrogerItemDisplay key={result.productId} result={result} />
+            <KrogerItemDisplay
+              key={result.productId}
+              result={result}
+              originalListItemId={
+                shouldMarkAsBought ? originalListItemId : undefined
+              }
+              onCloseModal={() => setIsModalOpen(false)}
+            />
           ))}
         </div>
       </DialogContent>

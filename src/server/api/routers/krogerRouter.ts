@@ -53,6 +53,7 @@ export const krogerRouter = createTRPCRouter({
             quantity: z.number(),
           }),
         ),
+        listItemId: z.number().optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -73,6 +74,18 @@ export const krogerRouter = createTRPCRouter({
 
         if (!addResponse.ok) {
           throw new Error("Request failed");
+        }
+
+        // if things went well and we have an item id, mark it as bought
+        if (input.listItemId) {
+          await db.shoppingList.update({
+            where: {
+              id: input.listItemId,
+            },
+            data: {
+              isBought: true,
+            },
+          });
         }
 
         return { result: true };
