@@ -9,10 +9,10 @@ import { db } from "~/server/db";
 import { type Ingredient2, type Root } from "./old_types";
 
 export const recipeRouter = createTRPCRouter({
-  getRecipes: publicProcedure.query(async () => {
-    // get data from http://recipes.byroni.us/api/db
-
-    const recipes = db.recipe.findMany();
+  getRecipes: protectedProcedure.query(async ({ ctx }) => {
+    const recipes = db.recipe.findMany({
+      where: { userId: ctx.session.user.id },
+    });
     return recipes;
   }),
 
