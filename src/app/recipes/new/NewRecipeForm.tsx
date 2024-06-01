@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -28,11 +29,15 @@ Mix flour with water
 export function NewRecipeForm() {
   const { register, handleSubmit } = useForm<NewRecipe>();
 
+  const router = useRouter();
+
   const createRecipeMutation =
     api.recipe.createRecipeFromTextInput.useMutation();
 
   const onSubmit: SubmitHandler<NewRecipe> = async (data) => {
-    await createRecipeMutation.mutateAsync(data);
+    const res = await createRecipeMutation.mutateAsync(data);
+
+    router.push(`/recipes/${res.id}`);
   };
 
   return (
