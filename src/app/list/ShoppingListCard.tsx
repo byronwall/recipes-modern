@@ -7,7 +7,7 @@ import { KrogerSearchPopup } from "./KrogerSearchPopup";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { cn } from "~/lib/utils";
-import { Trash } from "lucide-react";
+import { Edit, Trash } from "lucide-react";
 
 type ShoppingListItem = RouterOutputs["shoppingList"]["getShoppingList"][0];
 
@@ -69,7 +69,8 @@ export function ShoppingListCard(props: {
               }}
               variant="secondary"
             >
-              Update Aisle
+              <Edit />
+              Aisle
             </Button>
           )}
           <Button
