@@ -5,9 +5,11 @@ import { api } from "~/trpc/react";
 import { useRecipeActions } from "../useRecipeActions";
 import { PlanCard } from "./PlanCard";
 import { RecipePickerPopover } from "./RecipePickerPopover";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
+import { StylishDatePicker } from "./StylishDatePicker";
+import { addDays, startOfDay } from "date-fns";
 
 export function PlanPageClient() {
   const { data: plans = [] } = api.recipe.getMealPlans.useQuery();
@@ -46,6 +48,35 @@ export function PlanPageClient() {
 
   const { handleAddToMealPlan } = useRecipeActions();
 
+  // get the maximum date of the plans + 1 day (or current date, whichever is later)
+  // this is the default date for the date picker
+
+  const maxDate = plans.reduce(
+    (max, plan) => {
+      const date = addDays(plan.date, 1);
+
+      return date > max ? date : max;
+    },
+    addDays(new Date(), 1),
+  );
+
+  const dateString = maxDate?.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+
+  const [newDate, setNewDate] = useState<Date | undefined>(maxDate);
+
+  useEffect(() => {
+    if (!maxDate) return;
+
+    // set the date to the next day if the date is in the past
+    setNewDate(maxDate);
+
+    // this is the string to avoid an infinite loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateString]);
+
   return (
     <div className="flex flex-col gap-4">
       <H1>Planned Meals</H1>
@@ -66,10 +97,14 @@ export function PlanPageClient() {
           <PlanCard key={plan.id} plan={plan} />
         ))}
 
-        <div className="flex min-h-28 w-[276px] items-center justify-center rounded border border-gray-200">
+        <div className="flex min-h-28 w-[276px] items-center gap-4 rounded border border-gray-200">
+          <StylishDatePicker value={newDate} onChange={setNewDate} />
           <RecipePickerPopover
             onRecipeSelected={async (recipeId) => {
-              await handleAddToMealPlan(recipeId, new Date());
+              await handleAddToMealPlan(
+                recipeId,
+                startOfDay(newDate ?? new Date()),
+              );
             }}
           />
         </div>

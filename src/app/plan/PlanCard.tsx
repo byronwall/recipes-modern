@@ -1,16 +1,16 @@
 "use client";
 
-import { PopoverContent } from "@radix-ui/react-popover";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
-import { Calendar } from "~/components/ui/calendar";
-import { Popover, PopoverTrigger } from "~/components/ui/popover";
 import { H4 } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useMealPlanActions } from "../useMealPlanActions";
 import { ShoppingBasket, Trash } from "lucide-react";
 import { useRecipeActions } from "../useRecipeActions";
+import { StylishDatePicker } from "./StylishDatePicker";
+
+type PlannedMealWithRecipe = RouterOutputs["recipe"]["getMealPlans"][0];
 
 export function PlanCard(props: { plan: PlannedMealWithRecipe }) {
   const { plan } = props;
@@ -20,9 +20,13 @@ export function PlanCard(props: { plan: PlannedMealWithRecipe }) {
 
   const updatePlan = api.mealPlan.updateMealPlan.useMutation();
 
-  const shortMonth = new Date(plan.date).toLocaleDateString("en-US", {
-    month: "short",
-  });
+  function handleDateChange(date: Date | undefined): void {
+    if (!date) return;
+    updatePlan.mutate({
+      id: plan.id,
+      date: date,
+    });
+  }
 
   return (
     <div
@@ -31,34 +35,7 @@ export function PlanCard(props: { plan: PlannedMealWithRecipe }) {
       })}
     >
       <div className="flex gap-2 ">
-        <Popover>
-          <PopoverTrigger className="">
-            <div className="flex  flex-1 flex-col items-center justify-center border-r px-2  ">
-              <div className="text-lg font-semibold">{shortMonth}</div>
-              <div className="text-4xl font-bold">
-                {new Date(plan.date).getDate()}
-              </div>
-              <div className="text-xs font-bold text-gray-500">
-                {new Date(plan.date).toLocaleDateString("en-US", {
-                  weekday: "short",
-                })}
-              </div>
-            </div>
-          </PopoverTrigger>
-          <PopoverContent className="z-10 border border-black bg-white">
-            <Calendar
-              mode="single"
-              selected={plan.date}
-              title="Select date"
-              onSelect={(date) => {
-                updatePlan.mutate({
-                  id: plan.id,
-                  date,
-                });
-              }}
-            />
-          </PopoverContent>
-        </Popover>
+        <StylishDatePicker value={plan.date} onChange={handleDateChange} />
 
         <div className="flex flex-col gap-1">
           <Link href={`/recipes/${plan.Recipe.id}`}>
@@ -95,4 +72,3 @@ export function PlanCard(props: { plan: PlannedMealWithRecipe }) {
     </div>
   );
 }
-type PlannedMealWithRecipe = RouterOutputs["recipe"]["getMealPlans"][0];
