@@ -5,22 +5,29 @@ import { api } from "~/trpc/react";
 import { useRecipeActions } from "../useRecipeActions";
 import { PlanCard } from "./PlanCard";
 import { RecipePickerPopover } from "./RecipePickerPopover";
+import { useState } from "react";
+import { Switch } from "~/components/ui/switch";
+import { Label } from "~/components/ui/label";
 
 export function PlanPageClient() {
   const { data: plans = [] } = api.recipe.getMealPlans.useQuery();
 
-  // TODO: this filtering should be done on the server
-  const _plansThisMonth = plans.filter((plan) => {
-    // filter within -14 days and +14 days
-    const date = new Date(plan.date);
-    const now = new Date();
-    const fourteenDaysAgo = new Date();
-    fourteenDaysAgo.setDate(now.getDate() - 14);
-    const fourteenDaysFromNow = new Date();
-    fourteenDaysFromNow.setDate(now.getDate() + 14);
+  const [shouldHideCompleted, setShouldHideCompleted] = useState(true);
 
-    return date >= fourteenDaysAgo && date <= fourteenDaysFromNow;
-  });
+  // TODO: this filtering should be done on the server
+  const _plansThisMonth = plans
+    .filter((plan) => {
+      // filter within -14 days and +14 days
+      const date = new Date(plan.date);
+      const now = new Date();
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(now.getDate() - 14);
+      const fourteenDaysFromNow = new Date();
+      fourteenDaysFromNow.setDate(now.getDate() + 14);
+
+      return date >= fourteenDaysAgo && date <= fourteenDaysFromNow;
+    })
+    .filter((plan) => (!shouldHideCompleted ? true : !plan.isMade));
 
   // sort by date
   const plansThisMonth = _plansThisMonth.sort((a, b) => {
@@ -42,6 +49,17 @@ export function PlanPageClient() {
   return (
     <div className="flex flex-col gap-4">
       <H1>Planned Meals</H1>
+
+      <div className="flex items-center gap-2">
+        <Switch
+          checked={shouldHideCompleted}
+          onCheckedChange={setShouldHideCompleted}
+          id="hide-completed"
+        />
+        <Label htmlFor="hide-completed" className="cursor-pointer">
+          Hide made meals
+        </Label>
+      </div>
 
       <div className="flex flex-wrap gap-2">
         {plansThisMonth.map((plan) => (
