@@ -1,10 +1,6 @@
 import { z } from "zod";
 
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { type Ingredient2, type Root } from "./old_types";
 
@@ -16,11 +12,11 @@ export const recipeRouter = createTRPCRouter({
     return recipes;
   }),
 
-  getRecipe: publicProcedure
+  getRecipe: protectedProcedure
     .input(z.object({ id: z.coerce.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const recipe = await db.recipe.findUnique({
-        where: { id: input.id },
+        where: { id: input.id, userId: ctx.session.user.id },
         include: {
           stepGroups: {
             include: { Recipe: true },
