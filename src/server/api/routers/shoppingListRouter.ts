@@ -101,6 +101,12 @@ export const shoppingListRouter = createTRPCRouter({
         where: { recipeId: input.recipeId },
       });
 
+      // need to search through meal plans and reset any that have this recipe
+      await db.plannedMeal.updateMany({
+        where: { recipeId: input.recipeId, isMade: false },
+        data: { isOnShoppingList: false },
+      });
+
       return shoppingList;
     }),
 
