@@ -53,7 +53,11 @@ export function IngredientList({ recipe }: IngredientListProps) {
         )}
       </div>
       {isEditing ? (
-        <IngredientListEditMode recipe={recipe} cancelButton={cancelBtn} />
+        <IngredientListEditMode
+          recipe={recipe}
+          cancelButton={cancelBtn}
+          onDoneEditing={() => setIsEditing(false)}
+        />
       ) : (
         mainComp
       )}

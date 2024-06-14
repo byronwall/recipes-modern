@@ -10,11 +10,13 @@ import { Plus, Save } from "lucide-react";
 
 type AddlProps = {
   cancelButton: React.ReactNode;
+  onDoneEditing: () => void;
 };
 
 export function IngredientListEditMode({
   recipe,
   cancelButton,
+  onDoneEditing,
 }: IngredientListProps & AddlProps) {
   const [ingredientGroups, setIngredientGroups] = useState(
     recipe.ingredientGroups,
@@ -128,6 +130,9 @@ export function IngredientListEditMode({
       recipeId: recipe.id,
       ingredientGroups,
     });
+
+    // mark done editing
+    onDoneEditing();
   }
 
   if (!recipe) {
