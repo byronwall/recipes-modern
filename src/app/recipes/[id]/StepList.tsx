@@ -64,7 +64,11 @@ export function StepList({ recipe }: StepListProps) {
       </div>
 
       {isEditing ? (
-        <StepListEditMode recipe={recipe} cancelButton={cancelBtn} />
+        <StepListEditMode
+          recipe={recipe}
+          cancelButton={cancelBtn}
+          onDoneEditing={() => setIsEditing(false)}
+        />
       ) : (
         mainComp
       )}

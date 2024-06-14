@@ -13,11 +13,13 @@ import { type StepListProps } from "./StepList";
 
 type AddlProps = {
   cancelButton: React.ReactNode;
+  onDoneEditing: () => void;
 };
 
 export function StepListEditMode({
   recipe,
   cancelButton,
+  onDoneEditing,
 }: StepListProps & AddlProps) {
   const [stepGroups, setStepGroups] = useState(recipe.stepGroups);
 
@@ -82,6 +84,8 @@ export function StepListEditMode({
       recipeId: recipe.id,
       stepGroups,
     });
+
+    onDoneEditing();
   }
 
   function handleToggleDeleteGroup(groupIdx: number) {
