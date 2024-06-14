@@ -8,8 +8,10 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { cn } from "~/lib/utils";
 import { Edit, Trash } from "lucide-react";
+import { getIngredientLabel } from "./getIngredientLabel";
 
-type ShoppingListItem = RouterOutputs["shoppingList"]["getShoppingList"][0];
+export type ShoppingListItem =
+  RouterOutputs["shoppingList"]["getShoppingList"][0];
 
 export function ShoppingListCard(props: {
   item: ShoppingListItem;
@@ -20,7 +22,7 @@ export function ShoppingListCard(props: {
   const { handleDeleteItem, handleMarkAsBought, handleUpdateIngredientAisle } =
     useShoppingListActions();
 
-  const ingredientLabel = item.ingredient?.ingredient ?? item.looseItem;
+  const ingredientLabel = getIngredientLabel(item);
   // if display mode is aisle, show the recipe; flip if display mode is recipe
   const extraLabel =
     props.displayMode === "aisle" ? item.Recipe?.name : item.ingredient?.aisle;
