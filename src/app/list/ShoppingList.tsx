@@ -67,7 +67,7 @@ export function ShoppingList() {
       .filter((item) => item.Recipe?.id === +b[0])
       .reduce((acc, item) => Math.max(acc, item.id), 0);
 
-    return bMax - aMax;
+    return aMax - bMax;
   });
 
   return (
