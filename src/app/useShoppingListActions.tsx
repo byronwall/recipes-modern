@@ -15,11 +15,8 @@ export function useShoppingListActions() {
     await addLooseItem.mutateAsync({ ingredient });
   };
 
-  const addRecipe = api.shoppingList.addRecipeToShoppingList.useMutation();
-
-  const handleAddRecipe = async (recipeId: number) => {
-    await addRecipe.mutateAsync({ recipeId });
-  };
+  const addRecipeMutation =
+    api.shoppingList.addRecipeToShoppingList.useMutation();
 
   // delete item, delete all, delete all bought
   const deleteItem = api.shoppingList.deleteItemFromShoppingList.useMutation();
@@ -72,8 +69,9 @@ export function useShoppingListActions() {
   };
 
   return {
+    addRecipeMutation,
+
     handleAddLooseItem,
-    handleAddRecipe,
     handleDeleteItem,
     handleDeleteAll,
     handleDeleteBought,

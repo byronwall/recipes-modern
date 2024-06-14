@@ -6,14 +6,15 @@ import { ShoppingBasket } from "lucide-react";
 export function AddRecipeToShoppingList(props: { recipeId: number }) {
   const { recipeId } = props;
 
-  const { handleAddRecipe } = useShoppingListActions();
+  const { addRecipeMutation } = useShoppingListActions();
   return (
     <Button
       onClick={async () => {
-        await handleAddRecipe(recipeId);
+        await addRecipeMutation.mutateAsync({ recipeId });
       }}
+      isLoading={addRecipeMutation.isPending}
+      iconComponent={<ShoppingBasket />}
     >
-      <ShoppingBasket />
       List
     </Button>
   );
