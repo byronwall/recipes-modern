@@ -55,11 +55,26 @@ export function ShoppingList() {
   const groupedKeys = Object.keys(groupedShoppingList);
   groupedKeys.sort();
 
+  const recipeNames = Object.entries(recipeNameById);
+
+  // sort those names by the max of ingredient id
+  recipeNames.sort((a, b) => {
+    const aMax = shoppingList
+      .filter((item) => item.Recipe?.id === +a[0])
+      .reduce((acc, item) => Math.max(acc, item.id), 0);
+
+    const bMax = shoppingList
+      .filter((item) => item.Recipe?.id === +b[0])
+      .reduce((acc, item) => Math.max(acc, item.id), 0);
+
+    return bMax - aMax;
+  });
+
   return (
     <>
       <H2>Recipes included</H2>
       <div className="flex flex-col gap-2">
-        {Object.entries(recipeNameById).map(([id, name]) => (
+        {recipeNames.map(([id, name]) => (
           <ShoppingRecipeItem key={id} id={id} name={name} />
         ))}
       </div>
