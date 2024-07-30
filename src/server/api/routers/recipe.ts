@@ -463,7 +463,10 @@ function splitTextIntoHeaderAndItems(text: string) {
 
   const groups: { title: string; items: string[] }[] = [];
 
-  let currentGroup: { title: string; items: string[] } | null = null;
+  let currentGroup: { title: string; items: string[] } = {
+    title: "",
+    items: [],
+  };
 
   for (const _line of lines) {
     const line = _line.trim();
@@ -475,7 +478,7 @@ function splitTextIntoHeaderAndItems(text: string) {
     const headerMatch = line.match(headerRegEx);
 
     if (headerMatch) {
-      if (currentGroup) {
+      if (currentGroup.items.length > 0) {
         groups.push(currentGroup);
       }
 
@@ -483,12 +486,12 @@ function splitTextIntoHeaderAndItems(text: string) {
         title: headerMatch[1] ?? "Unknown",
         items: [],
       };
-    } else if (currentGroup) {
+    } else {
       currentGroup.items.push(line);
     }
   }
 
-  if (currentGroup) {
+  if (currentGroup.items.length > 0) {
     groups.push(currentGroup);
   }
 
