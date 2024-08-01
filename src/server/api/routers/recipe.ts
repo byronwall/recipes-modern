@@ -9,7 +9,7 @@ export const recipeRouter = createTRPCRouter({
     const recipes = db.recipe.findMany({
       where: { userId: ctx.session.user.id },
     });
-    return recipes;
+    return recipes ?? [];
   }),
 
   getRecipe: protectedProcedure

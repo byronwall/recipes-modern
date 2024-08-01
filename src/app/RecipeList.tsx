@@ -9,10 +9,15 @@ import { api } from "~/trpc/react";
 const defaultRecipes: Recipe[] = [];
 
 export function RecipeList() {
-  const { data: recipes = defaultRecipes } = api.recipe.getRecipes.useQuery();
+  const { data: _recipes } = api.recipe.getRecipes.useQuery();
 
   const [search, setSearch] = useState("");
 
+  const recipes = _recipes ?? defaultRecipes;
+
+  console.log("recipes", recipes);
+
+  // prevent undefined?
   const filteredRecipes = recipes.filter((recipe) =>
     recipe.name.toLowerCase().includes(search.toLowerCase()),
   );
