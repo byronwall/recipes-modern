@@ -12,7 +12,10 @@ import { StylishDatePicker } from "./StylishDatePicker";
 import { addDays, startOfDay } from "date-fns";
 
 export function PlanPageClient() {
-  const { data: plans = [] } = api.recipe.getMealPlans.useQuery();
+  const { data } = api.recipe.getMealPlans.useQuery();
+
+  // prevent null from cascading
+  const plans = data ?? [];
 
   const [shouldHideCompleted, setShouldHideCompleted] = useState(true);
 
