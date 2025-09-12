@@ -23,7 +23,8 @@ export function RecipeClient(props: { id: number }) {
   return (
     <div className="relative w-full space-y-2">
       <H2>{recipe.name}</H2>
-      {recipe.description ? (
+      {recipe.description &&
+      recipe.description.trim().toLowerCase() !== "desc" ? (
         <p className="max-w-prose text-muted-foreground">
           {recipe.description}
         </p>
