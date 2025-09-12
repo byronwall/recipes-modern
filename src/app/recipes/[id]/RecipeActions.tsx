@@ -31,9 +31,9 @@ export function RecipeActions(props: { recipeId: number }) {
               await handleDelete(props.recipeId);
             }}
             variant={"destructive-outline"}
+            size={"icon"}
           >
             <Trash />
-            Delete
           </Button>
         </>
       )}
