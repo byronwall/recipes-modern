@@ -6,13 +6,6 @@ export function useRecipeActions() {
   const deleteRecipe = api.recipe.deleteRecipe.useMutation();
 
   const handleDelete = async (id: number) => {
-    const shouldDelete = confirm(
-      "Are you sure you want to delete this recipe?",
-    );
-    if (!shouldDelete) {
-      return;
-    }
-
     await deleteRecipe.mutateAsync({ id });
   };
 
