@@ -1,9 +1,7 @@
 "use client";
 
-import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useForm, type SubmitHandler } from "react-hook-form";
-import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { H3 } from "~/components/ui/typography";
@@ -16,6 +14,10 @@ type NewRecipe = {
   steps: string;
 };
 
+type NewRecipeFormProps = {
+  formId?: string;
+};
+
 const defaultIngredients = `[Main Ingredients]
 1 cup of flour
 
@@ -26,7 +28,7 @@ Mix flour with water
 
 `;
 
-export function NewRecipeForm() {
+export function NewRecipeForm({ formId }: NewRecipeFormProps) {
   const { register, handleSubmit } = useForm<NewRecipe>();
 
   const router = useRouter();
@@ -41,7 +43,11 @@ export function NewRecipeForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex  flex-col gap-8">
+    <form
+      id={formId}
+      onSubmit={handleSubmit(onSubmit)}
+      className="flex  flex-col gap-8"
+    >
       <div className="flex items-center gap-4">
         <H3 className="w-36">Title</H3>
         <Input
@@ -86,16 +92,6 @@ export function NewRecipeForm() {
           />
         </div>
       </div>
-
-      <Button
-        type="submit"
-        className="self-center"
-        size="lg"
-        disabled={createRecipeMutation.isPending}
-      >
-        <Plus />
-        Create Recipe!
-      </Button>
     </form>
   );
 }

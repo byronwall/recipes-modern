@@ -5,6 +5,7 @@ import { Button } from "~/components/ui/button";
 import { helpers } from "~/trpc/helpers";
 import { RecipeList } from "./RecipeList";
 import { useEnforceAuth } from "./useEnforceAuth";
+import { NewRecipeDialog } from "./recipes/new/NewRecipeDialog";
 
 export default async function Home() {
   await useEnforceAuth();
@@ -13,12 +14,9 @@ export default async function Home() {
 
   return (
     <div className="flex w-full flex-col gap-4">
-      <Link href="/recipes/new" className="self-start">
-        <Button>
-          <Plus />
-          New Recipe
-        </Button>
-      </Link>
+      <div className="self-start">
+        <NewRecipeDialog />
+      </div>
 
       <RecipeList />
     </div>
