@@ -26,7 +26,7 @@ export function NewRecipeDialog() {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="grid h-[90vh] max-h-[90vh] max-w-5xl grid-rows-[auto,1fr,auto] overflow-hidden">
         <DialogHeader>
           <DialogTitle>Create New Recipe</DialogTitle>
         </DialogHeader>
