@@ -9,6 +9,7 @@ import { useState } from "react";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 import { ShoppingCart } from "lucide-react";
+import { env } from "~/env";
 
 type KrogerItemDisplayProps = {
   result: KrogerProduct;
@@ -47,6 +48,15 @@ export function KrogerItemDisplay({
         },
       ],
       listItemId: originalListItemId,
+      purchaseDetails: {
+        sku: result.upc,
+        productId: result.productId,
+        name: result.description,
+        price: displayPrice ?? 0,
+        quantity,
+        size: result.items[0]?.size ?? "",
+        imageUrl: imageUrl ?? "",
+      },
     });
 
     if (onCloseModal) {

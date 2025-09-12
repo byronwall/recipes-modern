@@ -27,6 +27,7 @@ export const env = createEnv({
     NEXT_CLIENT_ID: z.string(),
     CLIENT_SECRET: z.string(),
     NEXT_REDIRECT_URI: z.string(),
+    NEXT_SKIP_ADD_TO_CART: z.enum(["true", "false"]).default("false"),
   },
 
   /**
@@ -50,6 +51,7 @@ export const env = createEnv({
     NEXT_CLIENT_ID: process.env.NEXT_CLIENT_ID,
     CLIENT_SECRET: process.env.CLIENT_SECRET,
     NEXT_REDIRECT_URI: process.env.NEXT_REDIRECT_URI,
+    NEXT_SKIP_ADD_TO_CART: process.env.NEXT_SKIP_ADD_TO_CART,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

@@ -71,7 +71,8 @@ model Ingredient {
     group   IngredientGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
     groupId Int
 
-    ShoppingList ShoppingList[]
+    ShoppingList   ShoppingList[]
+    KrogerPurchase KrogerPurchase[]
 }
 
 model StepGroup {
@@ -165,10 +166,11 @@ model User {
     password String?
 
     // non-auth related
-    UserExtras   UserExtras[]
-    Recipe       Recipe[]
-    PlannedMeal  PlannedMeal[]
-    ShoppingList ShoppingList[]
+    UserExtras     UserExtras[]
+    Recipe         Recipe[]
+    PlannedMeal    PlannedMeal[]
+    ShoppingList   ShoppingList[]
+    KrogerPurchase KrogerPurchase[]
 }
 
 model VerificationToken {
@@ -177,4 +179,31 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+model KrogerPurchase {
+    id Int @id @default(autoincrement())
+
+    // who made this purchase action
+    userId String
+    User   User   @relation(fields: [userId], references: [id])
+
+    // optional link back to an ingredient (if purchase originated from a list item)
+    ingredientId Int?
+    ingredient   Ingredient? @relation(fields: [ingredientId], references: [id])
+
+    // kroger specific details
+    krogerSku       String // UPC
+    krogerProductId String
+    krogerName      String
+    price           Float
+    quantity        Int
+    itemSize        String
+    imageUrl        String
+
+    // status tracking
+    wasAddedToCart Boolean @default(false)
+    note           String?
+
+    createdAt DateTime @default(now())
 }
