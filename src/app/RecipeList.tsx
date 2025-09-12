@@ -41,12 +41,21 @@ export function RecipeList() {
           <tbody>
             {filteredRecipes.map((recipe) => (
               <tr key={recipe.id} className="border-t">
-                <td className="whitespace-nowrap px-3 py-2">
+                <td className="px-3 py-2">
                   <Link
                     href={`/recipes/${recipe.id}`}
                     className="hover:underline"
                   >
-                    {recipe.name}
+                    <div className="flex flex-col">
+                      <span className="whitespace-nowrap font-medium">
+                        {recipe.name}
+                      </span>
+                      {recipe.description ? (
+                        <span className="line-clamp-2 max-w-[48ch] text-muted-foreground">
+                          {recipe.description}
+                        </span>
+                      ) : null}
+                    </div>
                   </Link>
                 </td>
                 <td className="whitespace-nowrap px-3 py-2">
