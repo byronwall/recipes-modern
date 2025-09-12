@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { Input } from "~/components/ui/input";
@@ -16,6 +17,7 @@ type NewRecipe = {
 
 type NewRecipeFormProps = {
   formId?: string;
+  onSubmittingChange?: (isSubmitting: boolean) => void;
 };
 
 const defaultIngredients = `[Main Ingredients]
@@ -28,13 +30,20 @@ Mix flour with water
 
 `;
 
-export function NewRecipeForm({ formId }: NewRecipeFormProps) {
-  const { register, handleSubmit } = useForm<NewRecipe>();
+export function NewRecipeForm({
+  formId,
+  onSubmittingChange,
+}: NewRecipeFormProps) {
+  const { register, handleSubmit, formState } = useForm<NewRecipe>();
 
   const router = useRouter();
 
   const createRecipeMutation =
     api.recipe.createRecipeFromTextInput.useMutation();
+
+  useEffect(() => {
+    onSubmittingChange?.(formState.isSubmitting);
+  }, [formState.isSubmitting, onSubmittingChange]);
 
   const onSubmit: SubmitHandler<NewRecipe> = async (data) => {
     const res = await createRecipeMutation.mutateAsync(data);

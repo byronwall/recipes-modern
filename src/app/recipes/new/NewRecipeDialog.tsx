@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import { NewRecipeForm } from "~/app/recipes/new/NewRecipeForm";
 import { Button } from "~/components/ui/button";
@@ -15,6 +16,7 @@ import {
 
 export function NewRecipeDialog() {
   const formId = "create-recipe-form";
+  const [isSubmitting, setIsSubmitting] = useState(false);
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -29,13 +31,16 @@ export function NewRecipeDialog() {
           <DialogTitle>Create New Recipe</DialogTitle>
         </DialogHeader>
 
-        <NewRecipeForm formId={formId} />
+        <NewRecipeForm
+          formId={formId}
+          onSubmittingChange={(val) => setIsSubmitting(val)}
+        />
 
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="secondary">Cancel</Button>
           </DialogClose>
-          <Button type="submit" form={formId}>
+          <Button type="submit" form={formId} disabled={isSubmitting}>
             <Plus />
             Create Recipe!
           </Button>
