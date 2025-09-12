@@ -32,14 +32,16 @@ export function ShoppingList() {
 
   const groupedShoppingList = shoppingList.reduce(
     (acc, item) => {
-      if (groupMode === "recipe" && item.Recipe) {
-        const recipeName = recipeNameById[item.Recipe.id]!;
-        if (acc[recipeName] === undefined) {
-          acc[recipeName] = [];
+      if (groupMode === "recipe") {
+        const key = item.Recipe
+          ? recipeNameById[item.Recipe.id]!
+          : "Loose Items";
+        if (acc[key] === undefined) {
+          acc[key] = [];
         }
-        acc[recipeName]!.push(item);
+        acc[key]!.push(item);
       } else if (groupMode === "aisle") {
-        const aisle = item.ingredient?.aisle || "Unknown Aisle";
+        const aisle = item.ingredient?.aisle ?? "Unknown Aisle";
         if (acc[aisle] === undefined) {
           acc[aisle] = [];
         }
@@ -93,7 +95,7 @@ export function ShoppingList() {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={isVisible}
-                  onCheckedChange={(checked) =>
+                  onCheckedChange={(_checked) =>
                     setHiddenKeys((keys) => {
                       if (keys.includes(key)) {
                         return keys.filter((k) => k !== key);
@@ -117,7 +119,7 @@ export function ShoppingList() {
                     <ShoppingListCard
                       key={item.id}
                       item={item}
-                      displayMode={groupMode as any}
+                      displayMode={groupMode === "recipe" ? "recipe" : "aisle"}
                     />
                   ))}
                 </div>
