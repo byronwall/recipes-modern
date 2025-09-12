@@ -50,7 +50,8 @@ export function RecipeList() {
                       <span className="whitespace-nowrap font-medium">
                         {recipe.name}
                       </span>
-                      {recipe.description ? (
+                      {recipe.description &&
+                      recipe.description.trim().toLowerCase() !== "desc" ? (
                         <span className="line-clamp-2 max-w-[48ch] text-muted-foreground">
                           {recipe.description}
                         </span>
