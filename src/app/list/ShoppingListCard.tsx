@@ -9,6 +9,17 @@ import { Label } from "~/components/ui/label";
 import { cn } from "~/lib/utils";
 import { Edit, Trash } from "lucide-react";
 import { getIngredientLabel } from "./getIngredientLabel";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
 
 export type ShoppingListItem =
   RouterOutputs["shoppingList"]["getShoppingList"][0];
@@ -75,14 +86,33 @@ export function ShoppingListCard(props: {
               Aisle
             </Button>
           )}
-          <Button
-            onClick={async () => {
-              await handleDeleteItem(item.id);
-            }}
-            variant="destructive-outline"
-          >
-            <Trash />
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive-outline">
+                <Trash />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  Are you sure you want to delete?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will remove the item from your shopping list.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={async () => {
+                    await handleDeleteItem(item.id);
+                  }}
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </div>
