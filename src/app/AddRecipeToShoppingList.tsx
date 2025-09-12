@@ -14,8 +14,9 @@ export function AddRecipeToShoppingList(props: { recipeId: number }) {
       }}
       isLoading={addRecipeMutation.isPending}
       iconComponent={<ShoppingBasket />}
+      variant="outline"
     >
-      List
+      Add to List
     </Button>
   );
 }

@@ -6,6 +6,7 @@ import { AddRecipeToShoppingList } from "~/app/AddRecipeToShoppingList";
 import { AddToMealPlanPopover } from "~/app/AddToMealPlanPopover";
 import { useRecipeActions } from "~/app/useRecipeActions";
 import { Button } from "~/components/ui/button";
+import { SimpleAlertDialog } from "~/components/SimpleAlertDialog";
 import { useCookingMode } from "./useCookingMode";
 
 export function RecipeActions(props: { recipeId: number }) {
@@ -26,15 +27,23 @@ export function RecipeActions(props: { recipeId: number }) {
 
           <AddRecipeToShoppingList recipeId={recipeId} />
 
-          <Button
-            onClick={async () => {
+          <SimpleAlertDialog
+            trigger={
+              <Button variant={"destructive-outline"} size={"icon"}>
+                <Trash />
+              </Button>
+            }
+            title={"Delete recipe?"}
+            description={
+              "This action cannot be undone. This will permanently delete the recipe."
+            }
+            confirmText={"Delete"}
+            cancelText={"Cancel"}
+            confirmVariant="destructive"
+            onConfirm={async () => {
               await handleDelete(props.recipeId);
             }}
-            variant={"destructive-outline"}
-          >
-            <Trash />
-            Delete
-          </Button>
+          />
         </>
       )}
 

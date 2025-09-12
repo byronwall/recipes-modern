@@ -22,9 +22,9 @@ export function AddToMealPlanPopover(props: { recipeId: number }) {
     <div>
       <Popover>
         <PopoverTrigger asChild>
-          <Button>
+          <Button variant="outline">
             <CalendarPlus />
-            Plan
+            Add to Plan
           </Button>
         </PopoverTrigger>
         <PopoverContent>

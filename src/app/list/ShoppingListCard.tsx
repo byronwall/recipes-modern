@@ -9,6 +9,7 @@ import { Label } from "~/components/ui/label";
 import { cn } from "~/lib/utils";
 import { Edit, Trash } from "lucide-react";
 import { getIngredientLabel } from "./getIngredientLabel";
+import { SimpleAlertDialog } from "~/components/SimpleAlertDialog";
 
 export type ShoppingListItem =
   RouterOutputs["shoppingList"]["getShoppingList"][0];
@@ -75,14 +76,20 @@ export function ShoppingListCard(props: {
               Aisle
             </Button>
           )}
-          <Button
-            onClick={async () => {
+          <SimpleAlertDialog
+            trigger={
+              <Button variant="destructive-outline">
+                <Trash />
+              </Button>
+            }
+            title={"Are you sure you want to delete?"}
+            description={"This will remove the item from your shopping list."}
+            confirmText={"Delete"}
+            cancelText={"Cancel"}
+            onConfirm={async () => {
               await handleDeleteItem(item.id);
             }}
-            variant="destructive-outline"
-          >
-            <Trash />
-          </Button>
+          />
         </div>
       </div>
     </div>

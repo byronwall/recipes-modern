@@ -42,6 +42,32 @@ export const recipeRouter = createTRPCRouter({
     return plannedMeals;
   }),
 
+  updateRecipeMeta: protectedProcedure
+    .input(
+      z.object({
+        id: z.coerce.number(),
+        name: z.string().min(1),
+        description: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const userId = ctx.session.user.id;
+
+      const existing = await db.recipe.findUnique({
+        where: { id: input.id, userId },
+      });
+      if (!existing) {
+        throw new Error("Recipe not found");
+      }
+
+      const updated = await db.recipe.update({
+        where: { id: input.id },
+        data: { name: input.name, description: input.description },
+      });
+
+      return updated;
+    }),
+
   updateIngredientGroups: protectedProcedure
     .input(
       z.object({

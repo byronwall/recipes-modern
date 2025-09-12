@@ -4,6 +4,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { doKrogerSearch } from "~/server/kroger";
 import { getKrogerAccessToken } from "./getKrogerAccessToken";
+import { env } from "~/env";
 
 export const krogerRouter = createTRPCRouter({
   searchProducts: protectedProcedure
@@ -29,7 +30,7 @@ export const krogerRouter = createTRPCRouter({
 
       return results;
     }),
-  getKrogerStatus: protectedProcedure.query(async ({ input, ctx }) => {
+  getKrogerStatus: protectedProcedure.query(async ({ input: _input, ctx }) => {
     const userId = ctx.session.user.id;
 
     const user = await db.userExtras.findUnique({
@@ -54,15 +55,68 @@ export const krogerRouter = createTRPCRouter({
           }),
         ),
         listItemId: z.number().optional(),
+        purchaseDetails: z
+          .object({
+            sku: z.string(),
+            productId: z.string(),
+            name: z.string(),
+            price: z.number().default(0),
+            quantity: z.number(),
+            size: z.string(),
+            imageUrl: z.string().default(""),
+          })
+          .optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const postData = input as API_KrogerAddCart;
+      const postData = { items: input.items } as API_KrogerAddCart;
       const url = `https://api.kroger.com/v1/cart/add`;
 
-      const accessToken = await getKrogerAccessToken(ctx.session.user.id);
+      // Pre-create a purchase record so attempts are tracked even if API fails
+      let createdPurchaseId: number | null = null;
+      if (input.purchaseDetails) {
+        const userId = ctx.session.user.id;
+
+        let ingredientId: number | null = null;
+        if (input.listItemId) {
+          const listItem = await db.shoppingList.findUnique({
+            where: { id: input.listItemId },
+            select: { ingredientId: true },
+          });
+          ingredientId = listItem?.ingredientId ?? null;
+        }
+
+        const created = await db.krogerPurchase.create({
+          data: {
+            userId,
+            ingredientId: ingredientId ?? undefined,
+            krogerSku: input.purchaseDetails.sku,
+            krogerProductId: input.purchaseDetails.productId,
+            krogerName: input.purchaseDetails.name,
+            price: input.purchaseDetails.price ?? 0,
+            quantity: input.purchaseDetails.quantity,
+            itemSize: input.purchaseDetails.size,
+            imageUrl: input.purchaseDetails.imageUrl ?? "",
+            // wasAddedToCart defaults false; note left empty initially
+          },
+          select: { id: true },
+        });
+        createdPurchaseId = created.id;
+      }
+
+      // If we are configured to skip adding to cart, add note and return success
+      if (env.NEXT_SKIP_ADD_TO_CART === "true") {
+        if (createdPurchaseId) {
+          await db.krogerPurchase.update({
+            where: { id: createdPurchaseId },
+            data: { note: "Skipped due to SKIP_ADD_TO_CART=true" },
+          });
+        }
+        return { result: true };
+      }
 
       try {
+        const accessToken = await getKrogerAccessToken(ctx.session.user.id);
         const addResponse = await fetch(url, {
           method: "PUT",
           headers: {
@@ -73,6 +127,15 @@ export const krogerRouter = createTRPCRouter({
         });
 
         if (!addResponse.ok) {
+          const errorText = await addResponse.text().catch(() => "");
+          if (createdPurchaseId) {
+            await db.krogerPurchase.update({
+              where: { id: createdPurchaseId },
+              data: {
+                note: `HTTP ${addResponse.status}: ${errorText || "Request failed"}`,
+              },
+            });
+          }
           throw new Error("Request failed");
         }
 
@@ -88,8 +151,27 @@ export const krogerRouter = createTRPCRouter({
           });
         }
 
+        // Mark the pre-created purchase as successfully added
+        if (createdPurchaseId) {
+          await db.krogerPurchase.update({
+            where: { id: createdPurchaseId },
+            data: { wasAddedToCart: true },
+          });
+        }
+
         return { result: true };
-      } catch (error) {
+      } catch (error: unknown) {
+        if (createdPurchaseId) {
+          const message =
+            error instanceof Error ? error.message : "Unknown error";
+          // Append or set note on error
+          await db.krogerPurchase.update({
+            where: { id: createdPurchaseId },
+            data: {
+              note: message,
+            },
+          });
+        }
         return { result: false };
       }
     }),
