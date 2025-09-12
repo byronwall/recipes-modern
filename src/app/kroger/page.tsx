@@ -1,5 +1,14 @@
 import Link from "next/link";
 import { env } from "~/env";
+import { Button } from "~/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
+import { H1, Muted } from "~/components/ui/typography";
 import { useEnforceAuth } from "../useEnforceAuth";
 import { UserKrogerStatus } from "./UserKrogerStatus";
 
@@ -16,25 +25,52 @@ export default async function KrogerPage() {
     `&response_type=code` +
     `&scope=product.compact cart.basic:write`;
 
+  const elide = (value?: string) =>
+    value && value.length > 14
+      ? `${value.slice(0, 8)}…${value.slice(-6)}`
+      : value ?? "";
+
   return (
-    <div className="flex flex-col gap-2 rounded-lg bg-gray-100 p-4 text-center shadow-lg">
-      <h1 className="text-4xl font-bold">Kroger Page</h1>
-      <p>ENV bits</p>
-      <p>CLIENT_ID: {clientId}</p>
-      <p>REDIRECT_URI: {redirectUri}</p>
-      <Link
-        href={krogerUrl}
-        // poppy button
-        className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-      >
-        Sign in to Kroger
-      </Link>
+    <div className="flex w-full flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <H1 className="mb-2">Kroger</H1>
+        <UserKrogerStatus />
+      </div>
 
-      <UserKrogerStatus />
+      <Card>
+        <CardHeader>
+          <CardTitle>Connect your account</CardTitle>
+          <CardDescription>
+            Sign in to enable product search and add-to-cart from your shopping
+            list.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center gap-3">
+          <Link href={krogerUrl}>Sign in to Kroger</Link>
 
-      <p className="bg-orange-100 p-4 text-orange-900">
-        This page is a work in progress. It is not functional yet.
-      </p>
+          <Muted>Requires a Kroger account</Muted>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Developer details</CardTitle>
+          <CardDescription>Values loaded from environment</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 items-baseline gap-2 sm:grid-cols-3">
+            <div className="text-sm text-muted-foreground">Client ID</div>
+            <div className="break-all font-mono text-sm sm:col-span-2">
+              {elide(clientId)}
+            </div>
+
+            <div className="text-sm text-muted-foreground">Redirect URI</div>
+            <div className="break-all font-mono text-sm sm:col-span-2">
+              {redirectUri}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
