@@ -2,6 +2,38 @@
 
 ## Scope
 
+- Database and Prisma
+
+  - Add `Recipe.type` using an enum `RecipeType` with: BREAKFAST, LUNCH, DINNER, DESSERT, SNACK, DRINK, OTHER (default OTHER).
+  - Introduce tagging via `Tag` and `RecipeTag` models (M:N) as defined below; add appropriate indexes.
+  - Generate and apply Prisma migrations; backfill existing recipes with `type = OTHER`.
+
+- Server API (tRPC)
+
+  - Add a `tagRouter` with endpoints: `search`, `upsertByName`, `setTagsForRecipe`.
+  - Extend `recipeRouter.list` to accept `type`, `includeTags`, `excludeTags` (AND semantics) and optional `maxCookMins`.
+
+- UI — Create & Edit Recipes
+
+  - New Recipe (`src/app/recipes/new/NewRecipeForm.tsx`): add a `Type` segmented control and a `Tags` combobox (search existing, create-on-enter); persist on create.
+  - Edit Recipe (`src/app/recipes/[id]/RecipeClient.tsx`): add controls to view/update `Type` and `Tags`; wire to `setTagsForRecipe` and recipe update flow; display selected tags as removable chips.
+
+- UI — Browse / Main Recipe List
+
+  - `src/app/RecipeList.tsx`: add filter controls for `Type` (pill/segmented control) and `Tags` (multi-select combobox with search); reflect selection in query params (e.g., `?type=dinner&tags=italian,beef`).
+  - Call the updated `recipeRouter.list` with the selected type/tags; show selected filters as chips with quick remove.
+
+- UI — Meal Planning
+
+  - `src/app/plan/PlanCard.tsx`: show the scheduled recipe’s `Type` badge and top 1–2 tag chips for quick scanning.
+
+- Data migration/backfill (initial)
+
+  - After migration, run a light backfill to set obvious types (optional heuristic) and optionally seed a small set of common tags.
+
+- Out of scope (for this change)
+  - Tag alias/merge UI, admin moderation, suggestion/ranking API, and analytics dashboards.
+
 ## Chat logs
 
 Logs with an AI assistant about this feature. Use for inspo.
