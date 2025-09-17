@@ -41,11 +41,12 @@ export function ShoppingList() {
         }
         acc[key]!.push(item);
       } else if (groupMode === "aisle") {
-        const aisle = item.ingredient?.aisle ?? "Unknown Aisle";
-        if (acc[aisle] === undefined) {
-          acc[aisle] = [];
+        const aisleRaw = item.ingredient?.aisle;
+        const key = aisleRaw ? aisleRaw.toLowerCase() : "Unknown Aisle";
+        if (acc[key] === undefined) {
+          acc[key] = [];
         }
-        acc[aisle]!.push(item);
+        acc[key]!.push(item);
       }
       return acc;
     },
