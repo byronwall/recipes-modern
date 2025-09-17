@@ -1,7 +1,6 @@
 "use client";
 
 import { Label } from "@radix-ui/react-label";
-import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -13,56 +12,43 @@ import {
 import { Input } from "~/components/ui/input";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
-import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";
 
-export function LoginForm(props: { mode: "login" | "signup" }) {
-  const createUserMutation = api.user.createUser.useMutation();
-
+export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // redirect hook
   const router = useRouter();
 
-  async function handleClick() {
-    if (props.mode === "login") {
+  async function handleSubmit() {
+    setIsSubmitting(true);
+    try {
       const result = await signIn("credentials", {
         email,
         password,
-        redirect: false,
+        callbackUrl: "/",
+        redirect: true,
       });
-
+      // When redirect: true, NextAuth will navigate; result may be undefined
+      // In case redirect is blocked, ensure we land on home
       if (result?.ok) {
         router.push("/");
-        return;
       }
-
-      alert("Invalid login, try again");
-    } else {
-      await createUserMutation.mutateAsync({
-        email,
-        password,
-      });
-
-      await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-
-      router.push("/");
+    } catch (err) {
+      // no-op, surface minimal error UI below
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   return (
-    <Card className="mx-auto max-w-sm">
+    <Card className="shadow-lg">
       <CardHeader>
-        <CardTitle className="text-2xl">
-          {props.mode === "login" ? "Login" : "Sign Up"}
-        </CardTitle>
+        <CardTitle className="text-2xl">Login</CardTitle>
         <CardDescription>
-          Enter your email below to login to your account
+          Enter your email and password to continue
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -79,12 +65,7 @@ export function LoginForm(props: { mode: "login" | "signup" }) {
             />
           </div>
           <div className="grid gap-2">
-            <div className="flex items-center">
-              <Label htmlFor="password">Password</Label>
-              <Link href="#" className="ml-auto inline-block text-sm underline">
-                Forgot your password?
-              </Link>
-            </div>
+            <Label htmlFor="password">Password</Label>
             <Input
               id="password"
               type="password"
@@ -93,8 +74,13 @@ export function LoginForm(props: { mode: "login" | "signup" }) {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          <Button type="submit" className="w-full" onClick={handleClick}>
-            {props.mode === "login" ? "Login" : "Sign Up"}
+          <Button
+            type="button"
+            className="w-full"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Logging in..." : "Login"}
           </Button>
         </div>
       </CardContent>
