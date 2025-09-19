@@ -42,6 +42,9 @@ const config = {
     "@typescript-eslint/no-unsafe-argument": "warn",
     "@typescript-eslint/prefer-nullish-coalescing": "warn",
     "@typescript-eslint/no-empty-interface": "warn",
+    // "@typescript-eslint/no-unsafe-any": "warn",
+    "@typescript-eslint/no-unnecessary-type-assertion": "warn",
+    "@typescript-eslint/no-unsafe-call": "warn",
   },
 };
 module.exports = config;
