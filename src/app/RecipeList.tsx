@@ -1,12 +1,13 @@
 "use client";
 
 import { RecipeType, type Recipe } from "@prisma/client";
-import { useDeferredValue, useMemo, useState } from "react";
 import Link from "next/link";
+import { useDeferredValue, useMemo, useState } from "react";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
-// popover no longer used for tag entry
+
+import SimpleAlertDialog from "~/components/SimpleAlertDialog";
 import { Button } from "~/components/ui/button";
 import {
   Select,
@@ -15,10 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { api } from "~/trpc/react";
-import SimpleAlertDialog from "~/components/SimpleAlertDialog";
-import { RecipeActions } from "./recipes/[id]/RecipeActions";
 import { openAddTagDialog } from "~/hooks/use-add-tag-dialog";
+import { api } from "~/trpc/react";
+import { RecipeActions } from "./recipes/[id]/RecipeActions";
 
 const defaultRecipes: Recipe[] = [];
 
@@ -329,5 +329,3 @@ export function RecipeList() {
     </>
   );
 }
-
-// TagSearchList removed; using popular buttons + dropdown instead
