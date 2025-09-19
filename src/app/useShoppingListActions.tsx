@@ -56,16 +56,11 @@ export function useShoppingListActions() {
     id?: number;
     aisle?: string | null;
   }) => {
-    if (!input.id) {
-      return;
-    }
-
-    const aisle = prompt("Enter new aisle", input.aisle ?? "");
-    if (!aisle) {
-      return;
-    }
-
-    await updateIngredientAisle.mutateAsync({ aisle, id: input.id });
+    if (!input.id || !input.aisle) return;
+    await updateIngredientAisle.mutateAsync({
+      aisle: input.aisle,
+      id: input.id,
+    });
   };
 
   return {

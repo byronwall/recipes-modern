@@ -7,9 +7,10 @@ import { KrogerSearchPopup } from "./KrogerSearchPopup";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { cn } from "~/lib/utils";
-import { Edit, Trash } from "lucide-react";
+import { Trash } from "lucide-react";
 import { getIngredientLabel } from "./getIngredientLabel";
 import { SimpleAlertDialog } from "~/components/SimpleAlertDialog";
+import { AislePickerDialog } from "./AislePickerDialog";
 
 export type ShoppingListItem =
   RouterOutputs["shoppingList"]["getShoppingList"][0];
@@ -20,8 +21,7 @@ export function ShoppingListCard(props: {
 }) {
   const { item } = props;
 
-  const { handleDeleteItem, handleMarkAsBought, handleUpdateIngredientAisle } =
-    useShoppingListActions();
+  const { handleDeleteItem, handleMarkAsBought } = useShoppingListActions();
 
   const ingredientLabel = getIngredientLabel(item);
   // if display mode is aisle, show the recipe; flip if display mode is recipe
@@ -63,18 +63,10 @@ export function ShoppingListCard(props: {
             ingredient={item.ingredient?.ingredient}
           />
           {item.ingredient && (
-            <Button
-              onClick={async () => {
-                await handleUpdateIngredientAisle({
-                  id: item.ingredient?.id,
-                  aisle: item.ingredient?.aisle,
-                });
-              }}
-              variant="secondary"
-            >
-              <Edit />
-              Aisle
-            </Button>
+            <AislePickerDialog
+              ingredientId={item.ingredient.id}
+              currentAisle={item.ingredient.aisle}
+            />
           )}
           <SimpleAlertDialog
             trigger={

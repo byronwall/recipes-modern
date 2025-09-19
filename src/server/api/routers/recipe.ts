@@ -511,6 +511,27 @@ export const recipeRouter = createTRPCRouter({
       return ingredient;
     }),
 
+  getDistinctAisles: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    // Get distinct aisle values for this user's ingredients
+    const rows = await db.ingredient.findMany({
+      where: {
+        group: { Recipe: { userId } },
+        AND: [{ aisle: { not: null } }, { aisle: { not: "" } }],
+      },
+      distinct: ["aisle"],
+      select: { aisle: true },
+    });
+
+    const aisles = rows
+      .map((r) => r.aisle)
+      .filter((v): v is string => Boolean(v))
+      .sort((a, b) => a.localeCompare(b));
+
+    return aisles;
+  }),
+
   addMealPlanToShoppingList: protectedProcedure
     .input(z.object({ id: z.coerce.number() }))
     .mutation(async ({ input, ctx }) => {
