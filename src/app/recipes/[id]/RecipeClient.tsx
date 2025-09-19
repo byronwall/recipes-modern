@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil } from "lucide-react";
+import { RecipeType } from "@prisma/client";
+import { Pencil, Plus } from "lucide-react";
 import { H2 } from "~/components/ui/typography";
 import { Button } from "~/components/ui/button";
 import {
@@ -16,6 +17,12 @@ import {
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { IngredientList } from "./IngredientList";
 import { RecipeActions } from "./RecipeActions";
@@ -38,10 +45,18 @@ export function RecipeClient(props: { id: number }) {
       setOpen(false);
     },
   });
+  const setTagsMutation = api.tag.setTagsForRecipe.useMutation({
+    onSuccess: async () => {
+      await utils.recipe.getRecipe.invalidate({ id });
+    },
+  });
+  const upsertTag = api.tag.upsertByName.useMutation();
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [type, setType] = useState<RecipeType | undefined>(undefined);
+  const [tags, setTags] = useState<string[]>([]);
 
   if (!recipe) {
     return <div>Recipe not found</div>;
@@ -58,6 +73,10 @@ export function RecipeClient(props: { id: number }) {
             if (val) {
               setName(recipe.name ?? "");
               setDescription(recipe.description ?? "");
+              setType(recipe.type);
+              setTags(
+                (recipe.tags ?? []).map((rt) => rt.tag.name).filter(Boolean),
+              );
             }
           }}
         >
@@ -69,9 +88,7 @@ export function RecipeClient(props: { id: number }) {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Edit recipe</DialogTitle>
-              <DialogDescription>
-                Update the name and description for this recipe.
-              </DialogDescription>
+              <DialogDescription>Update recipe details.</DialogDescription>
             </DialogHeader>
 
             <form
@@ -82,6 +99,19 @@ export function RecipeClient(props: { id: number }) {
                   id,
                   name: name.trim(),
                   description: description ?? "",
+                  type,
+                });
+                // ensure tag slugs
+                const tagNames = tags.map((t) => t.trim()).filter(Boolean);
+                for (const name of tagNames) {
+                  await upsertTag.mutateAsync({ name });
+                }
+                const slugs = tagNames.map((n) =>
+                  n.toLowerCase().replace(/\s+/g, "-"),
+                );
+                await setTagsMutation.mutateAsync({
+                  recipeId: id,
+                  tagSlugs: slugs,
                 });
               }}
             >
@@ -102,6 +132,31 @@ export function RecipeClient(props: { id: number }) {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   autoResize
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <RadioGroup
+                  className="flex flex-wrap gap-2"
+                  value={type}
+                  onValueChange={(v) => setType(v as RecipeType)}
+                >
+                  {Object.values(RecipeType).map((t) => (
+                    <div key={t} className="flex items-center gap-2">
+                      <RadioGroupItem value={t} id={`edit-type-${t}`} />
+                      <Label htmlFor={`edit-type-${t}`}>{t}</Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Tags</Label>
+                <InlineTagEditor
+                  recipeId={id}
+                  values={tags}
+                  onChange={setTags}
                 />
               </div>
 
@@ -137,6 +192,163 @@ export function RecipeClient(props: { id: number }) {
       <StepList recipe={recipe} />
 
       <CookingModeOverlay recipe={recipe} />
+    </div>
+  );
+}
+
+function InlineTagEditor(props: {
+  values: string[];
+  onChange: (vals: string[]) => void;
+  recipeId?: number;
+}) {
+  const { values, onChange, recipeId } = props;
+  const [input, setInput] = useState("");
+  const { data } = api.tag.search.useQuery({ q: input, limit: 10 });
+  const [addOpen, setAddOpen] = useState(false);
+  const [newTagName, setNewTagName] = useState("");
+  const utils = api.useUtils();
+  const upsertTag = api.tag.upsertByName.useMutation();
+  const setTagsMutation = api.tag.setTagsForRecipe.useMutation({
+    onSuccess: async () => {
+      if (recipeId) {
+        await utils.recipe.getRecipe.invalidate({ id: recipeId });
+      }
+    },
+  });
+
+  function addTag(name: string) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const exists = values.some(
+      (v) => v.toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (exists) return;
+    onChange([...values, trimmed]);
+    setInput("");
+  }
+
+  function removeTag(name: string) {
+    onChange(values.filter((v) => v !== name));
+  }
+
+  return (
+    <div className="flex w-full flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <div className="flex flex-wrap gap-2">
+          {values.map((v) => (
+            <span key={v} className="rounded bg-muted px-2 py-1 text-xs">
+              {v}
+              <button
+                className="ml-1"
+                onClick={() => removeTag(v)}
+                aria-label={`Remove ${v}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+        <Dialog open={addOpen} onOpenChange={setAddOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="icon" aria-label="Add tag">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add a tag</DialogTitle>
+              <DialogDescription>
+                Create a new tag and add it to this recipe.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label htmlFor="new-tag-name">Tag name</Label>
+              <Input
+                id="new-tag-name"
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                placeholder="e.g. Vegetarian"
+                autoFocus
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAddOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  const name = newTagName.trim();
+                  if (!name) return;
+                  // avoid duplicates client-side
+                  const exists = values.some(
+                    (v) => v.toLowerCase() === name.toLowerCase(),
+                  );
+                  if (exists) {
+                    setAddOpen(false);
+                    setNewTagName("");
+                    return;
+                  }
+                  if (recipeId) {
+                    await upsertTag.mutateAsync({ name });
+                    const updated = [...values, name];
+                    onChange(updated);
+                    const slugs = updated.map((n) =>
+                      n.toLowerCase().replace(/\s+/g, "-"),
+                    );
+                    await setTagsMutation.mutateAsync({
+                      recipeId,
+                      tagSlugs: slugs,
+                    });
+                  } else {
+                    onChange([...values, name]);
+                  }
+                  setAddOpen(false);
+                  setNewTagName("");
+                }}
+                isLoading={upsertTag.isPending || setTagsMutation.isPending}
+              >
+                Add tag
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Search or create tag"
+          />
+        </PopoverTrigger>
+        <PopoverContent className="w-64 p-0">
+          <div className="max-h-60 overflow-auto py-1">
+            {data?.length ? (
+              data.map((t) => (
+                <button
+                  key={t.id}
+                  className="block w-full px-3 py-2 text-left hover:bg-muted"
+                  onClick={() => addTag(t.name)}
+                >
+                  {t.name}
+                </button>
+              ))
+            ) : (
+              <div className="px-3 py-2 text-sm text-muted-foreground">
+                No tags
+              </div>
+            )}
+            {input.trim() && (
+              <button
+                className="block w-full px-3 py-2 text-left hover:bg-muted"
+                onClick={() => addTag(input)}
+              >
+                Create: {input}
+              </button>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

@@ -14,6 +14,16 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+enum RecipeType {
+    BREAKFAST
+    LUNCH
+    DINNER
+    DESSERT
+    SNACK
+    DRINK
+    OTHER
+}
+
 model UserExtras {
     id Int @id @default(autoincrement())
 
@@ -36,8 +46,15 @@ model Recipe {
     PlannedMeal  PlannedMeal[]
     ShoppingList ShoppingList[]
 
+    // categorization
+    type        RecipeType  @default(OTHER)
+    tags        RecipeTag[]
+    cookMinutes Int?
+
     userId String
     User   User   @relation(fields: [userId], references: [id])
+
+    @@index([type])
 }
 
 model IngredientGroup {
@@ -206,4 +223,29 @@ model KrogerPurchase {
     note           String?
 
     createdAt DateTime @default(now())
+}
+
+model Tag {
+    id        Int         @id @default(autoincrement())
+    slug      String      @unique
+    name      String      @unique
+    aliases   String[]    @default([])
+    createdBy String?
+    createdAt DateTime    @default(now())
+    updatedAt DateTime    @updatedAt
+    recipes   RecipeTag[]
+
+    @@index([slug])
+}
+
+model RecipeTag {
+    recipeId  Int
+    tagId     Int
+    createdAt DateTime @default(now())
+
+    recipe Recipe @relation(fields: [recipeId], references: [id])
+    tag    Tag    @relation(fields: [tagId], references: [id])
+
+    @@id([recipeId, tagId])
+    @@index([tagId])
 }

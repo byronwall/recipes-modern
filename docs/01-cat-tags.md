@@ -1,5 +1,16 @@
 # Systems for Categories and Tags
 
+## Status and remaining work
+
+- [x] Database & Prisma: `Recipe.type` enum, `Tag`/`RecipeTag` models, indexes; migration applied; existing recipes default to `OTHER`.
+- [x] Server API: `tagRouter` (`search`, `upsertByName`, `setTagsForRecipe`), extend `recipeRouter.list` with `type`, tag filters, `maxCookMins`.
+- [x] UI — Create: New Recipe form has `Type` selector and `Tags` combobox; persists on create.
+- [x] UI — Edit: Recipe page dialog supports updating `Type` and `Tags`; chips with remove.
+- [x] UI — Browse: `RecipeList` has `Type` filter and `Tags` multi-select; calls updated API; shows selected as chips.
+- [x] UI — Meal Planning: `PlanCard` shows recipe `Type` and top 1–2 tags.
+- [ ] Data backfill (heuristic typing, optional seed tags)
+- [ ] Need to be able to add new tags - edit especially
+
 ## Scope
 
 - Database and Prisma

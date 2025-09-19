@@ -1,13 +1,48 @@
 import { z } from "zod";
+import { RecipeType } from "@prisma/client";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { type Ingredient2, type Root } from "./old_types";
 
 export const recipeRouter = createTRPCRouter({
+  list: protectedProcedure
+    .input(
+      z
+        .object({
+          type: z.nativeEnum(RecipeType).optional(),
+          includeTags: z.array(z.string()).optional(),
+          excludeTags: z.array(z.string()).optional(),
+          maxCookMins: z.number().optional(),
+        })
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+      const where: any = { userId };
+      if (input?.type) where.type = input.type;
+      if (input?.includeTags?.length) {
+        where.tags = { some: { tag: { slug: { in: input.includeTags } } } };
+      }
+      if (input?.excludeTags?.length) {
+        where.AND ??= [];
+        where.AND.push({
+          NOT: { tags: { some: { tag: { slug: { in: input.excludeTags } } } } },
+        });
+      }
+      if (input?.maxCookMins) where.cookMinutes = { lte: input.maxCookMins };
+
+      const recipes = await db.recipe.findMany({
+        where,
+        orderBy: { name: "asc" },
+        include: { tags: { include: { tag: true } } },
+      });
+      return recipes;
+    }),
   getRecipes: protectedProcedure.query(async ({ ctx }) => {
     const recipes = db.recipe.findMany({
       where: { userId: ctx.session.user.id },
+      include: { tags: { include: { tag: true } } },
     });
     return recipes ?? [];
   }),
@@ -24,6 +59,7 @@ export const recipeRouter = createTRPCRouter({
           ingredientGroups: {
             include: { ingredients: true },
           },
+          tags: { include: { tag: true } },
         },
       });
 
@@ -35,7 +71,9 @@ export const recipeRouter = createTRPCRouter({
 
     const plannedMeals = db.plannedMeal.findMany({
       where: { userId },
-      include: { Recipe: true },
+      include: {
+        Recipe: { include: { tags: { include: { tag: true } } } },
+      },
       orderBy: { date: "asc" },
     });
 
@@ -48,6 +86,8 @@ export const recipeRouter = createTRPCRouter({
         id: z.coerce.number(),
         name: z.string().min(1),
         description: z.string(),
+        type: z.nativeEnum(RecipeType).optional(),
+        cookMinutes: z.number().optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -62,7 +102,14 @@ export const recipeRouter = createTRPCRouter({
 
       const updated = await db.recipe.update({
         where: { id: input.id },
-        data: { name: input.name, description: input.description },
+        data: {
+          name: input.name,
+          description: input.description,
+          ...(input.type ? { type: input.type } : {}),
+          ...(typeof input.cookMinutes === "number"
+            ? { cookMinutes: input.cookMinutes }
+            : {}),
+        },
       });
 
       return updated;
@@ -231,6 +278,9 @@ export const recipeRouter = createTRPCRouter({
         description: z.string(),
         ingredients: z.string(),
         steps: z.string(),
+        type: z.nativeEnum(RecipeType).optional(),
+        tagSlugs: z.array(z.string()).optional(),
+        cookMinutes: z.number().optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -264,6 +314,10 @@ export const recipeRouter = createTRPCRouter({
         data: {
           name: input.title,
           description: input.description,
+          ...(input.type ? { type: input.type } : {}),
+          ...(typeof input.cookMinutes === "number"
+            ? { cookMinutes: input.cookMinutes }
+            : {}),
           userId,
           ingredientGroups: {
             create: ingredientGroups.map((group) => ({
@@ -281,6 +335,17 @@ export const recipeRouter = createTRPCRouter({
               steps: group.steps,
             })),
           },
+          ...(input.tagSlugs?.length
+            ? {
+                tags: {
+                  create: (
+                    await db.tag.findMany({
+                      where: { slug: { in: input.tagSlugs } },
+                    })
+                  ).map((t) => ({ tagId: t.id })),
+                },
+              }
+            : {}),
         },
         include: {
           ingredientGroups: {
@@ -293,6 +358,7 @@ export const recipeRouter = createTRPCRouter({
               Recipe: true,
             },
           },
+          tags: { include: { tag: true } },
         },
       });
 

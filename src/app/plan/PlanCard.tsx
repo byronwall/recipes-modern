@@ -41,6 +41,21 @@ export function PlanCard(props: { plan: PlannedMealWithRecipe }) {
           <Link href={`/recipes/${plan.Recipe.id}`}>
             <H4>{plan.Recipe.name}</H4>
           </Link>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="rounded border px-1.5 py-0.5 text-xs">
+              {plan.Recipe.type}
+            </span>
+            <div className="flex flex-wrap gap-1">
+              {(plan.Recipe as any).tags?.slice(0, 2).map((rt: any) => (
+                <span
+                  key={rt.tag.id}
+                  className="rounded bg-muted px-1.5 py-0.5 text-xs"
+                >
+                  {rt.tag.name}
+                </span>
+              ))}
+            </div>
+          </div>
           <div>{plan.isMade ? "made" : "not made"}</div>
           <div className="flex items-center gap-2">
             <Button
