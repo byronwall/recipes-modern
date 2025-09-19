@@ -7,6 +7,7 @@ import { getTrpcHelperState } from "~/trpc/helpers";
 import { TRPCReactProvider } from "~/trpc/react";
 import { MainPageWithNav } from "../components/MainPageWithNav";
 import { TailwindIndicator } from "./TailwindIndicator";
+import { GlobalAddTagDialog } from "~/components/GlobalAddTagDialog";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -38,7 +39,9 @@ export default async function RootLayout({
           <HydrationBoundary state={trpcState}>
             <MainPageWithNav>{children}</MainPageWithNav>
           </HydrationBoundary>
+          <GlobalAddTagDialog />
         </TRPCReactProvider>
+
         <TailwindIndicator />
       </body>
     </html>

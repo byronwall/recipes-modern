@@ -1,51 +1,80 @@
 "use client";
 
 import { RecipeType, type Recipe } from "@prisma/client";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import Link from "next/link";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+// popover no longer used for tag entry
+import { Button } from "~/components/ui/button";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { api } from "~/trpc/react";
+import SimpleAlertDialog from "~/components/SimpleAlertDialog";
 import { RecipeActions } from "./recipes/[id]/RecipeActions";
+import { openAddTagDialog } from "~/hooks/use-add-tag-dialog";
 
 const defaultRecipes: Recipe[] = [];
 
 type RecipeWithTags = Recipe & {
-  tags?: { tag: { id: string; name: string } }[];
+  tags?: { tag: { id: string; name: string; slug: string } }[];
 };
 
 export function RecipeList() {
   const [search, setSearch] = useState("");
   const [type, setType] = useState<RecipeType | undefined>(undefined);
-  const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<{ slug: string; name: string }[]>([]);
+  // controlled select value per recipe so we can reset after applying
+  const [addSelectValues, setAddSelectValues] = useState<
+    Record<number, string | undefined>
+  >({});
+  // global add tag dialog handles creation
 
   const { data: _recipes } = api.recipe.list.useQuery({
     type,
     includeTags: tags.map((t) => t.slug),
   });
 
+  // popular and all tags for picker UI
+  const { data: popularData } = api.tag.popular.useQuery({ limit: 5 });
+  const { data: allTagsData } = api.tag.all.useQuery();
+  const utils = api.useUtils();
+
+  const updateType = api.recipe.updateRecipeType.useMutation({
+    onSuccess: () => utils.recipe.list.invalidate(),
+  });
+  const addTagToRecipe = api.tag.addTagToRecipe.useMutation({
+    onSuccess: () => utils.recipe.list.invalidate(),
+  });
+  const removeTagFromRecipe = api.tag.removeTagFromRecipe.useMutation({
+    onSuccess: () => utils.recipe.list.invalidate(),
+  });
+  // creation handled in global dialog
+
   const recipes: RecipeWithTags[] =
     (_recipes as RecipeWithTags[] | undefined) ??
     (defaultRecipes as RecipeWithTags[]);
 
+  const deferredSearch = useDeferredValue(search);
   // prevent undefined?
   const filteredRecipes = useMemo(
     () =>
       recipes.filter((recipe) =>
-        recipe.name.toLowerCase().includes(search.toLowerCase()),
+        recipe.name.toLowerCase().includes(deferredSearch.toLowerCase()),
       ),
-    [recipes, search],
+    [recipes, deferredSearch],
   );
 
   return (
     <>
+      {/* Global Add Tag Dialog is mounted in layout */}
+
       <div className="mb-2 flex flex-wrap items-center gap-3">
         <Input
           value={search}
@@ -78,42 +107,82 @@ export function RecipeList() {
             ))}
           </ToggleGroup>
         </div>
+      </div>
 
-        <div className="flex items-center gap-2">
-          <Label>Tags</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Input
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                placeholder="Add tag"
-                className="max-w-[200px]"
-              />
-            </PopoverTrigger>
-            <PopoverContent className="w-60 p-0">
-              <TagSearchList
-                query={tagInput}
-                onPick={(tag) => {
-                  const exists = tags.some((t) => t.slug === tag.slug);
-                  if (!exists) setTags([...tags, tag]);
-                  setTagInput("");
+      {/* Tags row: popular buttons first, then dropdown for the rest */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <Label className="whitespace-nowrap">Tags</Label>
+        <div className="flex flex-wrap items-center gap-2">
+          {(popularData ?? []).map((t) => {
+            const selected = tags.some((x) => x.slug === t.slug);
+            return (
+              <Button
+                key={t.slug}
+                size="sm"
+                variant={selected ? "default" : "outline"}
+                onClick={() => {
+                  if (selected) {
+                    setTags(tags.filter((x) => x.slug !== t.slug));
+                  } else {
+                    setTags([...tags, { slug: t.slug, name: t.name }]);
+                  }
                 }}
-              />
-            </PopoverContent>
-          </Popover>
-          <div className="flex flex-wrap gap-2">
-            {tags.map((t) => (
-              <span key={t.slug} className="rounded bg-muted px-2 py-1 text-xs">
+              >
                 {t.name}
-                <button
-                  className="ml-1"
-                  onClick={() => setTags(tags.filter((x) => x.slug !== t.slug))}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
+              </Button>
+            );
+          })}
+        </div>
+
+        <Select
+          onValueChange={(slug) => {
+            const exists = tags.some((t) => t.slug === slug);
+            if (exists) return;
+            const picked = (allTagsData ?? []).find((t) => t.slug === slug);
+            if (picked)
+              setTags([...tags, { slug: picked.slug, name: picked.name }]);
+          }}
+        >
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="More tags" />
+          </SelectTrigger>
+          <SelectContent>
+            {(allTagsData ?? [])
+              .filter(
+                (t) => !(popularData ?? []).some((p) => p.slug === t.slug),
+              )
+              .filter((t) => !tags.some((x) => x.slug === t.slug))
+              .map((t) => (
+                <SelectItem key={t.slug} value={t.slug}>
+                  {t.name}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+
+        {tags.length > 0 && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setTags([])}
+            className="text-muted-foreground"
+          >
+            Clear
+          </Button>
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          {tags.map((t) => (
+            <span key={t.slug} className="rounded bg-muted px-2 py-1 text-xs">
+              {t.name}
+              <button
+                className="ml-1"
+                onClick={() => setTags(tags.filter((x) => x.slug !== t.slug))}
+              >
+                ×
+              </button>
+            </span>
+          ))}
         </div>
       </div>
       <div className="overflow-x-auto rounded-md border">
@@ -145,17 +214,105 @@ export function RecipeList() {
                     </div>
                   </Link>
                   <div className="mt-1 flex flex-wrap items-center gap-1">
-                    <span className="rounded border px-2 py-0.5 text-xs">
-                      {recipe.type}
-                    </span>
+                    {/* Category dropdown chip */}
+                    <Select
+                      value={recipe.type}
+                      onValueChange={(v) =>
+                        updateType.mutate({
+                          id: recipe.id,
+                          type: v as RecipeType,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="h-6 w-auto rounded border px-2 py-0 text-xs">
+                        <SelectValue placeholder={recipe.type} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.values(RecipeType).map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {t}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Existing tags with remove option */}
                     {recipe.tags?.map((rt) => (
                       <span
                         key={rt.tag.id}
-                        className="rounded bg-muted px-2 py-0.5 text-xs"
+                        className="flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-xs"
                       >
                         {rt.tag.name}
+                        <SimpleAlertDialog
+                          title="Remove tag?"
+                          description={`Remove “${rt.tag.name}” from this recipe?`}
+                          confirmText="Remove"
+                          trigger={
+                            <button
+                              aria-label={`Remove ${rt.tag.name}`}
+                              className="-mr-1 ml-1 rounded px-1 text-muted-foreground hover:bg-muted-foreground/10 hover:text-foreground"
+                            >
+                              ×
+                            </button>
+                          }
+                          onConfirm={async () => {
+                            await removeTagFromRecipe.mutateAsync({
+                              recipeId: recipe.id,
+                              tagSlug: rt.tag.slug,
+                            });
+                          }}
+                        />
                       </span>
                     ))}
+
+                    {/* Add tag via + dropdown */}
+                    <Select
+                      value={addSelectValues[recipe.id] ?? ""}
+                      onValueChange={async (slug) => {
+                        if (slug === "__new__") {
+                          openAddTagDialog({
+                            recipeId: recipe.id,
+                            existingTagSlugs: (recipe.tags ?? []).map(
+                              (rt) => rt.tag.slug,
+                            ),
+                            onSuccess: () =>
+                              setAddSelectValues((prev) => ({
+                                ...prev,
+                                [recipe.id]: "",
+                              })),
+                          });
+                          return;
+                        }
+                        await addTagToRecipe.mutateAsync({
+                          recipeId: recipe.id,
+                          tagSlug: slug,
+                        });
+                        // reset selection so user can click + again
+                        setAddSelectValues((prev) => ({
+                          ...prev,
+                          [recipe.id]: "",
+                        }));
+                      }}
+                    >
+                      <SelectTrigger className="h-6 w-auto rounded bg-muted px-2 py-0 text-xs text-muted-foreground hover:bg-muted/80">
+                        +
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        <SelectItem value="__new__">Add new tag…</SelectItem>
+                        {(allTagsData ?? [])
+                          .filter(
+                            (t) =>
+                              !(recipe.tags ?? []).some(
+                                (rt) => rt.tag.slug === t.slug,
+                              ),
+                          )
+                          .map((t) => (
+                            <SelectItem key={t.slug} value={t.slug}>
+                              {t.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </td>
                 <td className="whitespace-nowrap px-3 py-2">
@@ -172,40 +329,4 @@ export function RecipeList() {
   );
 }
 
-function TagSearchList(props: {
-  query: string;
-  onPick: (tag: { slug: string; name: string }) => void;
-}) {
-  const { query, onPick } = props;
-  const { data } = api.tag.search.useQuery({ q: query, limit: 10 });
-  return (
-    <div className="max-h-64 overflow-auto py-1">
-      {data?.length ? (
-        data.map((t) => (
-          <button
-            key={t.id}
-            className="block w-full px-3 py-2 text-left hover:bg-muted"
-            onClick={() => onPick({ slug: t.slug, name: t.name })}
-          >
-            {t.name}
-          </button>
-        ))
-      ) : (
-        <div className="px-3 py-2 text-sm text-muted-foreground">No tags</div>
-      )}
-      {query.trim() && (
-        <button
-          className="block w-full px-3 py-2 text-left hover:bg-muted"
-          onClick={() =>
-            onPick({
-              slug: query.trim().toLowerCase().replace(/\s+/g, "-"),
-              name: query,
-            })
-          }
-        >
-          Use &quot;{query}&quot;
-        </button>
-      )}
-    </div>
-  );
-}
+// TagSearchList removed; using popular buttons + dropdown instead

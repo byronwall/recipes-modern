@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { RecipeType } from "@prisma/client";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
@@ -19,18 +20,27 @@ export const recipeRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
-      const where: any = { userId };
+      const where: Prisma.RecipeWhereInput = { userId };
+
       if (input?.type) where.type = input.type;
       if (input?.includeTags?.length) {
         where.tags = { some: { tag: { slug: { in: input.includeTags } } } };
       }
       if (input?.excludeTags?.length) {
-        where.AND ??= [];
-        where.AND.push({
+        const andArray: Prisma.RecipeWhereInput[] = Array.isArray(where.AND)
+          ? [...where.AND]
+          : where.AND
+            ? [where.AND]
+            : [];
+        andArray.push({
           NOT: { tags: { some: { tag: { slug: { in: input.excludeTags } } } } },
         });
+        where.AND = andArray;
       }
-      if (input?.maxCookMins) where.cookMinutes = { lte: input.maxCookMins };
+      if (input?.maxCookMins)
+        where.cookMinutes = {
+          lte: input.maxCookMins,
+        } as Prisma.IntNullableFilter;
 
       const recipes = await db.recipe.findMany({
         where,
@@ -110,6 +120,26 @@ export const recipeRouter = createTRPCRouter({
             ? { cookMinutes: input.cookMinutes }
             : {}),
         },
+      });
+
+      return updated;
+    }),
+
+  updateRecipeType: protectedProcedure
+    .input(z.object({ id: z.coerce.number(), type: z.nativeEnum(RecipeType) }))
+    .mutation(async ({ input, ctx }) => {
+      const userId = ctx.session.user.id;
+
+      const existing = await db.recipe.findUnique({
+        where: { id: input.id, userId },
+      });
+      if (!existing) {
+        throw new Error("Recipe not found");
+      }
+
+      const updated = await db.recipe.update({
+        where: { id: input.id },
+        data: { type: input.type },
       });
 
       return updated;

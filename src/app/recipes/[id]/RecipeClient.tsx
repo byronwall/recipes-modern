@@ -24,6 +24,7 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { openAddTagDialog } from "~/hooks/use-add-tag-dialog";
 import { IngredientList } from "./IngredientList";
 import { RecipeActions } from "./RecipeActions";
 import { StepList } from "./StepList";
@@ -204,8 +205,7 @@ function InlineTagEditor(props: {
   const { values, onChange, recipeId } = props;
   const [input, setInput] = useState("");
   const { data } = api.tag.search.useQuery({ q: input, limit: 10 });
-  const [addOpen, setAddOpen] = useState(false);
-  const [newTagName, setNewTagName] = useState("");
+  // global add tag dialog used instead of local dialog
   const utils = api.useUtils();
   const upsertTag = api.tag.upsertByName.useMutation();
   const setTagsMutation = api.tag.setTagsForRecipe.useMutation({
@@ -248,70 +248,31 @@ function InlineTagEditor(props: {
             </span>
           ))}
         </div>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="icon" aria-label="Add tag">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add a tag</DialogTitle>
-              <DialogDescription>
-                Create a new tag and add it to this recipe.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-2">
-              <Label htmlFor="new-tag-name">Tag name</Label>
-              <Input
-                id="new-tag-name"
-                value={newTagName}
-                onChange={(e) => setNewTagName(e.target.value)}
-                placeholder="e.g. Vegetarian"
-                autoFocus
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setAddOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={async () => {
-                  const name = newTagName.trim();
-                  if (!name) return;
-                  // avoid duplicates client-side
-                  const exists = values.some(
-                    (v) => v.toLowerCase() === name.toLowerCase(),
-                  );
-                  if (exists) {
-                    setAddOpen(false);
-                    setNewTagName("");
-                    return;
-                  }
-                  if (recipeId) {
-                    await upsertTag.mutateAsync({ name });
-                    const updated = [...values, name];
-                    onChange(updated);
-                    const slugs = updated.map((n) =>
-                      n.toLowerCase().replace(/\s+/g, "-"),
-                    );
-                    await setTagsMutation.mutateAsync({
-                      recipeId,
-                      tagSlugs: slugs,
-                    });
-                  } else {
-                    onChange([...values, name]);
-                  }
-                  setAddOpen(false);
-                  setNewTagName("");
-                }}
-                isLoading={upsertTag.isPending || setTagsMutation.isPending}
-              >
-                Add tag
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label="Add tag"
+          onClick={() =>
+            openAddTagDialog({
+              recipeId,
+              existingTagSlugs: values.map((n) =>
+                n.toLowerCase().replace(/\s+/g, "-"),
+              ),
+              onSuccess: ({ name }) => {
+                const updated = [...values, name];
+                onChange(updated);
+                const slugs = updated.map((n) =>
+                  n.toLowerCase().replace(/\s+/g, "-"),
+                );
+                if (recipeId) {
+                  setTagsMutation.mutate({ recipeId, tagSlugs: slugs });
+                }
+              },
+            })
+          }
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
       </div>
       <Popover>
         <PopoverTrigger asChild>
