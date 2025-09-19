@@ -197,22 +197,23 @@ export function RecipeList() {
             {filteredRecipes.map((recipe) => (
               <tr key={recipe.id} className="border-t">
                 <td className="px-3 py-2">
-                  <Link
-                    href={`/recipes/${recipe.id}`}
-                    className="hover:underline"
-                  >
-                    <div className="flex flex-col">
+                  <div className="flex flex-col">
+                    <Link
+                      href={`/recipes/${recipe.id}`}
+                      className="self-start hover:underline"
+                    >
                       <span className="whitespace-nowrap font-medium">
                         {recipe.name}
                       </span>
-                      {recipe.description &&
-                      recipe.description.trim().toLowerCase() !== "desc" ? (
-                        <span className="line-clamp-2 max-w-[48ch] text-muted-foreground">
-                          {recipe.description}
-                        </span>
-                      ) : null}
-                    </div>
-                  </Link>
+                    </Link>
+                    {recipe.description &&
+                    recipe.description.trim().toLowerCase() !== "desc" ? (
+                      <span className="line-clamp-2 max-w-[48ch] text-muted-foreground">
+                        {recipe.description}
+                      </span>
+                    ) : null}
+                  </div>
+
                   <div className="mt-1 flex flex-wrap items-center gap-1">
                     {/* Category dropdown chip */}
                     <Select
