@@ -184,8 +184,8 @@ export function parseAndValidate(json: unknown): {
     })(),
     tags: Array.isArray((j as any)?.tags)
       ? ((j as any).tags as unknown[])
-          .filter((t: unknown) => typeof t === "string")
-          .map((s: string) => s.trim())
+          .filter((t: unknown): t is string => typeof t === "string")
+          .map((s) => s.trim())
           .filter(Boolean)
       : [],
     servings:
