@@ -21,6 +21,7 @@ export async function MainPageWithNav(props: { children: React.ReactNode }) {
               <NavLink href="/plan">plan</NavLink>
               <NavLink href="/list">list</NavLink>
               <NavLink href="/purchases">purchases</NavLink>
+              <NavLink href="/ai/recipe">ai</NavLink>
               <NavLink href="/kroger">kroger</NavLink>
             </>
           ) : (
