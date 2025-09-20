@@ -1,7 +1,8 @@
-import OpenAI, {
-  type ChatCompletion,
-  type ChatCompletionMessageParam,
-} from "openai";
+import OpenAI from "openai";
+import type {
+  ChatCompletion,
+  ChatCompletionMessageParam,
+} from "openai/resources/chat/completions";
 import { env } from "~/env";
 import type { GenerateRecipeRequest, GeneratedRecipe } from "~/types/ai";
 
