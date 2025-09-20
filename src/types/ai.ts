@@ -15,6 +15,15 @@ export interface GenerateRecipeRequest {
   prompt: string;
   constraints?: GenerateRecipeConstraints;
   regenerateScope?: RegenerateScope;
+  /**
+   * When generating multiple recipes in passes, previously generated recipes
+   * can be provided to encourage variety and avoid duplication.
+   */
+  previousRecipes?: GeneratedRecipe[];
+  /** 1-based index of the current pass when doing multi-pass generation */
+  passIndex?: number;
+  /** Total number of requested passes/recipes */
+  totalPasses?: number;
 }
 
 export type RecipeType =

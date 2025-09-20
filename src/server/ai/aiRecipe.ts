@@ -1,10 +1,26 @@
-import OpenAI from "openai";
+import OpenAI, {
+  type ChatCompletion,
+  type ChatCompletionMessageParam,
+} from "openai";
 import { env } from "~/env";
 import type { GenerateRecipeRequest, GeneratedRecipe } from "~/types/ai";
 
 const modelName = "gpt-4o-mini";
 
-export async function callOpenAI(req: GenerateRecipeRequest): Promise<any> {
+type EmitRecipeArgs = {
+  name: string;
+  description: string;
+  cookMinutes?: number | null;
+  type?: string | null;
+  tags?: string[] | null;
+  servings?: number | null;
+  ingredientGroups: { title: string; ingredients: string[] }[];
+  stepGroups: { title: string; steps: string[] }[];
+};
+
+export async function callOpenAI(
+  req: GenerateRecipeRequest,
+): Promise<EmitRecipeArgs> {
   if (!env.OPENAI_API_KEY) {
     throw new Error("OPENAI_API_KEY is not set");
   }
@@ -13,7 +29,10 @@ export async function callOpenAI(req: GenerateRecipeRequest): Promise<any> {
 
   const systemPrompt = [
     "You are a professional recipe developer and editor.",
-    "Respect user constraints. Prefer concise, clear steps with home-cook-friendly units.",
+    "Respect user constraints, but use good judgment: if a user suggestion will likely produce an unappealing, unsafe, or incoherent recipe, interpret it reasonably and improve it while honoring the spirit.",
+    "When asked to generate multiple recipes in passes, ensure each pass differs meaningfully from the prior recipe(s). Prefer variety in cuisine, cooking method, primary protein, flavor profile, diet, or preparation technique.",
+    "If you cannot achieve a clear difference, introduce variety anyway (e.g., change cuisine, spice profile, cooking technique, or format).",
+    "Prefer concise, clear steps with home-cook-friendly units.",
     "Output via the emit_recipe tool only.",
   ].join(" ");
 
@@ -92,44 +111,65 @@ export async function callOpenAI(req: GenerateRecipeRequest): Promise<any> {
     prompt: req.prompt,
     constraints: req.constraints ?? {},
     regenerateScope: req.regenerateScope ?? "all",
+    previousRecipes: req.previousRecipes ?? [],
+    passIndex: req.passIndex ?? 1,
+    totalPasses: req.totalPasses ?? 1,
+    guidance: {
+      goal: "Generate a recipe that is meaningfully different from the immediately previous recipe if provided.",
+      differenceHints: [
+        "Change cuisine/region",
+        "Change primary protein or make vegetarian/vegan",
+        "Change cooking method (stovetop, oven-roast, grill, pressure cook, slow cook)",
+        "Change flavor profile (herb-forward, smoky, spicy, tangy, umami)",
+        "Change format (soup, salad, bowl, wrap, bake, sheet pan, one-pot)",
+      ],
+      fallback:
+        "If no obvious difference exists, add variety in any reasonable way while keeping constraints.",
+    },
   };
 
-  const chat = await client.chat.completions.create({
+  const messages: ChatCompletionMessageParam[] = [
+    { role: "system", content: systemPrompt },
+    {
+      role: "user",
+      content:
+        "Generate a recipe. Consider previousRecipes (if any) and make this pass different. Payload: " +
+        JSON.stringify(userPayload),
+    },
+  ];
+
+  const chat: ChatCompletion = await client.chat.completions.create({
     model: modelName,
     temperature: 0.7,
-    messages: [
-      { role: "system", content: systemPrompt },
-      {
-        role: "user",
-        content: JSON.stringify(userPayload),
-      },
-    ],
+    messages,
     tools,
     tool_choice: "auto",
   });
 
-  const toolCall = (chat as any)?.choices?.[0]?.message?.tool_calls?.[0];
+  const toolCall = chat?.choices?.[0]?.message?.tool_calls?.[0];
   if (!toolCall) {
     throw new Error("No tool call returned from OpenAI");
   }
-  const args = toolCall.function?.arguments ?? "{}";
-  return JSON.parse(args);
+  const argsStr = toolCall.function?.arguments ?? "{}";
+  const parsed: EmitRecipeArgs = JSON.parse(argsStr);
+  return parsed;
 }
 
-export function parseAndValidate(json: any): {
+export function parseAndValidate(json: unknown): {
   recipe: GeneratedRecipe;
   warnings: string[];
 } {
   const warnings: string[] = [];
+  const j: Record<string, unknown> = (json as Record<string, unknown>) ?? {};
   const recipe: GeneratedRecipe = {
-    name: String(json?.name ?? "Untitled Recipe").trim(),
-    description: String(json?.description ?? "").trim(),
+    name: String((j as any)?.name ?? "Untitled Recipe").trim(),
+    description: String((j as any)?.description ?? "").trim(),
     cookMinutes:
-      typeof json?.cookMinutes === "number" && json.cookMinutes >= 0
-        ? json.cookMinutes
+      typeof (j as any)?.cookMinutes === "number" && (j as any).cookMinutes >= 0
+        ? ((j as any).cookMinutes as number)
         : undefined,
     type: ((): any => {
-      const t = String(json?.type ?? "OTHER").toUpperCase();
+      const t = String((j as any)?.type ?? "OTHER").toUpperCase();
       const allowed = [
         "BREAKFAST",
         "LUNCH",
@@ -141,30 +181,43 @@ export function parseAndValidate(json: any): {
       ];
       return allowed.includes(t) ? (t as any) : "OTHER";
     })(),
-    tags: Array.isArray(json?.tags)
-      ? json.tags
+    tags: Array.isArray((j as any)?.tags)
+      ? ((j as any).tags as unknown[])
           .filter((t: unknown) => typeof t === "string")
           .map((s: string) => s.trim())
           .filter(Boolean)
       : [],
-    servings: typeof json?.servings === "number" ? json.servings : undefined,
-    ingredientGroups: Array.isArray(json?.ingredientGroups)
-      ? json.ingredientGroups.map((g: any, idx: number) => ({
-          title: String(g?.title ?? `Ingredients ${idx + 1}`).trim(),
-          ingredients: Array.isArray(g?.ingredients)
-            ? g.ingredients
-                .map((s: any) => String(s ?? "").trim())
-                .filter(Boolean)
-            : [],
-        }))
+    servings:
+      typeof (j as any)?.servings === "number"
+        ? ((j as any).servings as number)
+        : undefined,
+    ingredientGroups: Array.isArray((j as any)?.ingredientGroups)
+      ? ((j as any).ingredientGroups as unknown[]).map(
+          (g: unknown, idx: number) => {
+            const gg = (g as Record<string, unknown>) ?? {};
+            return {
+              title: String(gg.title ?? `Ingredients ${idx + 1}`).trim(),
+              ingredients: Array.isArray(gg.ingredients)
+                ? (gg.ingredients as unknown[])
+                    .map((s: unknown) => String((s as string) ?? "").trim())
+                    .filter(Boolean)
+                : [],
+            };
+          },
+        )
       : [],
-    stepGroups: Array.isArray(json?.stepGroups)
-      ? json.stepGroups.map((g: any, idx: number) => ({
-          title: String(g?.title ?? `Steps ${idx + 1}`).trim(),
-          steps: Array.isArray(g?.steps)
-            ? g.steps.map((s: any) => String(s ?? "").trim()).filter(Boolean)
-            : [],
-        }))
+    stepGroups: Array.isArray((j as any)?.stepGroups)
+      ? ((j as any).stepGroups as unknown[]).map((g: unknown, idx: number) => {
+          const gg = (g as Record<string, unknown>) ?? {};
+          return {
+            title: String(gg.title ?? `Steps ${idx + 1}`).trim(),
+            steps: Array.isArray(gg.steps)
+              ? (gg.steps as unknown[])
+                  .map((s: unknown) => String((s as string) ?? "").trim())
+                  .filter(Boolean)
+              : [],
+          };
+        })
       : [],
   };
 
