@@ -680,108 +680,106 @@ If you want, I can **stub the UI** (Solid/React) for the Prompt page and the Pre
 
   - Add `OPENAI_API_KEY` to `.env.local`. Keep it server-only.
 
-- **Server module** (`src/server/ai/recipe.ts`)
+- **Server modules**
 
-  - Implement `callOpenAI(request)` using OpenAI Chat Completions with a tool schema that emits the structured recipe JSON (per section 7.2). Use model `gpt-4o-mini` with tool-calling.
-  - Implement `parseAndValidate(json)` to enforce guardrails: ensure ≥1 ingredient group and ≥1 step group, trim lines, clamp counts, and collect warnings.
-  - Implement `toImporterPayload(recipe)` to return text blocks if needed for the existing importer.
-  - Use project aliases (`~`) consistently (e.g., `import { db } from "~/server/db"`).
+  - `src/server/ai/suggest.ts`: returns exactly five `{ title, blurb }` suggestions (strict JSON). Model: `gpt-4o-mini`.
+  - `src/server/ai/generateRecipes.ts`: generates plain-text recipes following the format below for selected suggestions.
 
-- **API route** (`src/app/ai/generate-recipe/route.ts`)
-  - Create a Next.js App Route `POST` handler that accepts `GenerateRecipeRequest`, calls `callOpenAI`, validates, and returns `GenerateRecipeResponse`.
-  - Include `regenerateScope` passthrough to support partial regeneration later.
+- **API routes** (App Router)
+
+  - `POST /api/ai/suggest-recipes` → `src/app/api/ai/suggest-recipes/route.ts`
+    - Request: `{ prompt: string }`
+    - Response: `{ ok: true, suggestions: { title: string, blurb: string }[5] }`
+  - `POST /api/ai/generate-recipes` → `src/app/api/ai/generate-recipes/route.ts`
+    - Request: `{ prompt: string, selections: { title: string }[] }`
+    - Response: `{ ok: true, recipes: { title: string, text: string }[], warnings?: string[] }`
+
+- **Plain-text recipe format (LLM output spec)**
+
+  - First line: Title
+  - Optional: 1–3 sentence description
+  - Blank line
+  - Header: `Ingredients` (or `Ingredients — Group Name`)
+  - Bullet ingredients prefixed with `-`
+  - Blank line
+  - Header: `Steps` (or `Steps — Group Name`)
+  - Numbered steps `1.`, `2.`, ...
+  - Groups may repeat `Ingredients — X` and `Steps — X` pairs
 
 ### 21.2 Persistence (DB Save)
 
-- **New tRPC mutation** (`src/server/api/routers/recipe.ts`)
+- Reuse the existing text importer to parse edited plain text into `Recipe`, `IngredientGroup[]`, `Ingredient[]`, and `StepGroup[]`.
+- Expose a tRPC mutation `recipe.createFromText` (in `src/server/api/routers/recipe.ts`) that accepts `{ title, text }` (or multiple) and uses the importer.
+- Defer `AIGeneration` provenance table to a later version; not required for v1.
 
-  - Add `createRecipeFromAI`: input mirrors `GeneratedRecipe` (name, description, optional cookMinutes/type/tags, `ingredientGroups[]`, `stepGroups[]`).
-  - Implementation:
-    - Insert `Recipe` (include `type` and `cookMinutes` if provided) with `userId` from session.
-    - Create `IngredientGroup[]` with `order = index`, and `Ingredient[]` with `rawInput` set to each line (leave parse fields empty for now).
-    - Create `StepGroup[]` with `steps` string arrays.
-    - If tags provided, connect or create via `db.tag` (use existing tag helpers in `tagRouter` as reference).
-
-- **Alternative (optional)**
-
-  - Convert structured groups to importer text (`[Group]\n...`) and reuse `createRecipeFromTextInput` to centralize parsing. Keep `createRecipeFromAI` for direct structured saves.
-
-- **Provenance (optional)**
-  - For v1, append a short provenance block to `Recipe.description` (prompt, model, date). If you prefer a table, add `AIGeneration` later.
-
-### 21.3 Client UI (Prompt → Preview → Save)
+### 21.3 Client UI (Prompt → Suggestions → Text Editors → Save)
 
 - **Page** (`src/app/ai/recipe/page.tsx`)
 
   - Gate with `useEnforceAuth`.
-  - Provide a large prompt textarea and constraint chips (Servings, Time, Diet, Cuisine, Tools, Skill, Spice).
-  - “Generate” calls `/ai/generate-recipe` and stores the returned `GeneratedRecipe` + `warnings` in state.
-
-- **Preview**
-
-  - Tabs: Form View and Text View.
-    - Form View: editable name/description; group lists with inline edits and add/split/merge.
-    - Text View: render `[Group]` blocks and step blocks exactly as importer expects.
-  - “Regenerate Section”: send `regenerateScope` = `ingredients | steps | all`; merge minimal deltas while preserving user edits where possible.
-  - “Validate”: show warnings and quick-fix actions (normalize units, expand ranges) using client helpers.
+  - Single large prompt textarea; minimal UI.
+  - “Get suggestions” calls `/api/ai/suggest-recipes`.
+  - Render 5 suggestion cards (title + blurb) with checkboxes.
+  - “Generate selected” calls `/api/ai/generate-recipes` to create one plain-text recipe per selection.
+  - Each generated recipe appears in a textarea editor; show warnings beneath (from client-side validation).
 
 - **Save**
-  - Primary action calls `api.recipe.createRecipeFromAI.mutateAsync(...)` with the edited structure.
-  - Post-save: toast with link; optional modals “Add to Shopping List?” and “Plan a date?” (reuse existing flows).
 
-### 21.4 Validation & Guardrails
+  - Allow save per recipe or “Save all”; call `recipe.createFromText` for each.
+  - After save: toast with link; optional modals “Add to Shopping List?” / “Plan a date?”.
 
-- Server `parseAndValidate` performs minimum structure checks and trimming.
-- Client mirrors key checks to provide instant feedback.
-- Keep counts sane: 3–24 ingredient lines, 3–15 steps; ensure non-empty group titles.
+### 21.4 Validation & Guardrails (text-focused)
+
+- Title present (first non-empty line).
+- Has an `Ingredients` section with ≥1 `-` bullet.
+- Has a `Steps` section with ≥3 numbered steps.
+- Optional grouped sections allowed via `—` in headers; each group must have ≥1 line.
+- Warn on exotic units or suspicious times; do not block save unless structure is missing.
 
 ### 21.5 Security & Limits
 
-- Keep `OPENAI_API_KEY` server-side only; never expose to the client.
-- Protect endpoints with session checks (reuse `protectedProcedure` for tRPC; in App Route, read session and reject if missing).
-- Add simple per-user rate limiting for generation (e.g., cap N/day) in the App Route.
+- Keep `OPENAI_API_KEY` server-side only.
+- Protect API routes with session checks; reject unauthenticated users.
+- Add simple per-user daily caps for generation.
 
 ### 21.6 Observability
 
 - Log: user id, latency, token usage (if available), success/failure, warning counts.
-- Emit events: `ai.generate.started|succeeded|failed`, `recipe.saved`.
+- Emit events: `ai.suggest.started|succeeded|failed`, `ai.generate.started|succeeded|failed`, `recipe.saved`.
 
 ### 21.7 Testing
 
-- Unit: `parseAndValidate`, enum/type coercion (`RecipeType`), text block rendering.
-- Integration: end-to-end generate → preview → save; tag `connectOrCreate`.
-- Fixtures: vegetarian/vegan, gluten-free, quick 15–30 min, budget, kids.
+- Unit: text validation, importer parsing for ingredients/steps/groups.
+- Integration: prompt → suggestions → generate → edit → save.
+- Fixtures: vegetarian/vegan, gluten-free, 15–30 min, budget, kids.
 
 ### 21.8 Rollout
 
 - Add “AI Recipe” entry to creation UI/nav.
-- Alpha (internal): enable for signed-in owner; log all outputs.
-- Beta: enable for users; rate limit; add thumbs-up/down with comment.
+- Alpha (internal): enable for owner; log all outputs.
+- Beta: enable for users; rate limit; collect thumbs-up/down with comment.
 
 ### 21.9 Concrete Tasks (Checklist)
 
 - **Backend**
 
-  - [ ] Create `src/server/ai/recipe.ts` with `callOpenAI`, `parseAndValidate`, `toImporterPayload`.
-  - [ ] Add App Route `src/app/ai/generate-recipe/route.ts` (POST) returning `GenerateRecipeResponse`.
-  - [ ] Add tRPC mutation `recipe.createRecipeFromAI` (structured save) in `src/server/api/routers/recipe.ts`.
-  - [ ] Implement tag connect/create logic (reuse `tagRouter` patterns).
+  - [ ] Add `src/server/ai/suggest.ts` and `src/server/ai/generateRecipes.ts`.
+  - [ ] Add App Routes `src/app/api/ai/suggest-recipes/route.ts` and `src/app/api/ai/generate-recipes/route.ts`.
+  - [ ] Add tRPC mutation `recipe.createFromText` in `src/server/api/routers/recipe.ts` (uses importer).
   - [ ] Add basic per-user rate limiting and logging.
 
 - **Client**
 
-  - [ ] Build `src/app/ai/recipe/page.tsx` with prompt + constraints and Generate button.
-  - [ ] Implement Preview editor (Form + Text tabs) with inline edits and warnings.
-  - [ ] Implement Regenerate Section using `regenerateScope`.
-  - [ ] Implement Save via `api.recipe.createRecipeFromAI` and show post-save CTAs.
+  - [ ] Build `src/app/ai/recipe/page.tsx` with prompt + suggestions flow.
+  - [ ] Implement text editors per generated recipe with warnings display.
+  - [ ] Implement save per recipe and “Save all”.
 
 - **Infra**
 
   - [ ] `npm i openai`; add `OPENAI_API_KEY` to `.env.local`.
-  - [ ] Verify path aliases (`~`) in tsconfig; avoid mixing `@/` and `~/`.
-  - [ ] Add minimal telemetry (console or your logging solution).
+  - [ ] Minimal telemetry (console or your logging solution).
 
 - **Optional Enhancements**
-  - [ ] Add `AIGeneration` table for audit trail.
-  - [ ] Background parser to enrich `Ingredient` parse fields after insert.
-  - [ ] Cache prompt+constraints hash to avoid duplicate charges.
+
+  - [ ] Cache prompt hash to avoid duplicate charges.
+  - [ ] Add provenance table `AIGeneration` if needed later.
