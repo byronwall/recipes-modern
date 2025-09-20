@@ -674,3 +674,65 @@ module.exports = {
 ---
 
 If you want, I can also add a tiny **“derivatives”** (thumb/large) job that listens for new objects and writes resized variants back to the same bucket (using `sharp`) — also fully containerized and zero-touch.
+
+---
+
+### Plan + Steps
+
+- **Add Prisma models**
+
+  - Create `ImageRole`, `Image`, `RecipeImage` in `prisma/schema.prisma` per the schema above.
+  - Run migrations: `npx prisma migrate dev -n images_support`.
+
+- **Environment & config**
+
+  - Add `.env` vars: `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `PUBLIC_MEDIA_HOST`, `IMAGE_MAX_SIZE_MB`.
+  - Update `docker-compose.yaml` to include `minio` and `minio-init` sidecar; mount `infra/minio/cors.json`.
+  - Add `infra/minio/cors.json` and set CORS for localhost and prod.
+  - Update `next.config.js` `images.remotePatterns` to allow `${PUBLIC_MEDIA_HOST}` and `minio`.
+
+- **Server: S3 utilities**
+
+  - Add `src/server/lib/s3.ts` with `S3Client`, `createPutUrl`, and `headObject` helpers.
+  - Install deps: `npm i @aws-sdk/client-s3 @aws-sdk/s3-request-presigner sharp`.
+
+- **tRPC router**
+
+  - Create `src/server/api/routers/imagesRouter.ts` with:
+    - `getUploadUrl(input: { recipeId, role, mime, stepGroupId?, stepIndex?, ext? })` → `{ key, url }` using pre-signed PUT.
+    - `confirmUpload(input: { recipeId, role, key, alt?, caption?, order?, stepGroupId?, stepIndex? })` → creates `Image` and `RecipeImage` after probing object and `sharp` metadata.
+  - Register router in `src/server/api/root.ts` as `images: imagesRouter`.
+
+- **Recipe queries**
+
+  - Extend `recipe.getRecipe` include to fetch linked images once models exist (e.g., `RecipeImage` with `Image`).
+  - Optionally expose `images.listForRecipe(recipeId)` for client galleries.
+
+- **Client UI**
+
+  - Add a simple uploader to `src/app/recipes/[id]/RecipeClient.tsx`:
+    - File input/dropzone → call `getUploadUrl`, PUT directly to bucket, then `confirmUpload`.
+    - Show gallery grid for `GALLERY` images; choose `HERO` via action.
+  - Use `next/image` to render; pass remote URLs as `https://${PUBLIC_MEDIA_HOST}/${S3_BUCKET}/${key}` (or via signed GET if private).
+
+- **Ordering and metadata**
+
+  - Add reorder mutation to update `RecipeImage.order`.
+  - Inline edit for `caption` and `alt` via small inputs.
+
+- **Delete/unlink**
+
+  - Mutation to unlink `RecipeImage` (and optionally delete `Image` + object if no other links).
+
+- **Guardrails**
+
+  - Validate MIME and file size server-side before issuing PUT URL.
+  - Compute and persist `sha256`; consider de-dupe by reusing existing `Image` if `sha256` already exists.
+
+- **Rollout**
+  - 1. Migrate DB and deploy MinIO (or configure S3/R2).
+  - 2. Add S3 utils and `images` router; register in app router.
+  - 3. Wire `next.config.js` `remotePatterns`.
+  - 4. Implement minimal uploader UI and gallery on recipe page.
+  - 5. Add reorder, alt/caption edits, and delete/unlink.
+  - 6. Later: write back derivatives (`thumb/`, `lg/`) or add imgproxy.
