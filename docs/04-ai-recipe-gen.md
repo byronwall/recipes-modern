@@ -688,8 +688,39 @@ If you want, I can **stub the UI** (Solid/React) for the Prompt page and the Pre
 - **API routes** (App Router)
 
   - `POST /api/ai/suggest-recipes` → `src/app/api/ai/suggest-recipes/route.ts`
-    - Request: `{ prompt: string }`
-    - Response: `{ ok: true, suggestions: { title: string, blurb: string }[5] }`
+
+---
+
+## 22) Complete and remaining work
+
+**Complete**
+
+- Backend: `OPENAI_API_KEY` env support in `src/env.js`.
+- Shared types: AI recipe request/response in `src/types/ai.ts`.
+- Server core: OpenAI tool-call + parser in `src/server/ai/aiRecipe.ts`.
+- tRPC: `ai.generateRecipe` mutation in `src/server/api/routers/aiRouter.ts` and registered in `appRouter`.
+- Removed REST route in favor of tRPC.
+- Minimal UI: Prompt + preview page at `src/app/ai/recipe/page.tsx`.
+- Dependency: Installed `openai` SDK.
+
+**Remaining (v1)**
+
+- Save flow: map generated recipe to `Recipe`/`IngredientGroup`/`StepGroup` and persist.
+- Refinement: support `regenerateScope` and iterative edits in UI.
+- Validation UX: display warnings and highlight missing pieces.
+- Tags: connectOrCreate via `tagRouter` and show chips.
+- Auth gating: require login on AI page, associate user on save.
+- Telemetry/logging: basic audit of generations.
+- Examples presets: one-click example prompts.
+
+**Nice-to-have**
+
+- Rate limiting and usage quotas.
+- Admin view of generations.
+- Error states and retries with backoff.
+
+  - Request: `{ prompt: string }`
+  - Response: `{ ok: true, suggestions: { title: string, blurb: string }[5] }`
   - `POST /api/ai/generate-recipes` → `src/app/api/ai/generate-recipes/route.ts`
     - Request: `{ prompt: string, selections: { title: string }[] }`
     - Response: `{ ok: true, recipes: { title: string, text: string }[], warnings?: string[] }`

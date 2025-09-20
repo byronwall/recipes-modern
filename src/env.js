@@ -26,6 +26,7 @@ export const env = createEnv({
     CLIENT_SECRET: z.string(),
     NEXT_REDIRECT_URI: z.string(),
     NEXT_SKIP_ADD_TO_CART: z.enum(["true", "false"]).default("false"),
+    OPENAI_API_KEY: z.string(),
   },
 
   /**
@@ -50,6 +51,7 @@ export const env = createEnv({
     CLIENT_SECRET: process.env.CLIENT_SECRET,
     NEXT_REDIRECT_URI: process.env.NEXT_REDIRECT_URI,
     NEXT_SKIP_ADD_TO_CART: process.env.NEXT_SKIP_ADD_TO_CART,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
