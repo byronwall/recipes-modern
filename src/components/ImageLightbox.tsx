@@ -59,17 +59,16 @@ export function ImageLightbox(props: ImageLightboxProps) {
   }, [handleKeyDown]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
       <DialogContent
-        // full-screen content
         className={cn(
-          "fixed inset-0 z-50 grid h-[100dvh] w-screen max-w-none translate-x-0 translate-y-0 gap-0 border-0 bg-black/95 p-0 sm:rounded-none",
+          "fixed inset-0 z-50 grid h-[100dvh] w-screen max-w-none translate-x-0 translate-y-0 gap-0 border-0 bg-black/70 p-0 sm:rounded-none",
           className,
         )}
       >
         <div className="relative flex h-full w-full items-center justify-center">
           <Carousel
-            className="mx-auto w-full max-w-6xl"
+            className="mx-auto w-full max-w-[90dvw]"
             opts={{
               loop: images.length > 1,
               dragFree: false,
