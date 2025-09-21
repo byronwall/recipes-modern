@@ -58,6 +58,11 @@ export function ImageLightbox(props: ImageLightboxProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
+  const handleOverlayClick = useCallback(() => {
+    if (!open) return;
+    onOpenChange(false);
+  }, [open, onOpenChange]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
       <DialogContent
@@ -66,47 +71,59 @@ export function ImageLightbox(props: ImageLightboxProps) {
           className,
         )}
       >
-        <div className="relative flex h-full w-full items-center justify-center">
-          <Carousel
-            className="mx-auto w-full max-w-[90dvw]"
-            opts={{
-              loop: images.length > 1,
-              dragFree: false,
-              align: "center",
-            }}
-            setApi={setApi}
-          >
-            <CarouselContent>
-              {images.map((img, idx) => (
-                <CarouselItem
-                  key={idx}
-                  className="flex items-center justify-center"
-                >
-                  <figure className="relative flex max-h-[85dvh] w-full items-center justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={img.url}
-                      alt={img.alt ?? ""}
-                      className="max-h-[85dvh] max-w-full select-none rounded-md object-contain"
-                      draggable={false}
-                    />
-                    {img.caption ? (
-                      <figcaption className="pointer-events-none absolute bottom-4 left-1/2 w-[90%] -translate-x-1/2 truncate text-center text-sm text-white/80">
-                        {img.caption}
-                      </figcaption>
-                    ) : null}
-                  </figure>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
+        <div
+          className="relative flex h-full w-full items-center justify-center"
+          onClick={handleOverlayClick}
+        >
+          <div className="mx-auto w-full max-w-[90dvw] border">
+            <Carousel
+              className="w-full"
+              opts={{
+                loop: images.length > 1,
+                dragFree: false,
+                align: "center",
+              }}
+              setApi={setApi}
+            >
+              <CarouselContent>
+                {images.map((img, idx) => (
+                  <CarouselItem
+                    key={idx}
+                    className="flex items-center justify-center"
+                  >
+                    <figure className="relative flex max-h-[85dvh] w-full items-center justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={img.url}
+                        alt={img.alt ?? ""}
+                        className="max-h-[85dvh] max-w-full select-none rounded-md object-contain"
+                        draggable={false}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      {img.caption ? (
+                        <figcaption className="pointer-events-none absolute bottom-4 left-1/2 w-[90%] -translate-x-1/2 truncate text-center text-sm text-white/80">
+                          {img.caption}
+                        </figcaption>
+                      ) : null}
+                    </figure>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
 
-            {images.length > 1 ? (
-              <>
-                <CarouselPrevious className="left-4 top-1/2 -translate-y-1/2 border-0 bg-black/50 text-white hover:bg-black/70" />
-                <CarouselNext className="right-4 top-1/2 -translate-y-1/2 border-0 bg-black/50 text-white hover:bg-black/70" />
-              </>
-            ) : null}
-          </Carousel>
+              {images.length > 1 ? (
+                <>
+                  <CarouselPrevious
+                    className="left-4 top-1/2 -translate-y-1/2 border-0 bg-black/50 text-white hover:bg-black/70"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <CarouselNext
+                    className="right-4 top-1/2 -translate-y-1/2 border-0 bg-black/50 text-white hover:bg-black/70"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </>
+              ) : null}
+            </Carousel>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
