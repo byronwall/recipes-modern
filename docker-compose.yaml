@@ -3,6 +3,7 @@ version: "3.8"
 services:
   web-app:
     build: .
+    profiles: ["prod"]
     ports:
       - "3000"
     depends_on:
@@ -20,6 +21,34 @@ services:
       S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
       S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
       PUBLIC_MEDIA_HOST: ${PUBLIC_MEDIA_HOST}
+
+  web-app-dev:
+    image: node:20
+    working_dir: /app
+    profiles: ["dev"]
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - minio
+      - minio-init
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: development
+      HOT_RELOAD: ${HOT_RELOAD:-true}
+      WATCHPACK_POLLING: ${HOT_RELOAD:-true}
+      CHOKIDAR_USEPOLLING: ${HOT_RELOAD:-true}
+      CHOKIDAR_INTERVAL: ${CHOKIDAR_INTERVAL:-300}
+      # Ensure Next.js listens on all interfaces inside the container
+      HOSTNAME: 0.0.0.0
+      # Ensure the app connects to the db service hostname
+      DATABASE_URL: postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@db:5432/${DATABASE_NAME}
+    volumes:
+      - ./:/app:delegated
+      - /app/node_modules
+      - /app/.next
+    command: sh -c "npm ci && npx prisma generate && npm run dev -- -p 3000 -H 0.0.0.0"
 
   db:
     image: postgres:13
