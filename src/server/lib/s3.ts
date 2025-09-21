@@ -2,6 +2,7 @@ import {
   S3Client,
   HeadObjectCommand,
   PutObjectCommand,
+  DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -44,5 +45,11 @@ export async function createPutUrl(
 export async function headObject(key: string) {
   return s3Internal.send(
     new HeadObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: key }),
+  );
+}
+
+export async function deleteObject(key: string) {
+  return s3Internal.send(
+    new DeleteObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: key }),
   );
 }

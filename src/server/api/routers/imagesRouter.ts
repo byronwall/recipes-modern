@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { createPutUrl, headObject } from "~/server/lib/s3";
+import { createPutUrl, headObject, deleteObject } from "~/server/lib/s3";
 import crypto from "node:crypto";
 import sharp from "sharp";
 import { db } from "~/server/db";
@@ -94,5 +94,50 @@ export const imagesRouter = createTRPCRouter({
       });
 
       return created;
+    }),
+
+  deleteRecipeImage: protectedProcedure
+    .input(
+      z.union([
+        z.object({ recipeImageId: z.number() }),
+        z.object({ imageId: z.number(), recipeId: z.number() }),
+      ]),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Resolve the RecipeImage to delete and verify ownership
+      const where =
+        "recipeImageId" in input
+          ? { id: input.recipeImageId }
+          : { imageId: input.imageId, recipeId: input.recipeId };
+
+      const recipeImage = await db.recipeImage.findFirst({
+        where,
+        include: { image: true, recipe: { select: { userId: true } } },
+      });
+
+      if (!recipeImage) {
+        throw new Error("Image link not found");
+      }
+
+      if (recipeImage.recipe.userId !== ctx.session.user.id) {
+        throw new Error("Not authorized to delete this image");
+      }
+
+      // Delete the recipe-image link
+      await db.recipeImage.delete({ where: { id: recipeImage.id } });
+
+      // If no more links reference this image, delete the image and S3 object
+      const remaining = await db.recipeImage.count({
+        where: { imageId: recipeImage.imageId },
+      });
+      if (remaining === 0) {
+        // Best-effort S3 cleanup; ignore failures so UI isn't blocked
+        try {
+          await deleteObject(recipeImage.image.key);
+        } catch {}
+        await db.image.delete({ where: { id: recipeImage.imageId } });
+      }
+
+      return { success: true } as const;
     }),
 });

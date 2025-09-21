@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { RecipeType } from "@prisma/client";
-import { ImagePlus, Pencil, Plus } from "lucide-react";
+import { ImagePlus, Pencil, Plus, Trash } from "lucide-react";
 import { H2 } from "~/components/ui/typography";
 import { Button } from "~/components/ui/button";
 import {
@@ -30,6 +30,7 @@ import { RecipeActions } from "./RecipeActions";
 import { StepList } from "./StepList";
 import { CookingModeOverlay } from "./CookingModeOverlay";
 import ImageLightbox from "~/components/ImageLightbox";
+import SimpleAlertDialog from "~/components/SimpleAlertDialog";
 
 export type Recipe = NonNullable<RouterOutputs["recipe"]["getRecipe"]>;
 
@@ -68,6 +69,11 @@ export function RecipeClient(props: { id: number }) {
 
   const getUploadUrl = api.images.getUploadUrl.useMutation();
   const confirmUpload = api.images.confirmUpload.useMutation({
+    onSuccess: async () => {
+      await utils.recipe.getRecipe.invalidate({ id });
+    },
+  });
+  const deleteImageMutation = api.images.deleteRecipeImage.useMutation({
     onSuccess: async () => {
       await utils.recipe.getRecipe.invalidate({ id });
     },
@@ -308,7 +314,7 @@ export function RecipeClient(props: { id: number }) {
               return (
                 <div
                   key={ri.imageId}
-                  className="group overflow-hidden rounded-lg ring-1 ring-muted"
+                  className="group relative overflow-hidden rounded-lg ring-1 ring-muted"
                 >
                   <button
                     type="button"
@@ -326,6 +332,26 @@ export function RecipeClient(props: { id: number }) {
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   </button>
+                  <SimpleAlertDialog
+                    trigger={
+                      <button
+                        type="button"
+                        className="absolute bottom-2 right-2 inline-flex h-7 w-7 items-center justify-center rounded-md bg-black/60 text-white opacity-90 shadow hover:opacity-100 focus:outline-none"
+                        aria-label="Delete image"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </button>
+                    }
+                    title="Delete this image?"
+                    description="This will remove the image from this recipe."
+                    confirmText="Delete"
+                    onConfirm={async () => {
+                      await deleteImageMutation.mutateAsync({
+                        recipeImageId: ri.id,
+                      });
+                    }}
+                  />
                   {ri.caption ? (
                     <div className="px-2 py-1 text-xs text-muted-foreground">
                       {ri.caption}
