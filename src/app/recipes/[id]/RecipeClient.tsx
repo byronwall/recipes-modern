@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { RecipeType } from "@prisma/client";
-import { Pencil, Plus } from "lucide-react";
+import { ImagePlus, Pencil, Plus } from "lucide-react";
 import { H2 } from "~/components/ui/typography";
 import { Button } from "~/components/ui/button";
 import {
@@ -58,6 +58,9 @@ export function RecipeClient(props: { id: number }) {
   const [description, setDescription] = useState("");
   const [type, setType] = useState<RecipeType | undefined>(undefined);
   const [tags, setTags] = useState<string[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const getUploadUrl = api.images.getUploadUrl.useMutation();
   const confirmUpload = api.images.confirmUpload.useMutation({
@@ -66,8 +69,7 @@ export function RecipeClient(props: { id: number }) {
     },
   });
 
-  async function handleFileSelected(file: File) {
-    if (!file) return;
+  async function uploadSingleFile(file: File) {
     const { key, url } = await getUploadUrl.mutateAsync({
       recipeId: id,
       role: "GALLERY",
@@ -83,6 +85,21 @@ export function RecipeClient(props: { id: number }) {
     if (!put.ok) throw new Error("Upload failed");
 
     await confirmUpload.mutateAsync({ recipeId: id, role: "GALLERY", key });
+  }
+
+  async function handleFilesSelected(files: FileList | File[]) {
+    const list = Array.from(files ?? []);
+    if (!list.length) return;
+    setIsUploading(true);
+    try {
+      for (const f of list) {
+        // Upload sequentially to keep API simple
+        // eslint-disable-next-line no-await-in-loop
+        await uploadSingleFile(f);
+      }
+    } finally {
+      setIsUploading(false);
+    }
   }
 
   if (!recipe) {
@@ -222,32 +239,93 @@ export function RecipeClient(props: { id: number }) {
 
       <div className="mt-6 space-y-2">
         <Label>Images</Label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) void handleFileSelected(f);
+        <div
+          className={`group relative flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-dashed p-4 transition-colors ${
+            isDragOver ? "border-primary bg-primary/5" : "border-muted"
+          }`}
+          onClick={() => fileInputRef.current?.click()}
+          onDragEnter={(e) => {
+            e.preventDefault();
+            setIsDragOver(true);
           }}
-        />
-        {recipe.images?.length ? (
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-            {recipe.images.map((ri) => (
-              <div key={ri.imageId} className="overflow-hidden rounded border">
-                <img
-                  src={`${process.env.NEXT_PUBLIC_MEDIA_BASE_URL ?? `https://${process.env.NEXT_PUBLIC_MEDIA_HOST ?? "recipes-media.byroni.us"}/${process.env.NEXT_PUBLIC_S3_BUCKET ?? "recipes-media"}`}/${ri.image.key}`}
-                  alt={ri.image.alt ?? ""}
-                  className="h-40 w-full object-cover"
-                />
-                {ri.caption ? (
-                  <div className="p-1 text-xs text-muted-foreground">
-                    {ri.caption}
-                  </div>
-                ) : null}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragOver(true);
+          }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragOver(false);
+            if (e.dataTransfer.files?.length) {
+              void handleFilesSelected(e.dataTransfer.files);
+            }
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted text-muted-foreground group-hover:bg-primary/10">
+              <ImagePlus className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-sm font-medium">Drag & drop images</div>
+              <div className="text-xs text-muted-foreground">
+                or click to choose files
               </div>
-            ))}
+            </div>
           </div>
-        ) : null}
+          <Button variant="outline" size="sm" isLoading={isUploading}>
+            {isUploading ? "Uploading..." : "Choose files"}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files?.length) {
+                void handleFilesSelected(e.target.files);
+                // reset input so same file can be selected again
+                e.currentTarget.value = "";
+              }
+            }}
+          />
+        </div>
+
+        {recipe.images?.length ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            {recipe.images.map((ri) => {
+              const base =
+                process.env.NEXT_PUBLIC_MEDIA_BASE_URL ??
+                `https://${
+                  process.env.NEXT_PUBLIC_MEDIA_HOST ??
+                  "recipes-media.byroni.us"
+                }/${process.env.NEXT_PUBLIC_S3_BUCKET ?? "recipes-media"}`;
+              const url = `${base}/${ri.image.key}`;
+              return (
+                <div
+                  key={ri.imageId}
+                  className="group overflow-hidden rounded-lg ring-1 ring-muted"
+                >
+                  <div className="aspect-[4/3] w-full overflow-hidden">
+                    <img
+                      src={url}
+                      alt={ri.image.alt ?? ""}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  </div>
+                  {ri.caption ? (
+                    <div className="px-2 py-1 text-xs text-muted-foreground">
+                      {ri.caption}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-sm text-muted-foreground">No images yet</div>
+        )}
       </div>
     </div>
   );
