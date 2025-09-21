@@ -45,14 +45,26 @@ export const recipeRouter = createTRPCRouter({
       const recipes = await db.recipe.findMany({
         where,
         orderBy: { name: "asc" },
-        include: { tags: { include: { tag: true } } },
+        include: {
+          tags: { include: { tag: true } },
+          images: {
+            include: { image: true },
+            orderBy: [{ role: "asc" }, { order: "asc" }],
+          },
+        },
       });
       return recipes;
     }),
   getRecipes: protectedProcedure.query(async ({ ctx }) => {
     const recipes = db.recipe.findMany({
       where: { userId: ctx.session.user.id },
-      include: { tags: { include: { tag: true } } },
+      include: {
+        tags: { include: { tag: true } },
+        images: {
+          include: { image: true },
+          orderBy: [{ role: "asc" }, { order: "asc" }],
+        },
+      },
     });
     return recipes ?? [];
   }),
@@ -70,6 +82,7 @@ export const recipeRouter = createTRPCRouter({
             include: { ingredients: true },
           },
           tags: { include: { tag: true } },
+          images: { include: { image: true } },
         },
       });
 

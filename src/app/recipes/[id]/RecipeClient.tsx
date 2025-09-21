@@ -59,6 +59,32 @@ export function RecipeClient(props: { id: number }) {
   const [type, setType] = useState<RecipeType | undefined>(undefined);
   const [tags, setTags] = useState<string[]>([]);
 
+  const getUploadUrl = api.images.getUploadUrl.useMutation();
+  const confirmUpload = api.images.confirmUpload.useMutation({
+    onSuccess: async () => {
+      await utils.recipe.getRecipe.invalidate({ id });
+    },
+  });
+
+  async function handleFileSelected(file: File) {
+    if (!file) return;
+    const { key, url } = await getUploadUrl.mutateAsync({
+      recipeId: id,
+      role: "GALLERY",
+      mime: file.type,
+      ext: file.name.match(/\.[^./]+$/)?.[0],
+    });
+
+    const put = await fetch(url, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+    if (!put.ok) throw new Error("Upload failed");
+
+    await confirmUpload.mutateAsync({ recipeId: id, role: "GALLERY", key });
+  }
+
   if (!recipe) {
     return <div>Recipe not found</div>;
   }
@@ -193,6 +219,36 @@ export function RecipeClient(props: { id: number }) {
       <StepList recipe={recipe} />
 
       <CookingModeOverlay recipe={recipe} />
+
+      <div className="mt-6 space-y-2">
+        <Label>Images</Label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void handleFileSelected(f);
+          }}
+        />
+        {recipe.images?.length ? (
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            {recipe.images.map((ri) => (
+              <div key={ri.imageId} className="overflow-hidden rounded border">
+                <img
+                  src={`${process.env.NEXT_PUBLIC_MEDIA_BASE_URL ?? `https://${process.env.NEXT_PUBLIC_MEDIA_HOST ?? "recipes-media.byroni.us"}/${process.env.NEXT_PUBLIC_S3_BUCKET ?? "recipes-media"}`}/${ri.image.key}`}
+                  alt={ri.image.alt ?? ""}
+                  className="h-40 w-full object-cover"
+                />
+                {ri.caption ? (
+                  <div className="p-1 text-xs text-muted-foreground">
+                    {ri.caption}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

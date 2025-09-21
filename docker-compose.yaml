@@ -7,21 +7,19 @@ services:
       - "3000"
     depends_on:
       - db
+      - minio
+      - minio-init
     env_file:
       - .env
-    labels:
-      - traefik.enable=true
-      - traefik.http.middlewares.gzip.compress=true
-      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
-      - traefik.http.routers.http-0-r8c8c8kwscwwo804c48oswgo.entryPoints=http
-      - traefik.http.routers.http-0-r8c8c8kwscwwo804c48oswgo.middlewares=redirect-to-https
-      - "traefik.http.routers.http-0-r8c8c8kwscwwo804c48oswgo.rule=Host(`recipes.byroni.us`) && PathPrefix(`/`)"
-      - traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.entryPoints=https
-      - traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.middlewares=gzip
-      - "traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.rule=Host(`recipes.byroni.us`) && PathPrefix(`/`)"
-      - traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.tls.certresolver=letsencrypt
-      - traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.tls=true
-      - traefik.http.services.https-0-r8c8c8kwscwwo804c48oswgo.loadbalancer.server.port=3000
+    environment:
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_ENDPOINT_PUBLIC: ${S3_ENDPOINT_PUBLIC}
+      S3_ENDPOINT_INTERNAL: ${S3_ENDPOINT_INTERNAL}
+      S3_REGION: ${S3_REGION}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      PUBLIC_MEDIA_HOST: ${PUBLIC_MEDIA_HOST}
 
   db:
     image: postgres:13
@@ -34,5 +32,97 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
 
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: ${S3_BUCKET}
+      APP_ORIGINS: ${APP_ORIGINS}
+      CORS_ALLOWED_METHODS: ${CORS_ALLOWED_METHODS}
+      CORS_MAX_AGE: ${CORS_MAX_AGE}
+    command: |
+      set -eu
+      echo "Configuring MinIO (bucket, policy, CORS)"
+      mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
+      if ! mc ls local/"$$S3_BUCKET" >/dev/null 2>&1; then
+        mc mb --ignore-existing local/"$$S3_BUCKET"
+      fi
+      # Public read (download). Change to 'none' for private buckets.
+      mc anonymous set download local/"$$S3_BUCKET"
+
+      # Build CORS JSON from env vars without external tools
+      APP_ORIGINS_VAL="$$APP_ORIGINS"
+      [ -z "$$APP_ORIGINS_VAL" ] && APP_ORIGINS_VAL="http://localhost:3000"
+      METHODS_VAL="$$CORS_ALLOWED_METHODS"
+      [ -z "$$METHODS_VAL" ] && METHODS_VAL="GET,PUT"
+      MAX_AGE_VAL="$$CORS_MAX_AGE"
+      [ -z "$$MAX_AGE_VAL" ] && MAX_AGE_VAL="3600"
+
+      ORIGINS_JSON="["
+      OIFS="$$IFS"; IFS=','
+      set -- $$APP_ORIGINS_VAL
+      for origin in "$$@"; do
+        # trim leading/trailing whitespace using parameter expansion
+        origin="$$origin"
+        origin="$${origin#"$${origin%%[![:space:]]*}"}"
+        origin="$${origin%"$${origin##*[![:space:]]}"}"
+        [ -z "$$origin" ] && continue
+        if [ "$$ORIGINS_JSON" != "[" ]; then ORIGINS_JSON="$$ORIGINS_JSON,"; fi
+        ORIGINS_JSON="$$ORIGINS_JSON\"$$origin\""
+      done
+      IFS="$$OIFS"
+      ORIGINS_JSON="$$ORIGINS_JSON]"
+
+      METHODS_JSON="["
+      OIFS2="$$IFS"; IFS=','
+      set -- $$METHODS_VAL
+      for m in "$$@"; do
+        m="$$m"
+        m="$${m#"$${m%%[![:space:]]*}"}"
+        m="$${m%"$${m##*[![:space:]]}"}"
+        [ -z "$$m" ] && continue
+        if [ "$$METHODS_JSON" != "[" ]; then METHODS_JSON="$$METHODS_JSON,"; fi
+        METHODS_JSON="$$METHODS_JSON\"$$m\""
+      done
+      IFS="$$OIFS2"
+      METHODS_JSON="$$METHODS_JSON]"
+
+      cat > /tmp/cors.effective.json <<EOF
+      [
+        {
+          "AllowedHeaders": ["*"],
+          "AllowedMethods": $$METHODS_JSON,
+          "AllowedOrigins": $$ORIGINS_JSON,
+          "ExposeHeaders": ["ETag"],
+          "MaxAgeSeconds": $$MAX_AGE_VAL
+        }
+      ]
+      EOF
+
+      mc cors set local/"$$S3_BUCKET" /tmp/cors.effective.json
+
 volumes:
   db-data:
+  minio-data:

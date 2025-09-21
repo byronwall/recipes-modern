@@ -1,5 +1,6 @@
 import { z } from "zod";
 import bcrypt from "bcrypt";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 
@@ -14,6 +15,15 @@ export const userRouter = createTRPCRouter({
     .mutation(async ({ input }) => {
       // hash the password
       console.log("trying to create user", input);
+
+      // server-side guard: only allow registration if no users exist
+      const userCount = await db.user.count();
+      if (userCount > 0) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Registration is disabled",
+        });
+      }
 
       const hashedPassword = await bcrypt.hash(input.password, 10);
 

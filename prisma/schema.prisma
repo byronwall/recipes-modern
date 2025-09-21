@@ -54,6 +54,9 @@ model Recipe {
     userId String
     User   User   @relation(fields: [userId], references: [id])
 
+    // images linked to this recipe
+    images RecipeImage[]
+
     @@index([type])
 }
 
@@ -103,6 +106,9 @@ model StepGroup {
 
     recipeId Int
     Recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+    // images linked to steps in this group
+    images RecipeImage[]
 }
 
 model PlannedMeal {
@@ -188,6 +194,9 @@ model User {
     PlannedMeal    PlannedMeal[]
     ShoppingList   ShoppingList[]
     KrogerPurchase KrogerPurchase[]
+
+    // images created by this user
+    imagesCreated Image[]
 }
 
 model VerificationToken {
@@ -248,4 +257,52 @@ model RecipeTag {
 
     @@id([recipeId, tagId])
     @@index([tagId])
+}
+
+// ---- Image support ----
+
+enum ImageRole {
+    HERO
+    GALLERY
+    STEP
+    OTHER
+}
+
+model Image {
+    id            Int      @id @default(autoincrement())
+    bucket        String
+    key           String
+    mime          String
+    bytes         Int
+    width         Int?
+    height        Int?
+    sha256        String?  @unique
+    blurhash      String?
+    dominantColor String?
+    alt           String?
+    createdAt     DateTime @default(now())
+    createdById   String
+    createdBy     User     @relation(fields: [createdById], references: [id])
+
+    recipes RecipeImage[]
+
+    @@index([bucket, key])
+}
+
+model RecipeImage {
+    id          Int       @id @default(autoincrement())
+    recipeId    Int
+    imageId     Int
+    role        ImageRole @default(GALLERY)
+    order       Int       @default(0)
+    caption     String?
+    stepGroupId Int?
+    stepIndex   Int?
+
+    recipe    Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+    image     Image      @relation(fields: [imageId], references: [id], onDelete: Cascade)
+    stepGroup StepGroup? @relation(fields: [stepGroupId], references: [id])
+
+    @@index([imageId])
+    @@index([recipeId, role, order])
 }

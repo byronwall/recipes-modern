@@ -14,6 +14,15 @@ const config = {
     // Ignore ESLint errors during builds.
     ignoreDuringBuilds: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: process.env.PUBLIC_MEDIA_HOST ?? "recipes-media.byroni.us",
+      },
+      { protocol: "http", hostname: "minio" },
+    ],
+  },
 };
 
 export default config;

@@ -13,18 +13,27 @@ import { Input } from "~/components/ui/input";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { api } from "~/trpc/react";
 
-export function LoginForm() {
+export function LoginForm({
+  allowRegistration = false,
+}: {
+  allowRegistration?: boolean;
+}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // redirect hook
   const router = useRouter();
 
+  const createUser = api.user.createUser.useMutation();
+
   async function handleSubmit() {
     setIsSubmitting(true);
     try {
+      setErrorMessage(null);
       const result = await signIn("credentials", {
         email,
         password,
@@ -38,6 +47,31 @@ export function LoginForm() {
       }
     } catch (err) {
       // no-op, surface minimal error UI below
+      setErrorMessage("Invalid email or password");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleRegister() {
+    setIsSubmitting(true);
+    try {
+      setErrorMessage(null);
+      await createUser.mutateAsync({ email, password });
+      // Auto-login after successful registration
+      const result = await signIn("credentials", {
+        email,
+        password,
+        callbackUrl: "/",
+        redirect: true,
+      });
+      if (result?.ok) {
+        router.push("/");
+      }
+    } catch (err) {
+      setErrorMessage(
+        createUser.error?.message || "Unable to register. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -46,9 +80,13 @@ export function LoginForm() {
   return (
     <Card className="shadow-lg">
       <CardHeader>
-        <CardTitle className="text-2xl">Login</CardTitle>
+        <CardTitle className="text-2xl">
+          {allowRegistration ? "Create account" : "Login"}
+        </CardTitle>
         <CardDescription>
-          Enter your email and password to continue
+          {allowRegistration
+            ? "No users found. Create the first account to get started."
+            : "Enter your email and password to continue"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -74,13 +112,22 @@ export function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
+          {errorMessage ? (
+            <div className="text-sm text-red-600">{errorMessage}</div>
+          ) : null}
           <Button
             type="button"
             className="w-full"
-            onClick={handleSubmit}
+            onClick={allowRegistration ? handleRegister : handleSubmit}
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Logging in..." : "Login"}
+            {isSubmitting
+              ? allowRegistration
+                ? "Creating account..."
+                : "Logging in..."
+              : allowRegistration
+                ? "Create account"
+                : "Login"}
           </Button>
         </div>
       </CardContent>

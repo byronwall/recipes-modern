@@ -27,6 +27,16 @@ export const env = createEnv({
     NEXT_REDIRECT_URI: z.string(),
     NEXT_SKIP_ADD_TO_CART: z.enum(["true", "false"]).default("false"),
     OPENAI_API_KEY: z.string(),
+    // S3 / MinIO
+    S3_ENDPOINT: z.string().url().optional(),
+    S3_ENDPOINT_PUBLIC: z.string().url().optional(),
+    S3_ENDPOINT_INTERNAL: z.string().url().optional(),
+    S3_REGION: z.string().default("us-east-1"),
+    S3_BUCKET: z.string(),
+    S3_ACCESS_KEY_ID: z.string(),
+    S3_SECRET_ACCESS_KEY: z.string(),
+    // Build-time only, used by next.config.js image patterns
+    PUBLIC_MEDIA_HOST: z.string().optional(),
   },
 
   /**
@@ -35,7 +45,9 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    // NEXT_PUBLIC_CLIENTVAR: z.string(),
+    NEXT_PUBLIC_MEDIA_HOST: z.string().optional(),
+    NEXT_PUBLIC_S3_BUCKET: z.string().optional(),
+    NEXT_PUBLIC_MEDIA_BASE_URL: z.string().url().optional(),
   },
 
   /**
@@ -52,6 +64,17 @@ export const env = createEnv({
     NEXT_REDIRECT_URI: process.env.NEXT_REDIRECT_URI,
     NEXT_SKIP_ADD_TO_CART: process.env.NEXT_SKIP_ADD_TO_CART,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    S3_ENDPOINT: process.env.S3_ENDPOINT,
+    S3_ENDPOINT_PUBLIC: process.env.S3_ENDPOINT_PUBLIC,
+    S3_ENDPOINT_INTERNAL: process.env.S3_ENDPOINT_INTERNAL,
+    S3_REGION: process.env.S3_REGION,
+    S3_BUCKET: process.env.S3_BUCKET,
+    S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID,
+    S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY,
+    PUBLIC_MEDIA_HOST: process.env.PUBLIC_MEDIA_HOST,
+    NEXT_PUBLIC_MEDIA_HOST: process.env.NEXT_PUBLIC_MEDIA_HOST,
+    NEXT_PUBLIC_S3_BUCKET: process.env.NEXT_PUBLIC_S3_BUCKET,
+    NEXT_PUBLIC_MEDIA_BASE_URL: process.env.NEXT_PUBLIC_MEDIA_BASE_URL,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
