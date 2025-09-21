@@ -19,6 +19,7 @@ import {
 import { openAddTagDialog } from "~/hooks/use-add-tag-dialog";
 import { api } from "~/trpc/react";
 import { RecipeActions } from "./recipes/[id]/RecipeActions";
+import ImageLightbox from "~/components/ImageLightbox";
 
 const defaultRecipes: Recipe[] = [];
 
@@ -71,6 +72,11 @@ export function RecipeList() {
   const recipes: RecipeWithTags[] =
     (_recipes as RecipeWithTags[] | undefined) ??
     (defaultRecipes as RecipeWithTags[]);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState<
+    { url: string; alt?: string | null; caption?: string | null }[]
+  >([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const deferredSearch = useDeferredValue(search);
   // prevent undefined?
@@ -221,11 +227,36 @@ export function RecipeList() {
                   <td className="px-3 py-2">
                     <div className="flex items-start gap-2">
                       {imageUrl ? (
-                        <img
-                          src={imageUrl}
-                          alt={primaryImage?.image.alt ?? ""}
-                          className="h-10 w-10 flex-none rounded object-cover ring-1 ring-muted"
-                        />
+                        <button
+                          type="button"
+                          aria-label="Open image"
+                          onClick={() => {
+                            const base =
+                              process.env.NEXT_PUBLIC_MEDIA_BASE_URL ??
+                              `https://${process.env.NEXT_PUBLIC_MEDIA_HOST ?? "recipes-media.byroni.us"}/${process.env.NEXT_PUBLIC_S3_BUCKET ?? "recipes-media"}`;
+                            const imgs = (recipe.images ?? []).map((ri) => ({
+                              url: `${base}/${ri.image.key}`,
+                              alt: ri.image.alt ?? "",
+                            }));
+                            const idx = Math.max(
+                              0,
+                              Math.min(
+                                imgs.findIndex((x) => x.url === imageUrl),
+                                Math.max(0, imgs.length - 1),
+                              ),
+                            );
+                            setLightboxImages(imgs);
+                            setLightboxIndex(idx < 0 ? 0 : idx);
+                            setLightboxOpen(true);
+                          }}
+                          className="h-10 w-10 flex-none"
+                        >
+                          <img
+                            src={imageUrl}
+                            alt={primaryImage?.image.alt ?? ""}
+                            className="h-10 w-10 flex-none rounded object-cover ring-1 ring-muted"
+                          />
+                        </button>
                       ) : null}
                       <div className="flex flex-col">
                         <Link
@@ -358,6 +389,13 @@ export function RecipeList() {
           </tbody>
         </table>
       </div>
+
+      <ImageLightbox
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+        images={lightboxImages}
+        initialIndex={lightboxIndex}
+      />
     </>
   );
 }

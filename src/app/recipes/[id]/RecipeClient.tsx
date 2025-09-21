@@ -29,6 +29,7 @@ import { IngredientList } from "./IngredientList";
 import { RecipeActions } from "./RecipeActions";
 import { StepList } from "./StepList";
 import { CookingModeOverlay } from "./CookingModeOverlay";
+import ImageLightbox from "~/components/ImageLightbox";
 
 export type Recipe = NonNullable<RouterOutputs["recipe"]["getRecipe"]>;
 
@@ -61,6 +62,9 @@ export function RecipeClient(props: { id: number }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const getUploadUrl = api.images.getUploadUrl.useMutation();
   const confirmUpload = api.images.confirmUpload.useMutation({
@@ -293,7 +297,7 @@ export function RecipeClient(props: { id: number }) {
 
         {recipe.images?.length ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-            {recipe.images.map((ri) => {
+            {recipe.images.map((ri, idx) => {
               const base =
                 process.env.NEXT_PUBLIC_MEDIA_BASE_URL ??
                 `https://${
@@ -306,14 +310,22 @@ export function RecipeClient(props: { id: number }) {
                   key={ri.imageId}
                   className="group overflow-hidden rounded-lg ring-1 ring-muted"
                 >
-                  <div className="aspect-[4/3] w-full overflow-hidden">
+                  <button
+                    type="button"
+                    className="aspect-[4/3] w-full overflow-hidden"
+                    onClick={() => {
+                      setLightboxIndex(idx);
+                      setLightboxOpen(true);
+                    }}
+                    aria-label="Open image"
+                  >
                     <img
                       src={url}
                       alt={ri.image.alt ?? ""}
                       loading="lazy"
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-                  </div>
+                  </button>
                   {ri.caption ? (
                     <div className="px-2 py-1 text-xs text-muted-foreground">
                       {ri.caption}
@@ -327,6 +339,24 @@ export function RecipeClient(props: { id: number }) {
           <div className="text-sm text-muted-foreground">No images yet</div>
         )}
       </div>
+
+      <ImageLightbox
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+        initialIndex={lightboxIndex}
+        images={(recipe.images ?? []).map((ri) => {
+          const base =
+            process.env.NEXT_PUBLIC_MEDIA_BASE_URL ??
+            `https://${
+              process.env.NEXT_PUBLIC_MEDIA_HOST ?? "recipes-media.byroni.us"
+            }/${process.env.NEXT_PUBLIC_S3_BUCKET ?? "recipes-media"}`;
+          return {
+            url: `${base}/${ri.image.key}`,
+            alt: ri.image.alt ?? "",
+            caption: ri.caption ?? undefined,
+          };
+        })}
+      />
     </div>
   );
 }
