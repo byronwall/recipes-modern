@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   web-app:
     build: .
@@ -7,9 +5,12 @@ services:
     ports:
       - "3000"
     depends_on:
-      - db
-      - minio
-      - minio-init
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
     env_file:
       - .env
     environment:
@@ -53,11 +54,16 @@ services:
     env_file:
       - .env
     environment:
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_DB=${DB_NAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
       - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME} -h localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
 
   minio:
     image: minio/minio:latest
@@ -71,7 +77,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/ready"]
       interval: 5s
       timeout: 3s
-      retries: 20
+      retries: 60
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -81,71 +87,17 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    entrypoint: ["/bin/sh", "-c"]
+    volumes:
+      - ./ops/minio-init.sh:/usr/local/bin/minio-init.sh:ro
+    command: ["/bin/sh", "-ceu", "/usr/local/bin/minio-init.sh"]
     environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY}
       S3_BUCKET: ${S3_BUCKET}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
       APP_ORIGINS: ${APP_URL}
       CORS_ALLOWED_METHODS: ${CORS_ALLOWED_METHODS}
-
-    command: |
-      set -eu
-      echo "Configuring MinIO (bucket, policy, CORS)"
-      mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
-      if ! mc ls local/"$$S3_BUCKET" >/dev/null 2>&1; then
-        mc mb --ignore-existing local/"$$S3_BUCKET"
-      fi
-      # Public read (download). Change to 'none' for private buckets.
-      mc anonymous set download local/"$$S3_BUCKET"
-
-      # Build CORS JSON from env vars without external tools
-      APP_ORIGINS_VAL="$$APP_ORIGINS"
-      METHODS_VAL="GET,PUT"
-      MAX_AGE_VAL=3600
-
-      ORIGINS_JSON="["
-      OIFS="$$IFS"; IFS=','
-      set -- $$APP_ORIGINS_VAL
-      for origin in "$$@"; do
-        # trim leading/trailing whitespace using parameter expansion
-        origin="$$origin"
-        origin="$${origin#"$${origin%%[![:space:]]*}"}"
-        origin="$${origin%"$${origin##*[![:space:]]}"}"
-        [ -z "$$origin" ] && continue
-        if [ "$$ORIGINS_JSON" != "[" ]; then ORIGINS_JSON="$$ORIGINS_JSON,"; fi
-        ORIGINS_JSON="$$ORIGINS_JSON\"$$origin\""
-      done
-      IFS="$$OIFS"
-      ORIGINS_JSON="$$ORIGINS_JSON]"
-
-      METHODS_JSON="["
-      OIFS2="$$IFS"; IFS=','
-      set -- $$METHODS_VAL
-      for m in "$$@"; do
-        m="$$m"
-        m="$${m#"$${m%%[![:space:]]*}"}"
-        m="$${m%"$${m##*[![:space:]]}"}"
-        [ -z "$$m" ] && continue
-        if [ "$$METHODS_JSON" != "[" ]; then METHODS_JSON="$$METHODS_JSON,"; fi
-        METHODS_JSON="$$METHODS_JSON\"$$m\""
-      done
-      IFS="$$OIFS2"
-      METHODS_JSON="$$METHODS_JSON]"
-
-      cat > /tmp/cors.effective.json <<EOF
-      [
-        {
-          "AllowedHeaders": ["*"],
-          "AllowedMethods": $$METHODS_JSON,
-          "AllowedOrigins": $$ORIGINS_JSON,
-          "ExposeHeaders": ["ETag"],
-          "MaxAgeSeconds": $$MAX_AGE_VAL
-        }
-      ]
-      EOF
-
-      mc cors set local/"$$S3_BUCKET" /tmp/cors.effective.json
+      CORS_MAX_AGE: ${CORS_MAX_AGE:-}
+    restart: "no"
 
 volumes:
   db-data:
