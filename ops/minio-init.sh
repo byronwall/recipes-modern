@@ -38,10 +38,21 @@ echo "  CORS_MAX_AGE=${CORS_MAX_AGE}"
 # --------------------------------
 # Wait for MinIO to be fully ready
 # --------------------------------
-# Use the authenticated readiness endpoint to ensure auth is configured too.
+# Old (remove this):
+# i=0
+# until curl -sSf -u "${MINIO_ROOT_USER}:${MINIO_ROOT_PASSWORD}" \
+#   "${MINIO_HOST%/}/minio/health/ready" >/dev/null; do
+#   i=$((i+1))
+#   echo "Waiting for MinIO to be ready... (${i})"
+#   sleep 1
+# done
+# echo "MinIO is ready."
+
+# New: set alias first, then wait on mc's native readiness
+mc alias set "${MINIO_ALIAS}" "${MINIO_HOST}" "${MINIO_ROOT_USER}" "${MINIO_ROOT_PASSWORD}" >/dev/null
+
 i=0
-until curl -sSf -u "${MINIO_ROOT_USER}:${MINIO_ROOT_PASSWORD}" \
-  "${MINIO_HOST%/}/minio/health/ready" >/dev/null; do
+until mc ready --json "${MINIO_ALIAS}" >/dev/null 2>&1; do
   i=$((i+1))
   echo "Waiting for MinIO to be ready... (${i})"
   sleep 1
@@ -51,8 +62,7 @@ echo "MinIO is ready."
 # ----------------------------
 # MinIO Client (mc) bootstrap
 # ----------------------------
-mc alias set "${MINIO_ALIAS}" "${MINIO_HOST}" "${MINIO_ROOT_USER}" "${MINIO_ROOT_PASSWORD}" >/dev/null
-mc ready --json "${MINIO_ALIAS}" >/dev/null || { echo "ERROR: mc alias '${MINIO_ALIAS}' not ready"; exit 1; }
+
 
 # Bucket (idempotent)
 mc mb --ignore-existing "${MINIO_ALIAS}/${S3_BUCKET}" >/dev/null || true
