@@ -90,7 +90,7 @@ services:
     volumes:
       - ./ops/minio-init.sh:/usr/local/bin/minio-init.sh:ro
     # exec-form; no Compose interpolation; ENTRYPOINT contains shell, so this is fine
-    command: ["/bin/sh", "-ceu", "/usr/local/bin/minio-init.sh"]
+    command: ["/bin/sh", "-ceu", ". /usr/local/bin/minio-init.sh"]
     environment:
       # Coolify must supply these (recommended to set in its UI)
       S3_BUCKET: ${S3_BUCKET}
