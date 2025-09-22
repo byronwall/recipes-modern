@@ -83,7 +83,7 @@ services:
       - "9001:9001"
 
   minio-init:
-    image: bitnami/minio-client:2025.8.4 # has bash/sh and mc in PATH
+    image: bitnami/minio-client:latest
     depends_on:
       minio:
         condition: service_healthy
