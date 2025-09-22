@@ -1,13 +1,15 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
+console.log("env", process.env);
+
 export const env = createEnv({
   /**
    * Specify your server-side environment variables schema here. This way you can ensure the app
    * isn't built with invalid env vars.
    */
   server: {
-    DATABASE_URL: z.string().url(),
+    DB_URL: z.string().url(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -35,8 +37,6 @@ export const env = createEnv({
     S3_BUCKET: z.string(),
     S3_ACCESS_KEY_ID: z.string(),
     S3_SECRET_ACCESS_KEY: z.string(),
-    // Build-time only, used by next.config.js image patterns
-    PUBLIC_MEDIA_HOST: z.string().optional(),
   },
 
   /**
@@ -45,8 +45,6 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    NEXT_PUBLIC_MEDIA_HOST: z.string().optional(),
-    NEXT_PUBLIC_S3_BUCKET: z.string().optional(),
     NEXT_PUBLIC_MEDIA_BASE_URL: z.string().url().optional(),
   },
 
@@ -55,7 +53,7 @@ export const env = createEnv({
    * middlewares) or client-side so we need to destruct manually.
    */
   runtimeEnv: {
-    DATABASE_URL: process.env.DATABASE_URL,
+    DB_URL: process.env.DB_URL,
     NODE_ENV: process.env.NODE_ENV,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
@@ -71,9 +69,6 @@ export const env = createEnv({
     S3_BUCKET: process.env.S3_BUCKET,
     S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID,
     S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY,
-    PUBLIC_MEDIA_HOST: process.env.PUBLIC_MEDIA_HOST,
-    NEXT_PUBLIC_MEDIA_HOST: process.env.NEXT_PUBLIC_MEDIA_HOST,
-    NEXT_PUBLIC_S3_BUCKET: process.env.NEXT_PUBLIC_S3_BUCKET,
     NEXT_PUBLIC_MEDIA_BASE_URL: process.env.NEXT_PUBLIC_MEDIA_BASE_URL,
   },
   /**

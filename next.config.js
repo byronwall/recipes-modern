@@ -4,6 +4,22 @@
  */
 await import("./src/env.js");
 
+// for images
+// ENV Looks like: NEXT_PUBLIC_MEDIA_BASE_URL=http://localhost:9000/recipes-media
+const mediaBaseUrl = process.env.NEXT_PUBLIC_MEDIA_BASE_URL;
+if (!mediaBaseUrl) {
+  throw new Error("NEXT_PUBLIC_MEDIA_BASE_URL is not set");
+}
+const mediaAsUri = new URL(mediaBaseUrl);
+const protocol = mediaAsUri.protocol.replace(":", "");
+if (protocol !== "http" && protocol !== "https") {
+  throw new Error(
+    "NEXT_PUBLIC_MEDIA_BASE_URL must start with http or https: `" +
+      protocol +
+      "`",
+  );
+}
+
 /** @type {import("next").NextConfig} */
 const config = {
   typescript: {
@@ -17,10 +33,11 @@ const config = {
   images: {
     remotePatterns: [
       {
-        protocol: "https",
-        hostname: process.env.PUBLIC_MEDIA_HOST ?? "recipes-media.byroni.us",
+        protocol: protocol,
+        hostname: mediaAsUri.hostname,
+        port: mediaAsUri.port,
+        pathname: mediaAsUri.pathname,
       },
-      { protocol: "http", hostname: "minio" },
     ],
   },
 };

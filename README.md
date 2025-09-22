@@ -33,7 +33,7 @@ This app supports recipe images using an S3-compatible bucket (MinIO in Docker b
    docker compose up --build
    ```
 
-   - `minio-init` auto-creates the bucket and applies CORS driven by env (`APP_ORIGINS`, `CORS_ALLOWED_METHODS`, `CORS_MAX_AGE`).
+   - `minio-init` auto-creates the bucket and applies CORS driven by env (`APP_ORIGINS`).
 
 3. Database
 
@@ -57,44 +57,43 @@ This app supports recipe images using an S3-compatible bucket (MinIO in Docker b
 Notes
 
 - For local dev via Compose, the app talks to MinIO at `http://minio:9000` inside the Docker network.
-- To serve images over HTTPS in prod, point `PUBLIC_MEDIA_HOST` DNS to your Traefik/MinIO endpoint and keep it in Next.js `remotePatterns`.
+- To serve images over HTTPS in prod, set `NEXT_PUBLIC_MEDIA_BASE_URL` to your public S3/MinIO endpoint plus bucket (e.g. `https://media.example.com/recipes-media`). `next.config.js` derives image `remotePatterns` from this value.
 
 ## Environment variables
 
 Create a `.env` file in the project root.
 
-Required for app and database:
+Required (core app):
 
-- `DATABASE_URL` = Postgres connection string (e.g. `postgresql://user:password@localhost:5432/recipes-modern`)
+- `DB_URL` = Postgres connection string (e.g. `postgresql://user:password@localhost:5432/recipes-modern`)
 - `NEXTAUTH_URL` = Base URL of the app (e.g. `http://localhost:3000`)
 - `NEXTAUTH_SECRET` = Any random string in production
 
-Kroger integration (optional, required only if using Kroger pages/actions):
+Required (images & object storage):
 
-- `NEXT_CLIENT_ID` = Kroger OAuth client id
-- `CLIENT_SECRET` = Kroger OAuth client secret
-- `NEXT_REDIRECT_URI` = Redirect URL registered with Kroger (e.g. `http://localhost:3000/kroger/auth`)
-
-Media (S3/MinIO):
-
-- `MINIO_ROOT_USER` = MinIO root user (dev default: `minioadmin`)
-- `MINIO_ROOT_PASSWORD` = MinIO root password (dev default: `minioadmin`)
-- `S3_ENDPOINT` = S3 API endpoint (dev: `http://minio:9000`)
-- `S3_REGION` = Region label (e.g. `us-east-1`)
+- `NEXT_PUBLIC_MEDIA_BASE_URL` = Public base URL to your bucket (e.g. `http://localhost:9000/recipes-media`)
 - `S3_BUCKET` = Bucket name (e.g. `recipes-media`)
-- `S3_ACCESS_KEY_ID` = Access key (in Compose defaults to `${MINIO_ROOT_USER}`)
-- `S3_SECRET_ACCESS_KEY` = Secret (in Compose defaults to `${MINIO_ROOT_PASSWORD}`)
-- `PUBLIC_MEDIA_HOST` = Public host serving media (e.g. `recipes-media.byroni.us`)
-- `NEXT_PUBLIC_MEDIA_HOST` = Same host, exposed to client for image URLs
-- `NEXT_PUBLIC_S3_BUCKET` = Bucket name, exposed to client
-- `APP_ORIGINS` = Comma-separated origins allowed for CORS (e.g. `http://localhost:3000,https://recipes.byroni.us`)
-- `CORS_ALLOWED_METHODS` = Comma-separated methods (default `GET,PUT`)
-- `CORS_MAX_AGE` = Max age seconds (default `3600`)
+- `S3_ACCESS_KEY_ID` = Access key (used for both MinIO root and S3 client)
+- `S3_SECRET_ACCESS_KEY` = Secret
+- `S3_REGION` = Region label (default `us-east-1`)
+- Endpoints (choose one of the following setups):
+  - Provide both:
+    - `S3_ENDPOINT_PUBLIC` = Public browser-reachable endpoint (e.g. `http://localhost:9000`)
+    - `S3_ENDPOINT_INTERNAL` = Server-reachable endpoint (e.g. `http://minio:9000` in Docker)
+  - Or provide a single legacy:
+    - `S3_ENDPOINT` = Used as a fallback if the above are not set
+
+Optional:
+
+- `OPENAI_API_KEY` = Enables AI recipe generation
+- `NEXT_CLIENT_ID`, `CLIENT_SECRET`, `NEXT_REDIRECT_URI` = Kroger integration
+- `NEXT_SKIP_ADD_TO_CART` = Set to `true` to disable pushing items to Kroger cart
+- `APP_ORIGINS` = Comma-separated origins to allow in MinIO CORS (Compose defaults this to `APP_URL`)
 
 Notes:
 
-- The app validates env vars at startup. To bypass during Docker builds, set `SKIP_ENV_VALIDATION=1`.
-- For local only usage without Kroger, you can omit the Kroger variables; avoid visiting Kroger pages.
+- Env vars are validated at startup. To bypass during Docker builds, set `SKIP_ENV_VALIDATION=1`.
+- Kroger and AI are optional; omit those vars if you’re not using those features.
 
 ## Verify MinIO setup
 
@@ -109,8 +108,8 @@ docker compose run --rm --entrypoint /bin/sh minio-init -lc \
 docker compose run --rm --entrypoint /bin/sh minio-init -lc \
   'mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"; mc anonymous get local/"$S3_BUCKET"; mc cors get local/"$S3_BUCKET"'
 
-# Quick write/read test from the app container
-docker compose exec -T web-app node -e "const {S3Client,PutObjectCommand}=require('@aws-sdk/client-s3');(async()=>{const s3=new S3Client({region:process.env.S3_REGION,endpoint:process.env.S3_ENDPOINT,forcePathStyle:true,credentials:{accessKeyId:process.env.S3_ACCESS_KEY_ID,secretAccessKey:process.env.S3_SECRET_ACCESS_KEY}});await s3.send(new PutObjectCommand({Bucket:process.env.S3_BUCKET,Key:'healthcheck/test.txt',ContentType:'text/plain',Body:'ok'}));console.log('PUT_OK')})()"
+# Quick write test to the internal endpoint from the app container
+docker compose exec -T web-app node -e "const {S3Client,PutObjectCommand}=require('@aws-sdk/client-s3');(async()=>{const endpoint=(process.env.S3_ENDPOINT_INTERNAL||process.env.S3_ENDPOINT||'').replace(/\/$/,'');const s3=new S3Client({region:process.env.S3_REGION,endpoint,forcePathStyle:true,credentials:{accessKeyId:process.env.S3_ACCESS_KEY_ID,secretAccessKey:process.env.S3_SECRET_ACCESS_KEY}});await s3.send(new PutObjectCommand({Bucket:process.env.S3_BUCKET,Key:'healthcheck/test.txt',ContentType:'text/plain',Body:'ok'}));console.log('PUT_OK')})()"
 ```
 
 ## Using Docker Compose
@@ -121,7 +120,7 @@ A `docker-compose.yaml` is provided to run the app and Postgres together.
 docker compose up --build
 ```
 
-- Ensure `.env` contains `DATABASE_URL`, `NEXTAUTH_*`, and optionally Kroger variables.
+- Ensure `.env` contains `DB_URL`, `NEXTAUTH_*`, `NEXT_PUBLIC_MEDIA_BASE_URL`, required `S3_*` values, and optionally Kroger/AI variables.
 - The app will be available on `http://localhost:3000`.
 
 ## Production build
@@ -165,7 +164,7 @@ The container entrypoint runs `npx prisma migrate deploy` before `next start`.
 ## Troubleshooting
 
 - Env validation errors: confirm required variables in `.env` match the names above
-- DB connection issues: ensure Postgres is running and `DATABASE_URL` credentials are correct
+- DB connection issues: ensure Postgres is running and `DB_URL` credentials are correct
 - Auth errors: confirm `NEXTAUTH_URL` matches the URL you’re visiting and `NEXTAUTH_SECRET` is set in production
 - Kroger errors: check OAuth app config and `NEXT_REDIRECT_URI` exact match
 - Images:
@@ -176,7 +175,7 @@ The container entrypoint runs `npx prisma migrate deploy` before `next start`.
     docker compose up -d minio-init
     ```
 
-  - If browser PUT is blocked by CORS, set `APP_ORIGINS`, `CORS_ALLOWED_METHODS`, and `CORS_MAX_AGE` in `.env` and re-run the init job:
+  - If browser PUT is blocked by CORS, set `APP_ORIGINS` in `.env` and re-run the init job:
 
     ```bash
     docker compose up -d minio-init

@@ -304,12 +304,7 @@ export function RecipeClient(props: { id: number }) {
         {recipe.images?.length ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
             {recipe.images.map((ri, idx) => {
-              const base =
-                process.env.NEXT_PUBLIC_MEDIA_BASE_URL ??
-                `https://${
-                  process.env.NEXT_PUBLIC_MEDIA_HOST ??
-                  "recipes-media.byroni.us"
-                }/${process.env.NEXT_PUBLIC_S3_BUCKET ?? "recipes-media"}`;
+              const base = process.env.NEXT_PUBLIC_MEDIA_BASE_URL;
               const url = `${base}/${ri.image.key}`;
               return (
                 <div
@@ -371,11 +366,7 @@ export function RecipeClient(props: { id: number }) {
         onOpenChange={setLightboxOpen}
         initialIndex={lightboxIndex}
         images={(recipe.images ?? []).map((ri) => {
-          const base =
-            process.env.NEXT_PUBLIC_MEDIA_BASE_URL ??
-            `https://${
-              process.env.NEXT_PUBLIC_MEDIA_HOST ?? "recipes-media.byroni.us"
-            }/${process.env.NEXT_PUBLIC_S3_BUCKET ?? "recipes-media"}`;
+          const base = process.env.NEXT_PUBLIC_MEDIA_BASE_URL;
           return {
             url: `${base}/${ri.image.key}`,
             alt: ri.image.alt ?? "",

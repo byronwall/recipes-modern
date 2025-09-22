@@ -212,9 +212,7 @@ export function RecipeList() {
           </thead>
           <tbody>
             {filteredRecipes.map((recipe) => {
-              const base =
-                process.env.NEXT_PUBLIC_MEDIA_BASE_URL ??
-                `https://${process.env.NEXT_PUBLIC_MEDIA_HOST ?? "recipes-media.byroni.us"}/${process.env.NEXT_PUBLIC_S3_BUCKET ?? "recipes-media"}`;
+              const base = process.env.NEXT_PUBLIC_MEDIA_BASE_URL;
               const primaryImage =
                 (recipe.images ?? []).find(
                   (ri) => ri.role === ImageRole.HERO,
@@ -231,9 +229,7 @@ export function RecipeList() {
                           type="button"
                           aria-label="Open image"
                           onClick={() => {
-                            const base =
-                              process.env.NEXT_PUBLIC_MEDIA_BASE_URL ??
-                              `https://${process.env.NEXT_PUBLIC_MEDIA_HOST ?? "recipes-media.byroni.us"}/${process.env.NEXT_PUBLIC_S3_BUCKET ?? "recipes-media"}`;
+                            const base = process.env.NEXT_PUBLIC_MEDIA_BASE_URL;
                             const imgs = (recipe.images ?? []).map((ri) => ({
                               url: `${base}/${ri.image.key}`,
                               alt: ri.image.alt ?? "",
