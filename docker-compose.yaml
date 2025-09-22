@@ -20,6 +20,19 @@ services:
       S3_BUCKET: ${S3_BUCKET}
       S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+    labels:
+      - traefik.enable=true
+      - traefik.http.middlewares.gzip.compress=true
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+      - traefik.http.routers.http-0-r8c8c8kwscwwo804c48oswgo.entryPoints=http
+      - traefik.http.routers.http-0-r8c8c8kwscwwo804c48oswgo.middlewares=redirect-to-https
+      - "traefik.http.routers.http-0-r8c8c8kwscwwo804c48oswgo.rule=Host(`recipes.byroni.us`) && PathPrefix(`/`)"
+      - traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.entryPoints=https
+      - traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.middlewares=gzip
+      - "traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.rule=Host(`recipes.byroni.us`) && PathPrefix(`/`)"
+      - traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.tls.certresolver=letsencrypt
+      - traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.tls=true
+      - traefik.http.services.https-0-r8c8c8kwscwwo804c48oswgo.loadbalancer.server.port=3000
 
   web-app-dev:
     image: node:20
