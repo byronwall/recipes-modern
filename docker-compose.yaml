@@ -83,19 +83,22 @@ services:
       - "9001:9001"
 
   minio-init:
-    image: minio/mc:latest
+    image: bitnami/minio-client:2025.8.4 # has bash/sh and mc in PATH
     depends_on:
       minio:
         condition: service_healthy
     volumes:
       - ./ops/minio-init.sh:/usr/local/bin/minio-init.sh:ro
+    # exec-form; no Compose interpolation; ENTRYPOINT contains shell, so this is fine
     command: ["/bin/sh", "-ceu", "/usr/local/bin/minio-init.sh"]
     environment:
+      # Coolify must supply these (recommended to set in its UI)
       S3_BUCKET: ${S3_BUCKET}
       S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+      APP_URL: ${APP_URL}
       APP_ORIGINS: ${APP_URL}
-      CORS_ALLOWED_METHODS: ${CORS_ALLOWED_METHODS}
+      CORS_ALLOWED_METHODS: ${CORS_ALLOWED_METHODS:-}
       CORS_MAX_AGE: ${CORS_MAX_AGE:-}
     restart: "no"
 
