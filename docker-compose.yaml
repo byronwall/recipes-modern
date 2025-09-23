@@ -9,29 +9,43 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-      minio-init:
-        condition: service_completed_successfully
     env_file:
       - .env
     environment:
-      S3_ENDPOINT_PUBLIC: ${S3_ENDPOINT_PUBLIC}
+      # Public/media host and path for Traefik-based same-origin media
+      APP_HOST: ${APP_HOST}
+      MEDIA_PATH_PREFIX: ${MEDIA_PATH_PREFIX:-/media}
+      PUBLIC_SCHEME: ${PUBLIC_SCHEME:-https}
+      # Derived public endpoints for SDK and Next Image
+      # IMPORTANT: Do NOT include MEDIA_PATH_PREFIX here; signatures must be for the path MinIO sees
+      S3_ENDPOINT_PUBLIC: ${PUBLIC_SCHEME:-https}://${APP_HOST}
+      NEXT_PUBLIC_MEDIA_BASE_URL: ${PUBLIC_SCHEME:-https}://${APP_HOST}${MEDIA_PATH_PREFIX}/${S3_BUCKET}
       S3_ENDPOINT_INTERNAL: ${S3_ENDPOINT_INTERNAL}
       S3_REGION: ${S3_REGION}
       S3_BUCKET: ${S3_BUCKET}
       S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+      APP_ORIGINS: ${APP_ORIGINS:-http://localhost:3000}
+      CORS_ALLOWED_METHODS: ${CORS_ALLOWED_METHODS:-GET,PUT}
+      CORS_MAX_AGE: ${CORS_MAX_AGE:-3600}
+      S3_PUBLIC_READ: ${S3_PUBLIC_READ:-true}
+    command: >
+      sh -ceu '
+        node ./scripts/init-bucket.js;
+        exec npm run start
+      '
     labels:
       - traefik.enable=true
       - traefik.http.middlewares.gzip.compress=true
       - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
-      - traefik.http.routers.http-0-r8c8c8kwscwwo804c48oswgo.entryPoints=http
+      - traefik.http.routers.http-0-r8c8c8kwscwwo804c48oswgo.entryPoints=${TRAEFIK_ENTRYPOINT:-https}
       - traefik.http.routers.http-0-r8c8c8kwscwwo804c48oswgo.middlewares=redirect-to-https
-      - "traefik.http.routers.http-0-r8c8c8kwscwwo804c48oswgo.rule=Host(`recipes.byroni.us`) && PathPrefix(`/`)"
-      - traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.entryPoints=https
+      - "traefik.http.routers.http-0-r8c8c8kwscwwo804c48oswgo.rule=Host(`${APP_HOST}`) && PathPrefix(`/`)"
+      - traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.entryPoints=${TRAEFIK_ENTRYPOINT:-https}
       - traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.middlewares=gzip
-      - "traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.rule=Host(`recipes.byroni.us`) && PathPrefix(`/`)"
-      - traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.tls.certresolver=letsencrypt
-      - traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.tls=true
+      - "traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.rule=Host(`${APP_HOST}`) && PathPrefix(`/`)"
+      - traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      - traefik.http.routers.https-0-r8c8c8kwscwwo804c48oswgo.tls=${TRAEFIK_TLS:-true}
       - traefik.http.services.https-0-r8c8c8kwscwwo804c48oswgo.loadbalancer.server.port=3000
 
   web-app-dev:
@@ -43,10 +57,19 @@ services:
     depends_on:
       - db
       - minio
-      - minio-init
     env_file:
       - .env
     environment:
+      # Local Traefik defaults
+      APP_HOST: ${APP_HOST:-recipes.localhost}
+      MEDIA_PATH_PREFIX: ${MEDIA_PATH_PREFIX:-/media}
+      PUBLIC_SCHEME: ${PUBLIC_SCHEME:-http}
+      TRAEFIK_ENTRYPOINT: ${TRAEFIK_ENTRYPOINT:-web}
+      TRAEFIK_TLS: ${TRAEFIK_TLS:-false}
+      # Derived public endpoints
+      # IMPORTANT: Do NOT include MEDIA_PATH_PREFIX here; signatures must be for the path MinIO sees
+      S3_ENDPOINT_PUBLIC: ${PUBLIC_SCHEME:-http}://${APP_HOST}
+      NEXT_PUBLIC_MEDIA_BASE_URL: ${PUBLIC_SCHEME:-http}://${APP_HOST}${MEDIA_PATH_PREFIX}/${S3_BUCKET}
       NODE_ENV: development
       HOT_RELOAD: ${HOT_RELOAD:-true}
       WATCHPACK_POLLING: ${HOT_RELOAD:-true}
@@ -60,7 +83,13 @@ services:
       - ./:/app:delegated
       - /app/node_modules
       - /app/.next
-    command: sh -c "npm ci && npx prisma generate && npm run dev -- -p 3000 -H 0.0.0.0"
+    command: sh -c "npm ci && npx prisma generate && npm run init-bucket && npm run dev -- -p 3000 -H 0.0.0.0"
+    labels:
+      - traefik.enable=true
+      - traefik.http.middlewares.gzip.compress=true
+      - traefik.http.routers.app-dev.entryPoints=${TRAEFIK_ENTRYPOINT:-web}
+      - "traefik.http.routers.app-dev.rule=Host(`${APP_HOST}`) && PathPrefix(`/`)"
+      - traefik.http.services.app-dev.loadbalancer.server.port=3000
 
   db:
     image: postgres:13
@@ -94,26 +123,33 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
+    labels:
+      - traefik.enable=true
+      # Strip /media prefix when proxying to MinIO
+      - "traefik.http.middlewares.strip-media.stripprefix.prefixes=${MEDIA_PATH_PREFIX:-/media}"
+      # Optional gzip
+      - traefik.http.middlewares.media-gzip.compress=true
+      # Route https://recipes.byroni.us/media/* to MinIO API (9000)
+      - traefik.http.routers.minio-media.entryPoints=${TRAEFIK_ENTRYPOINT:-https}
+      - "traefik.http.routers.minio-media.rule=Host(`${APP_HOST}`) && PathPrefix(`${MEDIA_PATH_PREFIX:-/media}`)"
+      - traefik.http.routers.minio-media.tls=${TRAEFIK_TLS:-true}
+      - traefik.http.routers.minio-media.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      - traefik.http.routers.minio-media.middlewares=strip-media,media-gzip
+      - traefik.http.services.minio-api.loadbalancer.server.port=9000
 
-  minio-init:
-    image: bitnami/minio-client:latest
-    depends_on:
-      minio:
-        condition: service_healthy
+  traefik:
+    image: traefik:v2.11
+    profiles: ["dev"]
+    command:
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+    ports:
+      - "80:80"
+      - "8080:8080"
     volumes:
-      - ./ops/minio-init.sh:/usr/local/bin/minio-init.sh:ro
-    # exec-form; no Compose interpolation; ENTRYPOINT contains shell, so this is fine
-    command: ["bash", "/usr/local/bin/minio-init.sh"]
-    environment:
-      # Coolify must supply these (recommended to set in its UI)
-      S3_BUCKET: ${S3_BUCKET}
-      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
-      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
-      APP_URL: ${APP_URL}
-      APP_ORIGINS: ${APP_URL}
-      CORS_ALLOWED_METHODS: ${CORS_ALLOWED_METHODS:-}
-      CORS_MAX_AGE: ${CORS_MAX_AGE:-}
-    restart: "no"
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 
 volumes:
   db-data:

@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { createPutUrl, headObject, deleteObject } from "~/server/lib/s3";
+import {
+  createPutUrl,
+  headObject,
+  getObjectBuffer,
+  deleteObject,
+} from "~/server/lib/s3";
 import crypto from "node:crypto";
 import sharp from "sharp";
 import { db } from "~/server/db";
@@ -22,7 +27,23 @@ export const imagesRouter = createTRPCRouter({
       const key = `u_${uid}/r_${input.recipeId}/orig/${crypto.randomUUID()}${
         input.ext ?? ""
       }`;
-      const url = await createPutUrl(key, input.mime);
+      const signedUrl = await createPutUrl(key, input.mime);
+      // Inject proxy prefix (e.g., /media) for browser routing, without affecting the signature
+      const mediaPrefix = (process.env.MEDIA_PATH_PREFIX ?? "").replace(
+        /\/$/,
+        "",
+      );
+      let url = signedUrl;
+      if (mediaPrefix) {
+        try {
+          const u = new URL(signedUrl);
+          // Preserve query string; only prefix path
+          u.pathname = `${mediaPrefix}${u.pathname}`;
+          url = u.toString();
+        } catch {
+          // fall back to original on parse errors
+        }
+      }
       return { key, url };
     }),
 
@@ -45,12 +66,8 @@ export const imagesRouter = createTRPCRouter({
       const mime = String(meta.ContentType ?? "image/jpeg");
       const bytes = Number(meta.ContentLength ?? 0);
 
-      const endpoint =
-        process.env.S3_ENDPOINT_INTERNAL ?? process.env.S3_ENDPOINT ?? "";
-      const res = await fetch(
-        `${endpoint.replace(/\/$/, "")}/${bucket}/${input.key}`,
-      );
-      const buf = Buffer.from(await res.arrayBuffer());
+      // Read the object via SDK to avoid endpoint composition issues
+      const buf = await getObjectBuffer(input.key);
 
       const image = sharp(buf);
       const { width, height } = await image.metadata();
@@ -85,7 +102,7 @@ export const imagesRouter = createTRPCRouter({
         data: {
           recipeId: input.recipeId,
           imageId: created.id,
-          role: input.role as any,
+          role: input.role as unknown as "HERO" | "GALLERY" | "STEP",
           order: input.order,
           caption: input.caption ?? null,
           stepGroupId: input.stepGroupId,
