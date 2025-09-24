@@ -2,13 +2,13 @@
  * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially useful
  * for Docker builds.
  */
-await import("./src/env.js");
+const envFile = await import("./src/env.js");
 
 // for images
 // ENV Looks like: NEXT_PUBLIC_MEDIA_BASE_URL=http://localhost:9000/recipes-media
-const mediaBaseUrl = process.env.NEXT_PUBLIC_MEDIA_BASE_URL;
+const mediaBaseUrl = envFile.env.MEDIA_BASE_URL;
 if (!mediaBaseUrl) {
-  throw new Error("NEXT_PUBLIC_MEDIA_BASE_URL is not set");
+  throw new Error("APP_HOST is not set");
 }
 const mediaAsUri = new URL(mediaBaseUrl);
 const protocol = mediaAsUri.protocol.replace(":", "");

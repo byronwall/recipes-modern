@@ -20,6 +20,7 @@ import { openAddTagDialog } from "~/hooks/use-add-tag-dialog";
 import { api } from "~/trpc/react";
 import { RecipeActions } from "./recipes/[id]/RecipeActions";
 import ImageLightbox from "~/components/ImageLightbox";
+import { env } from "~/env";
 
 const defaultRecipes: Recipe[] = [];
 
@@ -212,7 +213,7 @@ export function RecipeList() {
           </thead>
           <tbody>
             {filteredRecipes.map((recipe) => {
-              const base = process.env.NEXT_PUBLIC_MEDIA_BASE_URL;
+              const base = env.NEXT_PUBLIC_MEDIA_BASE_URL;
               const primaryImage =
                 (recipe.images ?? []).find(
                   (ri) => ri.role === ImageRole.HERO,
@@ -229,6 +230,7 @@ export function RecipeList() {
                           type="button"
                           aria-label="Open image"
                           onClick={() => {
+                            console.log("env", env, process.env);
                             const base = process.env.NEXT_PUBLIC_MEDIA_BASE_URL;
                             const imgs = (recipe.images ?? []).map((ri) => ({
                               url: `${base}/${ri.image.key}`,

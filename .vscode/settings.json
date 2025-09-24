@@ -18,5 +18,11 @@
     "titleBar.inactiveBackground": "#e5797a99",
     "titleBar.inactiveForeground": "#15202b99"
   },
-  "peacock.color": "#e5797a"
+  "peacock.color": "#e5797a",
+  "search.exclude": {
+    "**/.git": true,
+    "**/.next/": true,
+    "**/.turbo": true,
+    "**/node_modules": true
+  }
 }

@@ -31,6 +31,7 @@ import { StepList } from "./StepList";
 import { CookingModeOverlay } from "./CookingModeOverlay";
 import ImageLightbox from "~/components/ImageLightbox";
 import SimpleAlertDialog from "~/components/SimpleAlertDialog";
+import { env } from "~/env";
 
 export type Recipe = NonNullable<RouterOutputs["recipe"]["getRecipe"]>;
 
@@ -40,6 +41,8 @@ export function RecipeClient(props: { id: number }) {
   const { data: recipe } = api.recipe.getRecipe.useQuery({
     id,
   });
+
+  console.log("recipe", recipe);
 
   const utils = api.useUtils();
   const updateMutation = api.recipe.updateRecipeMeta.useMutation({
@@ -304,8 +307,11 @@ export function RecipeClient(props: { id: number }) {
         {recipe.images?.length ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
             {recipe.images.map((ri, idx) => {
-              const base = process.env.NEXT_PUBLIC_MEDIA_BASE_URL;
+              // base = http://domain.com/media/{image.bucket}
+              const base = `${window.location.origin}/media/${ri.image.bucket}`;
+              console.log("base", base);
               const url = `${base}/${ri.image.key}`;
+              console.log("url", url);
               return (
                 <div
                   key={ri.imageId}
@@ -366,7 +372,7 @@ export function RecipeClient(props: { id: number }) {
         onOpenChange={setLightboxOpen}
         initialIndex={lightboxIndex}
         images={(recipe.images ?? []).map((ri) => {
-          const base = process.env.NEXT_PUBLIC_MEDIA_BASE_URL;
+          const base = env.NEXT_PUBLIC_MEDIA_BASE_URL;
           return {
             url: `${base}/${ri.image.key}`,
             alt: ri.image.alt ?? "",

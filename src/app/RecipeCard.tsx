@@ -6,6 +6,7 @@ import { Card, CardTitle } from "~/components/ui/card";
 import { ImageRole, type Recipe } from "@prisma/client";
 import { RecipeActions } from "./recipes/[id]/RecipeActions";
 import ImageLightbox from "~/components/ImageLightbox";
+import { env } from "~/env";
 
 type RecipeWithImages = Recipe & {
   images?:
@@ -31,7 +32,9 @@ export function RecipeCard({ recipe }: { recipe: RecipeWithImages }) {
       </CardTitle>
       <div className="flex items-center gap-2 p-2">
         {(() => {
-          const base = process.env.NEXT_PUBLIC_MEDIA_BASE_URL;
+          console.log("env", env);
+          const base = env.NEXT_PUBLIC_MEDIA_BASE_URL;
+          console.log("base", base);
 
           const primaryImage =
             (recipe.images ?? []).find((ri) => ri.role === ImageRole.HERO) ??
