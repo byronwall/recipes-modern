@@ -1,7 +1,6 @@
 x-common-env: &common-env
   APP_HOST: ${APP_HOST}
   PUBLIC_SCHEME: ${PUBLIC_SCHEME:-https}
-  NEXT_PUBLIC_SCHEME: ${PUBLIC_SCHEME:-https}
   MEDIA_PATH_PREFIX: ${MEDIA_PATH_PREFIX:-/media}
   S3_ENDPOINT_INTERNAL: ${S3_ENDPOINT_INTERNAL:-http://minio:9000}
   S3_REGION: ${S3_REGION:-us-east-1}
