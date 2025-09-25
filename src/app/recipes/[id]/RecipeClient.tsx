@@ -31,7 +31,7 @@ import { StepList } from "./StepList";
 import { CookingModeOverlay } from "./CookingModeOverlay";
 import ImageLightbox from "~/components/ImageLightbox";
 import SimpleAlertDialog from "~/components/SimpleAlertDialog";
-import { env } from "~/env";
+import { getImageUrl } from "~/lib/media";
 
 export type Recipe = NonNullable<RouterOutputs["recipe"]["getRecipe"]>;
 
@@ -307,11 +307,10 @@ export function RecipeClient(props: { id: number }) {
         {recipe.images?.length ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
             {recipe.images.map((ri, idx) => {
-              // base = http://domain.com/media/{image.bucket}
-              const base = `${window.location.origin}/media/${ri.image.bucket}`;
-              console.log("base", base);
-              const url = `${base}/${ri.image.key}`;
-              console.log("url", url);
+              const url = getImageUrl({
+                bucket: ri.image.bucket,
+                key: ri.image.key,
+              });
               return (
                 <div
                   key={ri.imageId}
@@ -371,14 +370,11 @@ export function RecipeClient(props: { id: number }) {
         open={lightboxOpen}
         onOpenChange={setLightboxOpen}
         initialIndex={lightboxIndex}
-        images={(recipe.images ?? []).map((ri) => {
-          const base = env.NEXT_PUBLIC_MEDIA_BASE_URL;
-          return {
-            url: `${base}/${ri.image.key}`,
-            alt: ri.image.alt ?? "",
-            caption: ri.caption ?? undefined,
-          };
-        })}
+        images={(recipe.images ?? []).map((ri) => ({
+          url: getImageUrl({ bucket: ri.image.bucket, key: ri.image.key }),
+          alt: ri.image.alt ?? "",
+          caption: ri.caption ?? undefined,
+        }))}
       />
     </div>
   );
