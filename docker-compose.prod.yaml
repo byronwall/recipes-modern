@@ -1,0 +1,13 @@
+services:
+  web-app:
+    labels:
+      - traefik.http.routers.app-http.rule=Host(recipes.byroni.us) && PathPrefix(`/`)
+      - traefik.http.routers.app-https.rule=Host(recipes.byroni.us) && PathPrefix(`/`)
+
+  minio:
+    labels:
+      - traefik.http.middlewares.strip-media.stripprefix.prefixes=/media
+
+      - traefik.http.routers.media-https.entryPoints=https
+      - traefik.http.routers.media-https.rule=Host(recipes.byroni.us) && PathPrefix(/media)
+      - traefik.http.routers.media-https.tls=true
