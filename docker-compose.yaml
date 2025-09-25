@@ -45,12 +45,13 @@ services:
       - traefik.http.routers.app-http.middlewares=redirect-https
       - traefik.http.routers.app-http.service=app-svc
 
-      - traefik.http.routers.app-https.entryPoints=web
+      - traefik.http.routers.app-https.entryPoints=websecure
       - traefik.http.routers.app-https.rule=Host(`${APP_HOST}`)
       - traefik.http.routers.app-https.middlewares=gzip
       - traefik.http.routers.app-https.service=app-svc
       - traefik.http.routers.app-https.tls=true
       - traefik.http.routers.app-https.tls.certresolver=letsencrypt
+      - traefik.http.routers.app-https.priority=10
 
       # Service
       - traefik.http.services.app-svc.loadbalancer.server.port=3000
@@ -59,7 +60,7 @@ services:
     working_dir: /app
     profiles: ["dev"]
     ports:
-      - "3000:3000"
+      - "3000"
     depends_on:
       - db
       - minio
@@ -68,8 +69,6 @@ services:
     environment:
       <<: *common-env
       PUBLIC_SCHEME: ${PUBLIC_SCHEME:-http}
-      TRAEFIK_ENTRYPOINT: ${TRAEFIK_ENTRYPOINT:-web}
-      TRAEFIK_TLS: ${TRAEFIK_TLS:-false}
       NODE_ENV: development
       HOT_RELOAD: ${HOT_RELOAD:-true}
       WATCHPACK_POLLING: ${HOT_RELOAD:-true}
@@ -92,6 +91,7 @@ services:
       - traefik.http.routers.app-dev.entryPoints=web
       - traefik.http.routers.app-dev.rule=Host(`${APP_HOST}`)
       - traefik.http.routers.app-dev.service=app-dev-svc
+      - traefik.http.routers.app-dev.priority=10
 
       # Service
       - traefik.http.services.app-dev-svc.loadbalancer.server.port=3000
@@ -126,8 +126,8 @@ services:
       timeout: 3s
       retries: 60
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9000"
+      - "9001"
     labels:
       - traefik.enable=true
 
@@ -136,12 +136,14 @@ services:
       - traefik.http.middlewares.media-gzip.compress=true
 
       # Router
-      - traefik.http.routers.media-https.entryPoints=web
+      - traefik.http.routers.media-https.entryPoints=${TRAEFIK_MINIO_ENTRYPOINTS:-websecure}
       - traefik.http.routers.media-https.rule=Host(`${APP_HOST}`) && PathPrefix(`${MEDIA_PATH_PREFIX:-/media}`)
       - traefik.http.routers.media-https.middlewares=strip-media,media-gzip
       - traefik.http.routers.media-https.service=media-svc
-      - traefik.http.routers.media-https.tls=true
-      - traefik.http.routers.media-https.tls.certresolver=letsencrypt
+      # TODO: image uploads are broken - going to AWS
+      # if minio is served over http, these two vars (TLS and entrypoints) need to be removed
+      - traefik.http.routers.media-https.tls=${TRAEFIK_MINIO_TLS:-true}
+      - traefik.http.routers.media-https.priority=100
 
       # Service
       - traefik.http.services.media-svc.loadbalancer.server.port=9000
