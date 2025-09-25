@@ -37,28 +37,28 @@ services:
         exec npm run start-prod;
       '
     labels:
-      - traefik.enable=true
+      - "traefik.enable=true"
 
       # Middlewares
-      - traefik.http.middlewares.gzip.compress=true
-      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+      - "traefik.http.middlewares.gzip.compress=true"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 
       # Routers
-      - traefik.http.routers.app-http.entryPoints=http
-      - traefik.http.routers.app-http.rule=Host(`${APP_HOST}`) && PathPrefix(`/`)
-      - traefik.http.routers.app-http.middlewares=redirect-to-https
-      - traefik.http.routers.app-http.service=app-svc
+      - "traefik.http.routers.app-http.entryPoints=http"
+      - "traefik.http.routers.app-http.rule=Host(`${APP_HOST}`) && PathPrefix(`/`)"
+      - "traefik.http.routers.app-http.middlewares=redirect-to-https"
+      - "traefik.http.routers.app-http.service=app-svc"
 
-      - traefik.http.routers.app-https.entryPoints=https
-      - traefik.http.routers.app-https.rule=Host(`${APP_HOST}`) && PathPrefix(`/`)
-      - traefik.http.routers.app-https.middlewares=gzip
-      - traefik.http.routers.app-https.service=app-svc
-      - traefik.http.routers.app-https.tls=true
-      - traefik.http.routers.app-https.tls.certresolver=letsencrypt
-      - traefik.http.routers.app-https.priority=10
+      - "traefik.http.routers.app-https.entryPoints=https"
+      - "traefik.http.routers.app-https.rule=Host(`${APP_HOST}`) && PathPrefix(`/`)"
+      - "traefik.http.routers.app-https.middlewares=gzip"
+      - "traefik.http.routers.app-https.service=app-svc"
+      - "traefik.http.routers.app-https.tls=true"
+      - "traefik.http.routers.app-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.app-https.priority=10"
 
       # Service
-      - traefik.http.services.app-svc.loadbalancer.server.port=3000
+      - "traefik.http.services.app-svc.loadbalancer.server.port=3000"
   web-app-dev:
     image: node:20
     working_dir: /app
@@ -132,23 +132,23 @@ services:
       - "9000"
       - "9001"
     labels:
-      - traefik.enable=true
+      - "traefik.enable=true"
 
       # Middlewares
-      - traefik.http.middlewares.strip-media.stripprefix.prefixes=${MEDIA_PATH_PREFIX:-/media}
-      - traefik.http.middlewares.media-gzip.compress=true
+      - "traefik.http.middlewares.strip-media.stripprefix.prefixes=${MEDIA_PATH_PREFIX:-/media}"
+      - "traefik.http.middlewares.media-gzip.compress=true"
 
       # Router
-      - traefik.http.routers.media-https.entryPoints=${TRAEFIK_MINIO_ENTRYPOINTS:-https}
-      - traefik.http.routers.media-https.rule=Host(`${APP_HOST}`) && PathPrefix(`${MEDIA_PATH_PREFIX:-/media}`)
-      - traefik.http.routers.media-https.middlewares=strip-media,media-gzip
-      - traefik.http.routers.media-https.service=media-svc
+      - "traefik.http.routers.media-https.entryPoints=${TRAEFIK_MINIO_ENTRYPOINTS:-https}"
+      - "traefik.http.routers.media-https.rule=Host(`${APP_HOST}`) && PathPrefix(`${MEDIA_PATH_PREFIX:-/media}`)"
+      - "traefik.http.routers.media-https.middlewares=strip-media,media-gzip"
+      - "traefik.http.routers.media-https.service=media-svc"
       # if minio is served over http, these two vars (TLS and entrypoints) need to be removed
-      - traefik.http.routers.media-https.tls=${TRAEFIK_MINIO_TLS:-true}
-      - traefik.http.routers.media-https.priority=100
+      - "traefik.http.routers.media-https.tls=${TRAEFIK_MINIO_TLS:-true}"
+      - "traefik.http.routers.media-https.priority=100"
 
       # Service
-      - traefik.http.services.media-svc.loadbalancer.server.port=9000
+      - "traefik.http.services.media-svc.loadbalancer.server.port=9000"
 
   traefik:
     image: traefik:v2.11

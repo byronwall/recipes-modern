@@ -6,8 +6,8 @@ services:
 
   minio:
     labels:
-      - traefik.http.middlewares.strip-media.stripprefix.prefixes=/media
+      - "traefik.http.middlewares.strip-media.stripprefix.prefixes=/media"
 
-      - traefik.http.routers.media-https.entryPoints=https
+      - "traefik.http.routers.media-https.entryPoints=https"
       - "traefik.http.routers.media-https.rule=Host(`recipes.byroni.us`) && PathPrefix(`/media`)"
-      - traefik.http.routers.media-https.tls=true
+      - "traefik.http.routers.media-https.tls=true"
