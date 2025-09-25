@@ -13,6 +13,7 @@ x-common-env: &common-env
   KROGER_CLIENT_SECRET: ${KROGER_CLIENT_SECRET}
   OPENAI_API_KEY: ${OPENAI_API_KEY}
   NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+  HOST: 0.0.0.0
 
 services:
   web-app:
@@ -77,8 +78,7 @@ services:
       WATCHPACK_POLLING: ${HOT_RELOAD:-true}
       CHOKIDAR_USEPOLLING: ${HOT_RELOAD:-true}
       CHOKIDAR_INTERVAL: ${CHOKIDAR_INTERVAL:-300}
-      # Ensure Next.js listens on all interfaces inside the container
-      HOSTNAME: 0.0.0.0
+
     volumes:
       - ./:/app:delegated
       - /app/node_modules
