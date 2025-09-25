@@ -36,11 +36,6 @@ services:
     environment:
       <<: *common-env
 
-    command: >
-      sh -ceu '
-        node ./scripts/init-bucket.js;
-        exec npm run start-prod -- -H 0.0.0.0 -p 3000;
-      '
     labels:
       - "traefik.enable=true"
 
