@@ -43,12 +43,12 @@ services:
       - traefik.http.middlewares.redirect-https.redirectscheme.scheme=https
 
       # Routers
-      - traefik.http.routers.app-http.entryPoints=web
+      - traefik.http.routers.app-http.entryPoints=http
       - traefik.http.routers.app-http.rule=Host(`${APP_HOST}`)
       - traefik.http.routers.app-http.middlewares=redirect-https
       - traefik.http.routers.app-http.service=app-svc
 
-      - traefik.http.routers.app-https.entryPoints=websecure
+      - traefik.http.routers.app-https.entryPoints=https
       - traefik.http.routers.app-https.rule=Host(`${APP_HOST}`)
       - traefik.http.routers.app-https.middlewares=gzip
       - traefik.http.routers.app-https.service=app-svc
@@ -91,7 +91,7 @@ services:
       - traefik.http.middlewares.gzip.compress=true
 
       # Router
-      - traefik.http.routers.app-dev.entryPoints=web
+      - traefik.http.routers.app-dev.entryPoints=http
       - traefik.http.routers.app-dev.rule=Host(`${APP_HOST}`)
       - traefik.http.routers.app-dev.service=app-dev-svc
       - traefik.http.routers.app-dev.priority=10
@@ -139,7 +139,7 @@ services:
       - traefik.http.middlewares.media-gzip.compress=true
 
       # Router
-      - traefik.http.routers.media-https.entryPoints=${TRAEFIK_MINIO_ENTRYPOINTS:-websecure}
+      - traefik.http.routers.media-https.entryPoints=${TRAEFIK_MINIO_ENTRYPOINTS:-https}
       - traefik.http.routers.media-https.rule=Host(`${APP_HOST}`) && PathPrefix(`${MEDIA_PATH_PREFIX:-/media}`)
       - traefik.http.routers.media-https.middlewares=strip-media,media-gzip
       - traefik.http.routers.media-https.service=media-svc
@@ -157,7 +157,7 @@ services:
       - --api.insecure=true
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
-      - --entrypoints.web.address=:80
+      - --entrypoints.http.address=:80
     ports:
       - "80:80"
       - "8080:8080"

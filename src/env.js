@@ -28,10 +28,6 @@ const derivedMediaBaseUrl =
     ? `${publicScheme}://${appHost}${mediaPathPrefix}/${s3Bucket}`
     : undefined);
 
-// process.env.NEXT_PUBLIC_MEDIA_BASE_URL = derivedMediaBaseUrl;
-
-console.log("derivedMediaBaseUrl", derivedMediaBaseUrl);
-
 const derivedKrogerRedirectUri =
   process.env.NEXT_REDIRECT_URI ??
   (appHost ? `${publicScheme}://${appHost}/kroger/auth` : undefined);
