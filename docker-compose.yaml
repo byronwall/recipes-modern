@@ -40,16 +40,16 @@ services:
 
       # Middlewares
       - traefik.http.middlewares.gzip.compress=true
-      - traefik.http.middlewares.redirect-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
 
       # Routers
       - traefik.http.routers.app-http.entryPoints=http
-      - traefik.http.routers.app-http.rule=Host(`${APP_HOST}`)
-      - traefik.http.routers.app-http.middlewares=redirect-https
+      - traefik.http.routers.app-http.rule=Host(`${APP_HOST}`) && PathPrefix(`/`)
+      - traefik.http.routers.app-http.middlewares=redirect-to-https
       - traefik.http.routers.app-http.service=app-svc
 
       - traefik.http.routers.app-https.entryPoints=https
-      - traefik.http.routers.app-https.rule=Host(`${APP_HOST}`)
+      - traefik.http.routers.app-https.rule=Host(`${APP_HOST}`) && PathPrefix(`/`)
       - traefik.http.routers.app-https.middlewares=gzip
       - traefik.http.routers.app-https.service=app-svc
       - traefik.http.routers.app-https.tls=true
@@ -92,7 +92,7 @@ services:
 
       # Router
       - traefik.http.routers.app-dev.entryPoints=http
-      - traefik.http.routers.app-dev.rule=Host(`${APP_HOST}`)
+      - traefik.http.routers.app-dev.rule=Host(`${APP_HOST}`) && PathPrefix(`/`)
       - traefik.http.routers.app-dev.service=app-dev-svc
       - traefik.http.routers.app-dev.priority=10
 
