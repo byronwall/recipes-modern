@@ -42,8 +42,6 @@ export function RecipeClient(props: { id: number }) {
     id,
   });
 
-  console.log("recipe", recipe);
-
   const utils = api.useUtils();
   const updateMutation = api.recipe.updateRecipeMeta.useMutation({
     onSuccess: async () => {

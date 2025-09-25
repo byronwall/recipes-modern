@@ -8,17 +8,18 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { flexibleChecksumsMiddlewareOptions } from "@aws-sdk/middleware-flexible-checksums";
+import { env } from "~/env";
 
 type S3ClientOptions = Partial<S3ClientConfig>;
 
 const commonOptions: S3ClientOptions = {
-  region: process.env.S3_REGION,
+  region: env.S3_REGION,
   forcePathStyle: true,
   // Avoid adding checksum headers that MinIO/S3 may not implement for this operation
   requestChecksumCalculation: "WHEN_REQUIRED",
   credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY_ID ?? "",
-    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY ?? "",
+    accessKeyId: env.S3_ACCESS_KEY_ID ?? "",
+    secretAccessKey: env.S3_SECRET_ACCESS_KEY ?? "",
   },
 };
 
@@ -36,13 +37,13 @@ function sanitizeEndpoint(endpoint?: string) {
 // Internal client used by the server (can point at docker network hostname like http://minio:9000)
 export const s3Internal = new S3Client({
   ...commonOptions,
-  endpoint: sanitizeEndpoint(process.env.S3_ENDPOINT_INTERNAL),
+  endpoint: sanitizeEndpoint(env.S3_ENDPOINT_INTERNAL),
 });
 
 // Public client used only for generating presigned URLs that the browser will call directly
 export const s3Public = new S3Client({
   ...commonOptions,
-  endpoint: sanitizeEndpoint(process.env.S3_ENDPOINT_PUBLIC),
+  endpoint: sanitizeEndpoint(env.S3_ENDPOINT_PUBLIC),
 });
 
 // MinIO can return 403/501 when checksum headers are expected but not provided by callers
@@ -61,7 +62,7 @@ export async function createPutUrl(
   maxAgeSeconds = 60,
 ) {
   const cmd = new PutObjectCommand({
-    Bucket: process.env.S3_BUCKET!,
+    Bucket: env.S3_BUCKET,
     Key: key,
     ContentType: contentType,
   });
@@ -71,13 +72,13 @@ export async function createPutUrl(
 
 export async function headObject(key: string) {
   return s3Internal.send(
-    new HeadObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: key }),
+    new HeadObjectCommand({ Bucket: env.S3_BUCKET, Key: key }),
   );
 }
 
 export async function getObjectBuffer(key: string) {
   const result = await s3Internal.send(
-    new GetObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: key }),
+    new GetObjectCommand({ Bucket: env.S3_BUCKET, Key: key }),
   );
   const arr = await result.Body?.transformToByteArray();
   return Buffer.from(arr ?? []);
@@ -85,6 +86,6 @@ export async function getObjectBuffer(key: string) {
 
 export async function deleteObject(key: string) {
   return s3Internal.send(
-    new DeleteObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: key }),
+    new DeleteObjectCommand({ Bucket: env.S3_BUCKET, Key: key }),
   );
 }
