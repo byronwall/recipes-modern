@@ -55,7 +55,7 @@ export const env = createEnv({
         ? z.string()
         : z.string().optional(),
     NEXTAUTH_URL: z.string().url().optional(),
-    NEXT_CLIENT_ID: z.string(),
+    KROGER_CLIENT_ID: z.string(),
     CLIENT_SECRET: z.string(),
     NEXT_SKIP_ADD_TO_CART: z.enum(["true", "false"]).default("false"),
     OPENAI_API_KEY: z.string(),
@@ -87,7 +87,7 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXTAUTH_URL: derivedNextAuthUrl,
-    NEXT_CLIENT_ID: process.env.NEXT_CLIENT_ID,
+    KROGER_CLIENT_ID: process.env.KROGER_CLIENT_ID,
     CLIENT_SECRET: process.env.CLIENT_SECRET,
     NEXT_REDIRECT_URI: derivedKrogerRedirectUri,
     NEXT_SKIP_ADD_TO_CART: process.env.NEXT_SKIP_ADD_TO_CART,

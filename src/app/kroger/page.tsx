@@ -15,7 +15,7 @@ import { UserKrogerStatus } from "./UserKrogerStatus";
 export default async function KrogerPage() {
   await useEnforceAuth();
 
-  const clientId = env.NEXT_CLIENT_ID;
+  const clientId = env.KROGER_CLIENT_ID;
   const redirectUri = env.NEXT_REDIRECT_URI;
 
   const krogerUrl =

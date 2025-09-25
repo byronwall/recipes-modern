@@ -14,7 +14,7 @@ export async function doOAuth(
 ): Promise<boolean> {
   const config = {
     client: {
-      id: env.NEXT_CLIENT_ID,
+      id: env.KROGER_CLIENT_ID,
       secret: env.CLIENT_SECRET,
     },
     auth: {
