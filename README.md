@@ -86,7 +86,7 @@ Required (images & object storage):
 Optional:
 
 - `OPENAI_API_KEY` = Enables AI recipe generation
-- `KROGER_CLIENT_ID`, `CLIENT_SECRET`, `NEXT_REDIRECT_URI` = Kroger integration
+- `KROGER_CLIENT_ID`, `KROGER_CLIENT_SECRET`, `NEXT_REDIRECT_URI` = Kroger integration
 - `NEXT_SKIP_ADD_TO_CART` = Set to `true` to disable pushing items to Kroger cart
 - `APP_ORIGINS` = Comma-separated origins to allow in MinIO CORS (Compose defaults this to `APP_URL`)
 
@@ -142,7 +142,7 @@ The container entrypoint runs `npx prisma migrate deploy` before `next start`.
 ## Kroger integration
 
 - Go to `/kroger` and click “Sign in to Kroger” to connect your account.
-- You must configure `KROGER_CLIENT_ID`, `CLIENT_SECRET`, and `NEXT_REDIRECT_URI` (must match the OAuth app’s redirect).
+- You must configure `KROGER_CLIENT_ID`, `KROGER_CLIENT_SECRET`, and `NEXT_REDIRECT_URI` (must match the OAuth app’s redirect).
 - After connecting, you can search Kroger products and add items to your cart from the shopping list.
 
 ## Project scripts

@@ -15,7 +15,7 @@ export async function doOAuth(
   const config = {
     client: {
       id: env.KROGER_CLIENT_ID,
-      secret: env.CLIENT_SECRET,
+      secret: env.KROGER_CLIENT_SECRET,
     },
     auth: {
       tokenHost: "https://api.kroger.com/v1/connect/oauth2/token",

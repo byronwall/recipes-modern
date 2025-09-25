@@ -56,7 +56,7 @@ export const env = createEnv({
         : z.string().optional(),
     NEXTAUTH_URL: z.string().url().optional(),
     KROGER_CLIENT_ID: z.string(),
-    CLIENT_SECRET: z.string(),
+    KROGER_CLIENT_SECRET: z.string(),
     NEXT_SKIP_ADD_TO_CART: z.enum(["true", "false"]).default("false"),
     OPENAI_API_KEY: z.string(),
     // S3 / MinIO
@@ -88,7 +88,7 @@ export const env = createEnv({
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXTAUTH_URL: derivedNextAuthUrl,
     KROGER_CLIENT_ID: process.env.KROGER_CLIENT_ID,
-    CLIENT_SECRET: process.env.CLIENT_SECRET,
+    KROGER_CLIENT_SECRET: process.env.KROGER_CLIENT_SECRET,
     NEXT_REDIRECT_URI: derivedKrogerRedirectUri,
     NEXT_SKIP_ADD_TO_CART: process.env.NEXT_SKIP_ADD_TO_CART,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
