@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
-RUN npm ci
+RUN npm ci && apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # Copy the rest of the app's source code
 COPY . .
