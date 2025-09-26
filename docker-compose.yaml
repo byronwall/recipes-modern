@@ -23,7 +23,7 @@ services:
     build: .
     profiles: ["prod"]
     ports:
-      - "3000:3000"
+      - "3000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 10s
@@ -134,8 +134,8 @@ services:
       timeout: 3s
       retries: 60
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9000"
+      - "9001"
     labels:
       - "traefik.enable=true"
 
