@@ -21,8 +21,10 @@ A modern Next.js 14 app for creating and managing recipes, planning meals, and m
 
 - Build = `docker compose --profile prod build`
 - Deploy = `docker compose --profile prod up -d`
+  - The `-d` is critical to detach once deployed. Otherwise, Coolify will keep the container "In Progress" indefinitely.
+- Ensure the `Escape special characters in labels?` is **UNCHECKED**. We need to expand an ENV in the label
 
-The `-d` is critical to detach once deployed. Otherwise, Coolify will keep the container "In Progress" indefinitely.
+There are hard coded traefik labels in the docker-compose.yaml file. These are set to work with Coolify's Traefik setup. Specifically, the `endPoints` are `http` and `https` for the app.
 
 ## Setup (Images & Object Storage)
 
