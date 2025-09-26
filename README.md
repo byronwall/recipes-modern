@@ -17,6 +17,13 @@ A modern Next.js 14 app for creating and managing recipes, planning meals, and m
 - NextAuth (credentials), Zod
 - Tailwind CSS, Radix UI, Lucide Icons
 
+## Running on Coolify
+
+- Build = `docker compose --profile prod build`
+- Deploy = `docker compose --profile prod up -d`
+
+The `-d` is critical to detach once deployed. Otherwise, Coolify will keep the container "In Progress" indefinitely.
+
 ## Setup (Images & Object Storage)
 
 This app supports recipe images using an S3-compatible bucket (MinIO in Docker by default).
