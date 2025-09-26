@@ -134,8 +134,8 @@ services:
     #   timeout: 3s
     #   retries: 60
     ports:
-      - "9000"
-      - "9001"
+      - "9000:9000"
+      - "9001:9001"
     labels:
       - "traefik.enable=true"
 
