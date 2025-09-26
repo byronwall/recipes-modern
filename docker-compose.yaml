@@ -21,7 +21,7 @@ x-common-env: &common-env
 services:
   web-app:
     build: .
-    profiles: ["prod"]
+    # profiles: ["prod"]
     ports:
       - "3000:3000"
     # healthcheck:
