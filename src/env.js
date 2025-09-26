@@ -1,7 +1,7 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
-console.log("env", process.env);
+// console.log("env", process.env);
 
 // Derive public media/S3 endpoints when not explicitly provided, mirroring docker-compose
 const publicScheme =
