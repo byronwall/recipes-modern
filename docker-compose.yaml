@@ -62,6 +62,8 @@ services:
 
       # Service
       - "traefik.http.services.app-svc.loadbalancer.server.port=3000"
+      - "traefik.http.routers.app-http.rule=Host(`recipes.byroni.us`) && PathPrefix(`/`)"
+      - "traefik.http.routers.app-https.rule=Host(`recipes.byroni.us`) && PathPrefix(`/`)"
   # web-app-dev:
   #   image: node:20
   #   working_dir: /app
