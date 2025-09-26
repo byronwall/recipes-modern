@@ -11,7 +11,7 @@
     "postinstall": "prisma generate",
     "lint": "next lint",
     "start": "next start",
-    "start-prod": "npm run init-bucket && npx prisma migrate deploy && NODE_ENV=production next start",
+    "start-prod": "npx prisma migrate deploy && NODE_ENV=production next start",
     "init-bucket": "NODE_OPTIONS=--enable-source-maps node ./scripts/init-bucket.js"
   },
   "dependencies": {
