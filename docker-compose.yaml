@@ -62,45 +62,45 @@ services:
 
       # Service
       - "traefik.http.services.app-svc.loadbalancer.server.port=3000"
-  web-app-dev:
-    image: node:20
-    working_dir: /app
-    profiles: ["dev"]
-    ports:
-      - "3000"
-    depends_on:
-      - db
-      # - minio
-    env_file:
-      - .env
-    environment:
-      <<: *common-env
-      PUBLIC_SCHEME: ${PUBLIC_SCHEME:-http}
-      NODE_ENV: development
-      HOT_RELOAD: ${HOT_RELOAD:-true}
-      WATCHPACK_POLLING: ${HOT_RELOAD:-true}
-      CHOKIDAR_USEPOLLING: ${HOT_RELOAD:-true}
-      CHOKIDAR_INTERVAL: ${CHOKIDAR_INTERVAL:-300}
+  # web-app-dev:
+  #   image: node:20
+  #   working_dir: /app
+  #   profiles: ["dev"]
+  #   ports:
+  #     - "3000"
+  #   depends_on:
+  #     - db
+  #     # - minio
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     <<: *common-env
+  #     PUBLIC_SCHEME: ${PUBLIC_SCHEME:-http}
+  #     NODE_ENV: development
+  #     HOT_RELOAD: ${HOT_RELOAD:-true}
+  #     WATCHPACK_POLLING: ${HOT_RELOAD:-true}
+  #     CHOKIDAR_USEPOLLING: ${HOT_RELOAD:-true}
+  #     CHOKIDAR_INTERVAL: ${CHOKIDAR_INTERVAL:-300}
 
-    volumes:
-      - ./:/app:delegated
-      - /app/node_modules
-      - /app/.next
-    command: sh -c "npm ci && npx prisma generate && npm run init-bucket && npm run dev -- -p 3000 -H 0.0.0.0"
-    labels:
-      - traefik.enable=true
+  #   volumes:
+  #     - ./:/app:delegated
+  #     - /app/node_modules
+  #     - /app/.next
+  #   command: sh -c "npm ci && npx prisma generate && npm run init-bucket && npm run dev -- -p 3000 -H 0.0.0.0"
+  #   labels:
+  #     - traefik.enable=true
 
-      # Middleware (reuse gzip if you want)
-      - traefik.http.middlewares.gzip.compress=true
+  #     # Middleware (reuse gzip if you want)
+  #     - traefik.http.middlewares.gzip.compress=true
 
-      # Router
-      - traefik.http.routers.app-dev.entryPoints=http
-      - traefik.http.routers.app-dev.rule=Host(`${APP_HOST}`) && PathPrefix(`/`)
-      - traefik.http.routers.app-dev.service=app-dev-svc
-      - traefik.http.routers.app-dev.priority=10
+  #     # Router
+  #     - traefik.http.routers.app-dev.entryPoints=http
+  #     - traefik.http.routers.app-dev.rule=Host(`${APP_HOST}`) && PathPrefix(`/`)
+  #     - traefik.http.routers.app-dev.service=app-dev-svc
+  #     - traefik.http.routers.app-dev.priority=10
 
-      # Service
-      - traefik.http.services.app-dev-svc.loadbalancer.server.port=3000
+  #     # Service
+  #     - traefik.http.services.app-dev-svc.loadbalancer.server.port=3000
 
   db:
     image: postgres:13
@@ -153,19 +153,19 @@ services:
   #     # Service
   #     - "traefik.http.services.media-svc.loadbalancer.server.port=9000"
 
-  traefik:
-    image: traefik:v2.11
-    profiles: ["dev"]
-    command:
-      - --api.insecure=true
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
-      - --entrypoints.http.address=:80
-    ports:
-      - "80:80"
-      - "8080:8080"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+  # traefik:
+  #   image: traefik:v2.11
+  #   profiles: ["dev"]
+  #   command:
+  #     - --api.insecure=true
+  #     - --providers.docker=true
+  #     - --providers.docker.exposedbydefault=false
+  #     - --entrypoints.http.address=:80
+  #   ports:
+  #     - "80:80"
+  #     - "8080:8080"
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
 
 volumes:
   db-data:
