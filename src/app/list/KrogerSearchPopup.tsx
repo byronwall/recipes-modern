@@ -44,12 +44,14 @@ export function KrogerSearchPopup({ ingredient, originalListItemId }: Props) {
 
     // clear results
     setSearchResults([]);
-
-    const results = await searchMutation.mutateAsync({
-      query: searchIngredient,
-    });
-
-    setSearchResults(results);
+    try {
+      const results = await searchMutation.mutateAsync({
+        query: searchIngredient,
+      });
+      setSearchResults(results);
+    } catch (_err) {
+      // Error will be reflected in searchMutation.error and rendered below
+    }
   };
 
   async function searchOnOpen(isOpen: boolean) {

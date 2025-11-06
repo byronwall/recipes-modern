@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { type API_KrogerAddCart } from "~/app/kroger/model";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
@@ -18,17 +19,27 @@ export const krogerRouter = createTRPCRouter({
 
       console.log("do search", query);
 
-      const results = await doKrogerSearch(
-        {
-          filterTerm: query,
-        },
-        ctx.session.user.id,
-        true,
-      );
+      try {
+        const results = await doKrogerSearch(
+          {
+            filterTerm: query,
+          },
+          ctx.session.user.id,
+          true,
+        );
 
-      console.log("results", results);
+        console.log("results", results);
 
-      return results;
+        return results;
+      } catch (err: unknown) {
+        console.error("Kroger search failed", err);
+        const message =
+          err instanceof Error
+            ? err.message
+            : "Kroger search failed. Please try again later.";
+        // Avoid non-serializable cause to prevent client transform errors
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message });
+      }
     }),
   getKrogerStatus: protectedProcedure.query(async ({ input: _input, ctx }) => {
     const userId = ctx.session.user.id;

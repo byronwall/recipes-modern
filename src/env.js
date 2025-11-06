@@ -54,6 +54,7 @@ export const env = createEnv({
     KROGER_CLIENT_ID: z.string(),
     KROGER_CLIENT_SECRET: z.string(),
     NEXT_SKIP_ADD_TO_CART: z.enum(["true", "false"]).default("false"),
+    KROGER_SIMULATE_SEARCH_500: z.enum(["true", "false"]).default("false"),
     OPENAI_API_KEY: z.string(),
     // S3 / MinIO
     S3_ENDPOINT: z.string().url().optional(),
@@ -87,6 +88,7 @@ export const env = createEnv({
     KROGER_CLIENT_SECRET: process.env.KROGER_CLIENT_SECRET,
     NEXT_REDIRECT_URI: derivedKrogerRedirectUri,
     NEXT_SKIP_ADD_TO_CART: process.env.NEXT_SKIP_ADD_TO_CART,
+    KROGER_SIMULATE_SEARCH_500: process.env.KROGER_SIMULATE_SEARCH_500,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     S3_ENDPOINT: process.env.S3_ENDPOINT,
     S3_ENDPOINT_PUBLIC: derivedS3EndpointPublic,

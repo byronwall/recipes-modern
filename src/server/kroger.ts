@@ -122,6 +122,12 @@ export async function doKrogerSearch(
       "accessToken",
       accessToken,
     );
+    // Dev flag: simulate a 500 to verify client-side error handling
+    if (process.env.KROGER_SIMULATE_SEARCH_500 === "true") {
+      throw new Error(
+        "Kroger search failed: simulated 500. Please try again later.",
+      );
+    }
     const response = await fetch(url, {
       headers: {
         Accept: "application/json",
@@ -146,9 +152,22 @@ export async function doKrogerSearch(
         return await doKrogerSearch(postData, userId, false);
       }
     }
+
+    // For non-OK responses (including 5xx), throw an error so the client can surface it
+    const err: any = search as any;
+    const errCode = err?.errors?.code ? ` (${err.errors.code})` : "";
+    const errReason =
+      err?.errors?.reason || response.statusText || "Unknown error";
+    throw new Error(
+      `Kroger search failed: ${errReason}${errCode}. Please try again later.`,
+    );
   } catch (error: any) {
     console.error(error, "**** error on search");
+    // Re-throw to allow callers to handle and surface to the user
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Kroger search failed. Please try again later.";
+    throw new Error(message);
   }
-
-  return [];
 }
