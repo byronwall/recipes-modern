@@ -1,8 +1,11 @@
 "use client";
 
-import { PopoverContent } from "@radix-ui/react-popover";
 import { Calendar } from "~/components/ui/calendar";
-import { Popover, PopoverTrigger } from "~/components/ui/popover";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "~/components/ui/popover";
 
 type StylishDatePickerProps = {
   value: Date | undefined;
