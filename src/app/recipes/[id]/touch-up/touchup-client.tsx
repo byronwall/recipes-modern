@@ -25,17 +25,17 @@ function IngredientPieces(props: {
           {amount}
         </span>
       ) : null}
-      {hasModifier ? (
-        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-800">
-          {modifier}
-        </span>
-      ) : null}
       {hasUnit ? (
         <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-emerald-800">
           {unit}
         </span>
       ) : null}
       <span>{ingredient}</span>
+      {hasModifier ? (
+        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-800">
+          {modifier}
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -143,6 +143,21 @@ export function TouchUpClient(props: { id: number }) {
 
   const right = useMemo(() => {
     if (!result) return null;
+    const expandNote = (note: string): string => {
+      if (/No stepGroups in result/i.test(note)) {
+        return `${note} — The AI tool output did not include any step groups, so we could not use AI-generated steps.`;
+      }
+      if (/Step group \d+ has no steps/i.test(note)) {
+        return `${note} — One of the groups ended up with zero steps after AI processing.`;
+      }
+      if (/contains blank steps/i.test(note)) {
+        return `${note} — Some steps were empty strings, likely due to over-splitting or parsing issues.`;
+      }
+      if (/No result parsed/i.test(note)) {
+        return `${note} — The AI function arguments could not be parsed; the tool call may have been malformed.`;
+      }
+      return note;
+    };
     return (
       <div className="space-y-4">
         <div>
@@ -183,6 +198,17 @@ export function TouchUpClient(props: { id: number }) {
             ))}
           </div>
         </div>
+
+        {Array.isArray(result.notes) && result.notes.length > 0 ? (
+          <div>
+            <H4>Notes</H4>
+            <ul className="list-disc pl-5 text-sm">
+              {result.notes.map((n, i) => (
+                <li key={i}>{expandNote(n)}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </div>
     );
   }, [result]);
