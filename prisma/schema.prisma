@@ -21,6 +21,8 @@ enum RecipeType {
     DESSERT
     SNACK
     DRINK
+    APPETIZER
+    SIDE
     OTHER
 }
 

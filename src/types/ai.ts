@@ -1,3 +1,5 @@
+import { type RecipeType } from "@prisma/client";
+
 export interface GenerateRecipeConstraints {
   servings?: number;
   timeLimitMinutes?: number;
@@ -25,15 +27,6 @@ export interface GenerateRecipeRequest {
   /** Total number of requested passes/recipes */
   totalPasses?: number;
 }
-
-export type RecipeType =
-  | "BREAKFAST"
-  | "LUNCH"
-  | "DINNER"
-  | "DESSERT"
-  | "SNACK"
-  | "DRINK"
-  | "OTHER";
 
 export interface GeneratedRecipe {
   name: string;

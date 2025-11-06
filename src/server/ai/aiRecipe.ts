@@ -1,3 +1,4 @@
+import { RecipeType } from "@prisma/client";
 import OpenAI from "openai";
 import type {
   ChatCompletion,
@@ -51,16 +52,7 @@ export async function callOpenAI(
             cookMinutes: { type: ["integer", "null"], minimum: 0 },
             type: {
               type: ["string", "null"],
-              enum: [
-                "BREAKFAST",
-                "LUNCH",
-                "DINNER",
-                "DESSERT",
-                "SNACK",
-                "DRINK",
-                "OTHER",
-                null,
-              ],
+              enum: [...Object.values(RecipeType), null],
             },
             tags: {
               type: ["array", "null"],
@@ -171,15 +163,7 @@ export function parseAndValidate(json: unknown): {
         : undefined,
     type: ((): any => {
       const t = String((j as any)?.type ?? "OTHER").toUpperCase();
-      const allowed = [
-        "BREAKFAST",
-        "LUNCH",
-        "DINNER",
-        "DESSERT",
-        "SNACK",
-        "DRINK",
-        "OTHER",
-      ];
+      const allowed = Object.values(RecipeType);
       return allowed.includes(t) ? (t as any) : "OTHER";
     })(),
     tags: Array.isArray((j as any)?.tags)
