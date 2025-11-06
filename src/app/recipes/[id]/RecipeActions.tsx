@@ -1,7 +1,8 @@
 "use client";
 
-import { ChefHat, Trash } from "lucide-react";
+import { ChefHat, Sparkles, Trash } from "lucide-react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { AddRecipeToShoppingList } from "~/app/AddRecipeToShoppingList";
 import { AddToMealPlanPopover } from "~/app/AddToMealPlanPopover";
 import { useRecipeActions } from "~/app/useRecipeActions";
@@ -26,6 +27,13 @@ export function RecipeActions(props: { recipeId: number }) {
           <AddToMealPlanPopover recipeId={recipeId} />
 
           <AddRecipeToShoppingList recipeId={recipeId} />
+
+          <Link href={`/recipes/${recipeId}/touch-up`}>
+            <Button variant={"secondary"}>
+              <Sparkles />
+              Touch up with AI
+            </Button>
+          </Link>
 
           <SimpleAlertDialog
             trigger={

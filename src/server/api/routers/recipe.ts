@@ -307,6 +307,85 @@ export const recipeRouter = createTRPCRouter({
       return recipe;
     }),
 
+  replaceGroups: protectedProcedure
+    .input(
+      z.object({
+        recipeId: z.coerce.number(),
+        ingredientGroups: z.array(
+          z.object({
+            title: z.string(),
+            ingredients: z.array(
+              z.object({
+                ingredient: z.string(),
+                amount: z.string().optional().default(""),
+                modifier: z.string().optional().default(""),
+                unit: z.string().optional().default(""),
+                original: z.string().optional().default(""),
+              }),
+            ),
+          }),
+        ),
+        stepGroups: z.array(
+          z.object({
+            title: z.string(),
+            steps: z.array(z.string()),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const userId = ctx.session.user.id;
+      const existing = await db.recipe.findUnique({
+        where: { id: input.recipeId, userId },
+      });
+      if (!existing) throw new Error("Recipe not found");
+
+      // Replace all groups in a transaction
+      await db.$transaction(async (tx) => {
+        // Delete existing groups (cascade deletes ingredients and step images)
+        await tx.ingredientGroup.deleteMany({
+          where: { recipeId: input.recipeId },
+        });
+        await tx.stepGroup.deleteMany({ where: { recipeId: input.recipeId } });
+
+        // Create ingredient groups
+        for (let i = 0; i < input.ingredientGroups.length; i++) {
+          const g = input.ingredientGroups[i]!;
+          await tx.ingredientGroup.create({
+            data: {
+              title: g.title,
+              order: i,
+              recipeId: input.recipeId,
+              ingredients: {
+                create: g.ingredients.map((ing) => ({
+                  ingredient: ing.ingredient,
+                  amount: ing.amount ?? "",
+                  modifier: ing.modifier ?? "",
+                  unit: ing.unit ?? "",
+                  rawInput: ing.original ?? "",
+                })),
+              },
+            },
+          });
+        }
+
+        // Create step groups
+        for (let i = 0; i < input.stepGroups.length; i++) {
+          const g = input.stepGroups[i]!;
+          await tx.stepGroup.create({
+            data: {
+              title: g.title,
+              order: i,
+              steps: g.steps,
+              recipeId: input.recipeId,
+            },
+          });
+        }
+      });
+
+      return { ok: true as const };
+    }),
+
   /*
   type NewRecipe = {
   title: string;
