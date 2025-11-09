@@ -18,7 +18,10 @@ if (!mediaBaseUrl) {
     );
   }
 }
-const mediaAsUri = new URL(mediaBaseUrl);
+/// TODO: add proper checks around this for build.
+const mediaAsUri = new URL(
+  mediaBaseUrl ?? "http://localhost:9000/recipes-media",
+);
 const protocol = mediaAsUri.protocol.replace(":", "");
 if (protocol !== "http" && protocol !== "https") {
   throw new Error(
