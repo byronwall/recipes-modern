@@ -440,7 +440,7 @@ export function RecipeList() {
 
               <div className="mt-auto border-t px-3 py-2">
                 <div className="flex w-full">
-                  <RecipeActions recipeId={recipe.id} />
+                  <RecipeActions recipeId={recipe.id} variant="compact" />
                 </div>
               </div>
             </div>

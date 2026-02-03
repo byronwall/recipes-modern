@@ -118,137 +118,179 @@ export function RecipeClient(props: { id: number }) {
   }
 
   return (
-    <div className="relative w-full space-y-2">
-      <H2 className="flex items-center gap-2">
-        <span>{recipe.name}</span>
-        <Dialog
-          open={open}
-          onOpenChange={(val) => {
-            setOpen(val);
-            if (val) {
-              setName(recipe.name ?? "");
-              setDescription(recipe.description ?? "");
-              setType(recipe.type);
-              setTags(
-                (recipe.tags ?? []).map((rt) => rt.tag.name).filter(Boolean),
-              );
-            }
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Edit recipe">
-              <Pencil className="h-4 w-4" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit recipe</DialogTitle>
-              <DialogDescription>Update recipe details.</DialogDescription>
-            </DialogHeader>
+    <div className="relative w-full space-y-6">
+      <section className="rounded-2xl border bg-card/70 p-6 shadow-sm">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <H2 className="flex items-center gap-2 border-b-0 pb-0">
+                <span>{recipe.name}</span>
+              </H2>
+              <Dialog
+                open={open}
+                onOpenChange={(val) => {
+                  setOpen(val);
+                  if (val) {
+                    setName(recipe.name ?? "");
+                    setDescription(recipe.description ?? "");
+                    setType(recipe.type);
+                    setTags(
+                      (recipe.tags ?? []).map((rt) => rt.tag.name).filter(Boolean),
+                    );
+                  }
+                }}
+              >
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="Edit recipe">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Edit recipe</DialogTitle>
+                    <DialogDescription>Update recipe details.</DialogDescription>
+                  </DialogHeader>
 
-            <form
-              className="space-y-4"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                await updateMutation.mutateAsync({
-                  id,
-                  name: name.trim(),
-                  description: description ?? "",
-                  type,
-                });
-                // ensure tag slugs
-                const tagNames = tags.map((t) => t.trim()).filter(Boolean);
-                for (const name of tagNames) {
-                  await upsertTag.mutateAsync({ name });
-                }
-                const slugs = tagNames.map((n) =>
-                  n.toLowerCase().replace(/\s+/g, "-"),
-                );
-                await setTagsMutation.mutateAsync({
-                  recipeId: id,
-                  tagSlugs: slugs,
-                });
-              }}
-            >
-              <div className="space-y-2">
-                <Label htmlFor="recipe-name">Name</Label>
-                <Input
-                  id="recipe-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  autoFocus
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="recipe-description">Description</Label>
-                <Textarea
-                  id="recipe-description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  autoResize
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Type</Label>
-                <RadioGroup
-                  className="flex flex-wrap gap-2"
-                  value={type}
-                  onValueChange={(v) => setType(v as RecipeType)}
-                >
-                  {Object.values(RecipeType).map((t) => (
-                    <div key={t} className="flex items-center gap-2">
-                      <RadioGroupItem value={t} id={`edit-type-${t}`} />
-                      <Label htmlFor={`edit-type-${t}`}>{t}</Label>
+                  <form
+                    className="space-y-4"
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      await updateMutation.mutateAsync({
+                        id,
+                        name: name.trim(),
+                        description: description ?? "",
+                        type,
+                      });
+                      // ensure tag slugs
+                      const tagNames = tags.map((t) => t.trim()).filter(Boolean);
+                      for (const name of tagNames) {
+                        await upsertTag.mutateAsync({ name });
+                      }
+                      const slugs = tagNames.map((n) =>
+                        n.toLowerCase().replace(/\s+/g, "-"),
+                      );
+                      await setTagsMutation.mutateAsync({
+                        recipeId: id,
+                        tagSlugs: slugs,
+                      });
+                    }}
+                  >
+                    <div className="space-y-2">
+                      <Label htmlFor="recipe-name">Name</Label>
+                      <Input
+                        id="recipe-name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        autoFocus
+                      />
                     </div>
-                  ))}
-                </RadioGroup>
-              </div>
 
-              <div className="space-y-2">
-                <Label>Tags</Label>
-                <InlineTagEditor
-                  recipeId={id}
-                  values={tags}
-                  onChange={setTags}
-                />
-              </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="recipe-description">Description</Label>
+                      <Textarea
+                        id="recipe-description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        autoResize
+                      />
+                    </div>
 
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" isLoading={updateMutation.isPending}>
-                  Save
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </H2>
-      {recipe.description &&
-      recipe.description.trim().toLowerCase() !== "desc" ? (
-        <p className="max-w-prose text-muted-foreground">
-          {recipe.description}
-        </p>
-      ) : null}
+                    <div className="space-y-2">
+                      <Label>Type</Label>
+                      <RadioGroup
+                        className="flex flex-wrap gap-2"
+                        value={type}
+                        onValueChange={(v) => setType(v as RecipeType)}
+                      >
+                        {Object.values(RecipeType).map((t) => (
+                          <div key={t} className="flex items-center gap-2">
+                            <RadioGroupItem value={t} id={`edit-type-${t}`} />
+                            <Label htmlFor={`edit-type-${t}`}>{t}</Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    </div>
 
-      <div className="flex flex-wrap gap-2">
-        <RecipeActions recipeId={recipe.id} />
+                    <div className="space-y-2">
+                      <Label>Tags</Label>
+                      <InlineTagEditor
+                        recipeId={id}
+                        values={tags}
+                        onChange={setTags}
+                      />
+                    </div>
+
+                    <DialogFooter>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit" isLoading={updateMutation.isPending}>
+                        Save
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {recipe.description &&
+            recipe.description.trim().toLowerCase() !== "desc" ? (
+              <p className="max-w-prose text-muted-foreground">
+                {recipe.description}
+              </p>
+            ) : null}
+
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-muted px-3 py-1 text-xs">
+                {recipe.type}
+              </span>
+              {typeof recipe.cookMinutes === "number" && (
+                <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
+                  {recipe.cookMinutes} min
+                </span>
+              )}
+              {(recipe.tags ?? []).length > 0 ? (
+                (recipe.tags ?? []).map((rt) => (
+                  <span
+                    key={rt.tag.id}
+                    className="rounded-full bg-muted px-3 py-1 text-xs"
+                  >
+                    {rt.tag.name}
+                  </span>
+                ))
+              ) : (
+                <span className="text-xs text-muted-foreground">No tags</span>
+              )}
+            </div>
+          </div>
+
+          <div className="w-full max-w-xs border-l border-muted/60 pl-6 lg:ml-auto lg:self-start">
+            <div className="text-xs uppercase text-muted-foreground">
+              Actions
+            </div>
+            <div className="mt-3">
+              <RecipeActions recipeId={recipe.id} variant="full" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">
+        <section className="rounded-2xl border bg-card/70 p-6 shadow-sm">
+          <IngredientList recipe={recipe} />
+        </section>
+        <section className="rounded-2xl border bg-card/70 p-6 shadow-sm">
+          <StepList recipe={recipe} />
+        </section>
       </div>
-
-      <IngredientList recipe={recipe} />
-
-      <StepList recipe={recipe} />
 
       <CookingModeOverlay recipe={recipe} />
 
-      <div className="mt-6 space-y-2">
+      <section className="rounded-2xl border bg-card/70 p-6 shadow-sm">
         <Label>Images</Label>
         <div
           className={`group relative flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-dashed p-4 transition-colors ${
@@ -362,7 +404,7 @@ export function RecipeClient(props: { id: number }) {
         ) : (
           <div className="text-sm text-muted-foreground">No images yet</div>
         )}
-      </div>
+      </section>
 
       <ImageLightbox
         open={lightboxOpen}
