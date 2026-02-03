@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { RecipeType } from "@prisma/client";
-import { ImagePlus, Pencil, Plus, Trash } from "lucide-react";
+import { ChevronDown, ImagePlus, Pencil, Plus, Trash } from "lucide-react";
 import { H2 } from "~/components/ui/typography";
 import { Button } from "~/components/ui/button";
 import {
@@ -61,6 +61,7 @@ export function RecipeClient(props: { id: number }) {
   const [description, setDescription] = useState("");
   const [type, setType] = useState<RecipeType | undefined>(undefined);
   const [tags, setTags] = useState<string[]>([]);
+  const [cookMinutes, setCookMinutes] = useState<number | undefined>(undefined);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -134,6 +135,11 @@ export function RecipeClient(props: { id: number }) {
                     setName(recipe.name ?? "");
                     setDescription(recipe.description ?? "");
                     setType(recipe.type);
+                    setCookMinutes(
+                      typeof recipe.cookMinutes === "number"
+                        ? recipe.cookMinutes
+                        : undefined,
+                    );
                     setTags(
                       (recipe.tags ?? []).map((rt) => rt.tag.name).filter(Boolean),
                     );
@@ -145,14 +151,14 @@ export function RecipeClient(props: { id: number }) {
                     <Pencil className="h-4 w-4" />
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-3xl">
                   <DialogHeader>
                     <DialogTitle>Edit recipe</DialogTitle>
                     <DialogDescription>Update recipe details.</DialogDescription>
                   </DialogHeader>
 
                   <form
-                    className="space-y-4"
+                    className="grid gap-6"
                     onSubmit={async (e) => {
                       e.preventDefault();
                       await updateMutation.mutateAsync({
@@ -160,6 +166,7 @@ export function RecipeClient(props: { id: number }) {
                         name: name.trim(),
                         description: description ?? "",
                         type,
+                        cookMinutes,
                       });
                       // ensure tag slugs
                       const tagNames = tags.map((t) => t.trim()).filter(Boolean);
@@ -175,49 +182,84 @@ export function RecipeClient(props: { id: number }) {
                       });
                     }}
                   >
-                    <div className="space-y-2">
-                      <Label htmlFor="recipe-name">Name</Label>
-                      <Input
-                        id="recipe-name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        autoFocus
-                      />
-                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="recipe-name">Name</Label>
+                        <Input
+                          id="recipe-name"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          autoFocus
+                          className="h-12 text-base"
+                        />
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="recipe-description">Description</Label>
-                      <Textarea
-                        id="recipe-description"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        autoResize
-                      />
-                    </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="recipe-description">Description</Label>
+                        <Textarea
+                          id="recipe-description"
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          autoResize
+                        />
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label>Type</Label>
-                      <RadioGroup
-                        className="flex flex-wrap gap-2"
-                        value={type}
-                        onValueChange={(v) => setType(v as RecipeType)}
-                      >
-                        {Object.values(RecipeType).map((t) => (
-                          <div key={t} className="flex items-center gap-2">
-                            <RadioGroupItem value={t} id={`edit-type-${t}`} />
-                            <Label htmlFor={`edit-type-${t}`}>{t}</Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    </div>
+                      <div className="space-y-2">
+                        <Label>Type</Label>
+                        <RadioGroup
+                          className="flex flex-wrap gap-2"
+                          value={type}
+                          onValueChange={(v) => setType(v as RecipeType)}
+                        >
+                          {Object.values(RecipeType).map((t) => {
+                            const selected = type === t;
+                            return (
+                              <label
+                                key={t}
+                                htmlFor={`edit-type-${t}`}
+                                className={`flex items-center gap-2 rounded-full border px-3 py-1 text-sm capitalize transition ${
+                                  selected
+                                    ? "bg-muted"
+                                    : "bg-background hover:bg-muted/60"
+                                }`}
+                              >
+                                <RadioGroupItem
+                                  value={t}
+                                  id={`edit-type-${t}`}
+                                  className="sr-only"
+                                />
+                                <span>{t.toLowerCase()}</span>
+                              </label>
+                            );
+                          })}
+                        </RadioGroup>
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label>Tags</Label>
-                      <InlineTagEditor
-                        recipeId={id}
-                        values={tags}
-                        onChange={setTags}
-                      />
+                      <div className="space-y-2">
+                        <Label htmlFor="recipe-cook-minutes">
+                          Cooking time (minutes)
+                        </Label>
+                        <Input
+                          id="recipe-cook-minutes"
+                          type="number"
+                          min={0}
+                          placeholder="e.g. 30"
+                          value={cookMinutes ?? ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setCookMinutes(val ? Number(val) : undefined);
+                          }}
+                        />
+                      </div>
+
+                      <div className="space-y-2 md:col-span-2">
+                        <Label>Tags</Label>
+                        <InlineTagEditor
+                          recipeId={id}
+                          values={tags}
+                          onChange={setTags}
+                        />
+                      </div>
                     </div>
 
                     <DialogFooter>
@@ -420,14 +462,18 @@ export function RecipeClient(props: { id: number }) {
   );
 }
 
-function InlineTagEditor(props: {
-  values: string[];
-  onChange: (vals: string[]) => void;
-  recipeId?: number;
-}) {
+  function InlineTagEditor(props: {
+    values: string[];
+    onChange: (vals: string[]) => void;
+    recipeId?: number;
+  }) {
   const { values, onChange, recipeId } = props;
   const [input, setInput] = useState("");
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const { data } = api.tag.search.useQuery({ q: input, limit: 10 });
+  const lowerValues = values.map((v) => v.toLowerCase());
+  const filteredSuggestions =
+    data?.filter((t) => !lowerValues.includes(t.name.toLowerCase())) ?? [];
   // global add tag dialog used instead of local dialog
   const utils = api.useUtils();
   const upsertTag = api.tag.upsertByName.useMutation();
@@ -456,83 +502,73 @@ function InlineTagEditor(props: {
 
   return (
     <div className="flex w-full flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <div className="flex flex-wrap gap-2">
-          {values.map((v) => (
-            <span key={v} className="rounded bg-muted px-2 py-1 text-xs">
-              {v}
-              <button
-                className="ml-1"
-                onClick={() => removeTag(v)}
-                aria-label={`Remove ${v}`}
-              >
-                ×
-              </button>
-            </span>
-          ))}
-        </div>
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label="Add tag"
-          onClick={() =>
-            openAddTagDialog({
-              recipeId,
-              existingTagSlugs: values.map((n) =>
-                n.toLowerCase().replace(/\s+/g, "-"),
-              ),
-              onSuccess: ({ name }) => {
-                const updated = [...values, name];
-                onChange(updated);
-                const slugs = updated.map((n) =>
-                  n.toLowerCase().replace(/\s+/g, "-"),
-                );
-                if (recipeId) {
-                  setTagsMutation.mutate({ recipeId, tagSlugs: slugs });
-                }
-              },
-            })
-          }
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
+      <div className="flex flex-wrap gap-2">
+        {values.map((v) => (
+          <span
+            key={v}
+            className="flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs"
+          >
+            {v}
+            <button
+              className="-mr-1 ml-1 rounded px-1 text-muted-foreground hover:bg-muted-foreground/10 hover:text-foreground"
+              onClick={() => removeTag(v)}
+              aria-label={`Remove ${v}`}
+            >
+              ×
+            </button>
+          </span>
+        ))}
       </div>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Search or create tag"
-          />
-        </PopoverTrigger>
-        <PopoverContent className="w-64 p-0">
-          <div className="max-h-60 overflow-auto py-1">
-            {data?.length ? (
-              data.map((t) => (
+      <div className="flex items-center gap-2">
+        <Input
+          ref={inputRef}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Add or search tags"
+          className="max-w-sm"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addTag(input);
+            }
+          }}
+        />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" aria-label="Add tag">
+              <ChevronDown className="h-4 w-4" />
+              Add tag
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-1">
+            <div className="max-h-56 overflow-auto">
+              {filteredSuggestions.length ? (
+                filteredSuggestions.map((t) => (
+                  <button
+                    key={t.id}
+                    className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
+                    onClick={() => addTag(t.name)}
+                  >
+                    {t.name}
+                  </button>
+                ))
+              ) : (
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  No tags
+                </div>
+              )}
+              {input.trim() && (
                 <button
-                  key={t.id}
-                  className="block w-full px-3 py-2 text-left hover:bg-muted"
-                  onClick={() => addTag(t.name)}
+                  className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
+                  onClick={() => addTag(input)}
                 >
-                  {t.name}
+                  Create “{input}”
                 </button>
-              ))
-            ) : (
-              <div className="px-3 py-2 text-sm text-muted-foreground">
-                No tags
-              </div>
-            )}
-            {input.trim() && (
-              <button
-                className="block w-full px-3 py-2 text-left hover:bg-muted"
-                onClick={() => addTag(input)}
-              >
-                Create: {input}
-              </button>
-            )}
-          </div>
-        </PopoverContent>
-      </Popover>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   );
 }
