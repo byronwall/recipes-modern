@@ -17,10 +17,10 @@ export function NavLink(props: {
     <Link
       href={href}
       className={cn(
-        "px-2 py-1 text-3xl hover:bg-gray-200 hover:no-underline",
-        "border-b",
+        "rounded-full px-3 py-1 text-base font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground hover:no-underline",
         {
-          "border-b-4 border-b-primary": pathName === href,
+          "bg-foreground text-background hover:bg-foreground hover:text-background":
+            pathName === href,
         },
         className,
       )}

@@ -9,6 +9,12 @@ import { useMealPlanActions } from "../useMealPlanActions";
 import { ShoppingBasket, Trash } from "lucide-react";
 import { useRecipeActions } from "../useRecipeActions";
 import { StylishDatePicker } from "./StylishDatePicker";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 
 type PlannedMealWithRecipe = RouterOutputs["recipe"]["getMealPlans"][0];
 
@@ -30,59 +36,88 @@ export function PlanCard(props: { plan: PlannedMealWithRecipe }) {
 
   return (
     <div
-      className={cn("w-[276px] rounded border border-gray-200 p-2", {
-        "bg-gray-200 text-gray-700": plan.isMade,
-      })}
+      className={cn(
+        "flex h-full min-h-[190px] flex-col gap-3 rounded-2xl border bg-card/70 p-3 shadow-sm",
+        {
+          "bg-muted/60 text-muted-foreground": plan.isMade,
+        },
+      )}
     >
-      <div className="flex gap-2 ">
+      <div className="flex items-start gap-3">
         <StylishDatePicker value={plan.date} onChange={handleDateChange} />
 
-        <div className="flex flex-col gap-1">
+        <div className="flex min-h-[76px] flex-1 flex-col gap-2">
           <Link href={`/recipes/${plan.Recipe.id}`}>
-            <H4>{plan.Recipe.name}</H4>
+            <H4 className="leading-tight">{plan.Recipe.name}</H4>
           </Link>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="rounded border px-1.5 py-0.5 text-xs">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span className="rounded-full border px-2 py-0.5">
               {plan.Recipe.type}
             </span>
-            <div className="flex flex-wrap gap-1">
-              {(plan.Recipe as any).tags?.slice(0, 2).map((rt: any) => (
-                <span
-                  key={rt.tag.id}
-                  className="rounded bg-muted px-1.5 py-0.5 text-xs"
-                >
-                  {rt.tag.name}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div>{plan.isMade ? "made" : "not made"}</div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => handleDelete(plan.id)}
-              variant="destructive-outline"
-            >
-              <Trash size={16} />
-            </Button>
-            <Button
-              onClick={() => addMealPlanToList.mutateAsync({ id: plan.id })}
-              disabled={addMealPlanToList.isPending || plan.isOnShoppingList}
-            >
-              <ShoppingBasket />
-            </Button>
-            <Button
-              onClick={() => {
-                updatePlan.mutate({
-                  id: plan.id,
-                  isMade: !plan.isMade,
-                });
-              }}
-              disabled={updatePlan.isPending}
-            >
-              {plan.isMade ? "Not made" : "Made"}
-            </Button>
+            {plan.isMade && (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
+                made
+              </span>
+            )}
           </div>
         </div>
+      </div>
+
+      <div className="mt-auto flex items-center justify-between gap-2 border-t pt-2">
+        <TooltipProvider delayDuration={100}>
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => handleDelete(plan.id)}
+                  variant="destructive-outline"
+                  size="icon"
+                  aria-label="Delete meal"
+                >
+                  <Trash size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Delete meal</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => addMealPlanToList.mutateAsync({ id: plan.id })}
+                  disabled={
+                    addMealPlanToList.isPending || plan.isOnShoppingList
+                  }
+                  size="icon"
+                  variant="outline"
+                  aria-label="Add to list"
+                >
+                  <ShoppingBasket />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {plan.isOnShoppingList ? "Already on list" : "Add to list"}
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={() => {
+                  updatePlan.mutate({
+                    id: plan.id,
+                    isMade: !plan.isMade,
+                  });
+                }}
+                disabled={updatePlan.isPending}
+                size="sm"
+              >
+                {plan.isMade ? "Not made" : "Made"}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {plan.isMade ? "Mark not made" : "Mark made"}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </div>
   );

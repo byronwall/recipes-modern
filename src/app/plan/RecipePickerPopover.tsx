@@ -9,7 +9,13 @@ import {
 import { useState } from "react";
 import { Input } from "~/components/ui/input";
 import { Plus } from "lucide-react";
-import { H1, H3 } from "~/components/ui/typography";
+import { H3 } from "~/components/ui/typography";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 
 export function RecipePickerPopover(props: {
   onRecipeSelected: (recipeId: number) => void;
@@ -25,32 +31,58 @@ export function RecipePickerPopover(props: {
   return (
     <div>
       <Popover>
-        <PopoverContent className="max-h-[400px] w-72 overflow-y-auto p-4">
-          <div className="flex flex-col gap-2">
-            <H3>add recipe to meal plan</H3>
+        <PopoverContent
+          side="left"
+          align="start"
+          sideOffset={12}
+          className="max-h-[420px] w-80 overflow-y-auto p-4"
+        >
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <H3 className="text-lg">Add recipe</H3>
+              <span className="text-xs text-muted-foreground">
+                {filteredRecipes.length} results
+              </span>
+            </div>
             <Input
-              placeholder="Search"
+              placeholder="Search recipes"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="text-lg"
+              className="text-base"
             />
-            {filteredRecipes.map((recipe) => (
-              <Button
-                key={recipe.id}
-                onClick={() => props.onRecipeSelected(recipe.id)}
-                className="flex-1 text-wrap break-words py-1"
-                variant="outline"
-              >
-                {recipe.name}
-              </Button>
-            ))}
+            <div className="flex flex-col gap-1">
+              {filteredRecipes.map((recipe) => (
+                <button
+                  key={recipe.id}
+                  onClick={() => props.onRecipeSelected(recipe.id)}
+                  className="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition hover:border-foreground/20 hover:bg-muted"
+                >
+                  <span className="line-clamp-2">{recipe.name}</span>
+                  <span className="text-xs text-muted-foreground">Add</span>
+                </button>
+              ))}
+              {filteredRecipes.length === 0 && (
+                <div className="rounded-lg border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
+                  No recipes match that search.
+                </div>
+              )}
+            </div>
           </div>
         </PopoverContent>
         <PopoverTrigger asChild>
-          <Button>
-            <Plus />
-            Add
-          </Button>
+          <span className="inline-flex">
+            <TooltipProvider delayDuration={100}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" className="h-10 rounded-full">
+                    <Plus className="h-4 w-4" />
+                    Add meal
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Add meal</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </span>
         </PopoverTrigger>
       </Popover>
     </div>

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { RecipeType } from "@prisma/client";
+import { faker } from "@faker-js/faker";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
@@ -689,6 +690,67 @@ export const recipeRouter = createTRPCRouter({
         });
       }
     }),
+
+  seedDevRecipes: protectedProcedure
+    .input(
+      z
+        .object({
+          count: z.number().int().min(1).max(50).optional(),
+        })
+        .optional(),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (process.env.NODE_ENV !== "development") {
+        throw new Error("Seed recipes are only available in development.");
+      }
+
+      const userId = ctx.session.user.id;
+      const count = input?.count ?? 10;
+      const seeds = Array.from({ length: count }, () => buildSeedRecipe());
+      const availableTags = await ensureSeedTags(userId);
+
+      await db.$transaction(
+        seeds.map((seed) =>
+          db.recipe.create({
+            data: {
+              name: seed.name,
+              description: seed.description,
+              type: seed.type,
+              cookMinutes: seed.cookMinutes,
+              userId,
+              ingredientGroups: {
+                create: seed.ingredientGroups.map((group, index) => ({
+                  title: group.title,
+                  order: index,
+                  ingredients: {
+                    create: group.ingredients.map((ingredient) => ({
+                      ...ingredient,
+                    })),
+                  },
+                })),
+              },
+              stepGroups: {
+                create: seed.stepGroups.map((group, index) => ({
+                  title: group.title,
+                  order: index,
+                  steps: group.steps,
+                })),
+              },
+              tags: {
+                create: faker.helpers
+                  .arrayElements(
+                    availableTags,
+                    faker.number.int({ min: 1, max: 4 }),
+                  )
+                  .map((tag) => ({ tagId: tag.id })),
+              },
+            },
+          }),
+        ),
+      );
+
+      return { created: count };
+    }),
 });
 
 function splitTextIntoHeaderAndItems(text: string) {
@@ -731,4 +793,408 @@ function splitTextIntoHeaderAndItems(text: string) {
   }
 
   return groups;
+}
+
+type SeedIngredient = {
+  ingredient: string;
+  amount: string;
+  unit: string;
+  modifier: string;
+  rawInput: string;
+};
+
+type SeedGroup = {
+  title: string;
+  ingredients: SeedIngredient[];
+};
+
+type SeedStepGroup = {
+  title: string;
+  steps: string[];
+};
+
+type SeedRecipe = {
+  name: string;
+  description: string;
+  type: RecipeType;
+  cookMinutes: number;
+  ingredientGroups: SeedGroup[];
+  stepGroups: SeedStepGroup[];
+};
+
+const proteins = [
+  "chicken thighs",
+  "salmon fillets",
+  "shrimp",
+  "ground turkey",
+  "tofu",
+  "pork tenderloin",
+  "chickpeas",
+  "black beans",
+  "sirloin steak",
+];
+const veggies = [
+  "bell pepper",
+  "zucchini",
+  "broccoli",
+  "spinach",
+  "carrot",
+  "mushrooms",
+  "red onion",
+  "green beans",
+  "cherry tomatoes",
+];
+const carbs = [
+  "jasmine rice",
+  "quinoa",
+  "penne",
+  "fusilli",
+  "couscous",
+  "baby potatoes",
+  "tortillas",
+];
+const herbs = ["parsley", "cilantro", "basil", "dill", "thyme", "mint"];
+const acids = ["lemon", "lime", "red wine vinegar", "rice vinegar"];
+
+function makeIngredient(
+  amount: string,
+  unit: string,
+  ingredient: string,
+  modifier = "",
+): SeedIngredient {
+  const parts = [amount, unit, ingredient, modifier].filter(Boolean);
+  return {
+    ingredient,
+    amount,
+    unit,
+    modifier,
+    rawInput: parts.join(" "),
+  };
+}
+
+function buildSkilletDinner(): SeedRecipe {
+  const protein = faker.helpers.arrayElement(proteins);
+  const veg1 = faker.helpers.arrayElement(veggies);
+  const veg2 = faker.helpers.arrayElement(veggies.filter((v) => v !== veg1));
+  const herb = faker.helpers.arrayElement(herbs);
+  const acid = faker.helpers.arrayElement(acids);
+  const spice = faker.helpers.arrayElement([
+    "smoked paprika",
+    "Italian seasoning",
+    "curry powder",
+    "chili flakes",
+  ]);
+
+  return {
+    name: `${faker.word.adjective({ length: { min: 4, max: 8 } })} ${protein} skillet`,
+    description: `Weeknight skillet with ${veg1}, ${veg2}, and a ${spice} finish.`,
+    type: RecipeType.DINNER,
+    cookMinutes: faker.number.int({ min: 20, max: 40 }),
+    ingredientGroups: [
+      {
+        title: "Skillet",
+        ingredients: [
+          makeIngredient("1", "tbsp", "olive oil"),
+          makeIngredient("1", "lb", protein),
+          makeIngredient("1", "cup", veg1, "sliced"),
+          makeIngredient("1", "cup", veg2, "chopped"),
+          makeIngredient("2", "cloves", "garlic", "minced"),
+          makeIngredient("1", "tsp", spice),
+          makeIngredient("1", "tsp", "kosher salt"),
+          makeIngredient("1/2", "tsp", "black pepper"),
+        ],
+      },
+      {
+        title: "Finish",
+        ingredients: [
+          makeIngredient("1/2", "cup", "chicken stock"),
+          makeIngredient("1", "tbsp", "butter"),
+          makeIngredient("1", "tbsp", acid, "juice"),
+          makeIngredient("2", "tbsp", herb, "chopped"),
+        ],
+      },
+    ],
+    stepGroups: [
+      {
+        title: "Cook",
+        steps: [
+          "Pat the protein dry and season with salt, pepper, and the spice blend.",
+          "Heat olive oil in a large skillet over medium-high heat. Sear the protein until browned.",
+          "Add the vegetables and garlic. Cook until just tender, 4 to 6 minutes.",
+          "Pour in stock and butter, scraping up browned bits. Simmer until slightly glossy.",
+          "Finish with citrus juice and herbs. Serve right away.",
+        ],
+      },
+    ],
+  };
+}
+
+function buildSheetPanDinner(): SeedRecipe {
+  const protein = faker.helpers.arrayElement(proteins);
+  const veg1 = faker.helpers.arrayElement(veggies);
+  const veg2 = faker.helpers.arrayElement(veggies.filter((v) => v !== veg1));
+  const herb = faker.helpers.arrayElement(herbs);
+  const acid = faker.helpers.arrayElement(acids);
+
+  return {
+    name: `${faker.word.adjective({ length: { min: 4, max: 8 } })} ${protein} sheet pan`,
+    description: `Roasted ${protein} with ${veg1} and ${veg2}.`,
+    type: RecipeType.DINNER,
+    cookMinutes: faker.number.int({ min: 25, max: 45 }),
+    ingredientGroups: [
+      {
+        title: "Sheet Pan",
+        ingredients: [
+          makeIngredient("1", "lb", protein),
+          makeIngredient("2", "cups", veg1, "chunks"),
+          makeIngredient("2", "cups", veg2, "chunks"),
+          makeIngredient("2", "tbsp", "olive oil"),
+          makeIngredient("1", "tsp", "garlic powder"),
+          makeIngredient("1", "tsp", "kosher salt"),
+          makeIngredient("1/2", "tsp", "black pepper"),
+        ],
+      },
+      {
+        title: "Finish",
+        ingredients: [
+          makeIngredient("1", "tbsp", acid, "juice"),
+          makeIngredient("2", "tbsp", herb, "chopped"),
+        ],
+      },
+    ],
+    stepGroups: [
+      {
+        title: "Roast",
+        steps: [
+          "Heat the oven to 425°F and line a sheet pan with parchment.",
+          "Toss the protein and vegetables with olive oil, garlic powder, salt, and pepper.",
+          "Spread everything in an even layer and roast 18 to 25 minutes, stirring halfway.",
+          "Finish with citrus juice and fresh herbs before serving.",
+        ],
+      },
+    ],
+  };
+}
+
+function buildPastaDinner(): SeedRecipe {
+  const herb = faker.helpers.arrayElement(herbs);
+  const veg = faker.helpers.arrayElement(veggies);
+
+  return {
+    name: `${faker.word.adjective({ length: { min: 4, max: 8 } })} tomato ${faker.helpers.arrayElement(["penne", "fusilli"])}`,
+    description: "Simple pasta with a bright tomato sauce.",
+    type: RecipeType.DINNER,
+    cookMinutes: faker.number.int({ min: 20, max: 35 }),
+    ingredientGroups: [
+      {
+        title: "Pasta",
+        ingredients: [
+          makeIngredient("12", "oz", "pasta"),
+          makeIngredient("2", "tbsp", "olive oil"),
+          makeIngredient("1", "", "yellow onion", "diced"),
+          makeIngredient("3", "cloves", "garlic", "minced"),
+          makeIngredient("1", "can", "crushed tomatoes", "14 oz"),
+          makeIngredient("1", "cup", veg, "sliced"),
+          makeIngredient("1", "tsp", "kosher salt"),
+          makeIngredient("1/2", "tsp", "black pepper"),
+        ],
+      },
+      {
+        title: "Finish",
+        ingredients: [
+          makeIngredient("1/4", "cup", "parmesan", "grated"),
+          makeIngredient("2", "tbsp", herb, "chopped"),
+        ],
+      },
+    ],
+    stepGroups: [
+      {
+        title: "Simmer",
+        steps: [
+          "Cook the pasta in salted water until al dente; reserve 1/2 cup cooking water.",
+          "Saute onion and garlic in olive oil until soft, then add the vegetables.",
+          "Stir in tomatoes, salt, and pepper. Simmer 8 to 10 minutes.",
+          "Toss the pasta with the sauce, loosening with reserved water as needed.",
+          "Finish with parmesan and herbs.",
+        ],
+      },
+    ],
+  };
+}
+
+function buildBreakfastScramble(): SeedRecipe {
+  const veg = faker.helpers.arrayElement(veggies);
+  const herb = faker.helpers.arrayElement(herbs);
+  return {
+    name: `${faker.word.adjective({ length: { min: 4, max: 8 } })} veggie scramble`,
+    description: `Fluffy eggs with ${veg} and herbs.`,
+    type: RecipeType.BREAKFAST,
+    cookMinutes: faker.number.int({ min: 10, max: 20 }),
+    ingredientGroups: [
+      {
+        title: "Scramble",
+        ingredients: [
+          makeIngredient("6", "", "eggs"),
+          makeIngredient("1/4", "cup", "milk"),
+          makeIngredient("1", "cup", veg, "chopped"),
+          makeIngredient("1/2", "cup", "cheddar", "shredded"),
+          makeIngredient("1", "tbsp", "butter"),
+          makeIngredient("1/2", "tsp", "kosher salt"),
+          makeIngredient("1/4", "tsp", "black pepper"),
+          makeIngredient("1", "tbsp", herb, "chopped"),
+        ],
+      },
+    ],
+    stepGroups: [
+      {
+        title: "Cook",
+        steps: [
+          "Whisk the eggs with milk, salt, and pepper.",
+          "Melt butter in a nonstick skillet over medium heat, then add vegetables and cook until tender.",
+          "Pour in eggs and gently scramble until just set.",
+          "Fold in cheese and herbs. Serve immediately.",
+        ],
+      },
+    ],
+  };
+}
+
+function buildDessertCrisp(): SeedRecipe {
+  const fruit = faker.helpers.arrayElement([
+    "apples",
+    "blueberries",
+    "peaches",
+    "strawberries",
+  ]);
+  return {
+    name: `${faker.word.adjective({ length: { min: 4, max: 8 } })} ${fruit} crisp`,
+    description: `Warm baked ${fruit} with an oat topping.`,
+    type: RecipeType.DESSERT,
+    cookMinutes: faker.number.int({ min: 35, max: 55 }),
+    ingredientGroups: [
+      {
+        title: "Fruit",
+        ingredients: [
+          makeIngredient("4", "cups", fruit, "sliced"),
+          makeIngredient("2", "tbsp", "granulated sugar"),
+          makeIngredient("1", "tbsp", "lemon juice"),
+          makeIngredient("1", "tbsp", "cornstarch"),
+        ],
+      },
+      {
+        title: "Topping",
+        ingredients: [
+          makeIngredient("1", "cup", "rolled oats"),
+          makeIngredient("1/2", "cup", "flour"),
+          makeIngredient("1/3", "cup", "brown sugar"),
+          makeIngredient("1/2", "tsp", "cinnamon"),
+          makeIngredient("6", "tbsp", "butter", "cold, cubed"),
+        ],
+      },
+    ],
+    stepGroups: [
+      {
+        title: "Bake",
+        steps: [
+          "Heat oven to 375°F and butter a baking dish.",
+          "Toss fruit with sugar, lemon juice, and cornstarch, then spread in the dish.",
+          "Mix oats, flour, brown sugar, and cinnamon; cut in butter until crumbly.",
+          "Sprinkle topping over fruit and bake 30 to 35 minutes until bubbling.",
+        ],
+      },
+    ],
+  };
+}
+
+function buildLunchBowl(): SeedRecipe {
+  const protein = faker.helpers.arrayElement(proteins);
+  const veg = faker.helpers.arrayElement(veggies);
+  const grain = faker.helpers.arrayElement(carbs);
+  const herb = faker.helpers.arrayElement(herbs);
+  return {
+    name: `${faker.word.adjective({ length: { min: 4, max: 8 } })} ${protein} bowl`,
+    description: `Hearty bowl with ${grain}, ${veg}, and a quick dressing.`,
+    type: RecipeType.LUNCH,
+    cookMinutes: faker.number.int({ min: 20, max: 35 }),
+    ingredientGroups: [
+      {
+        title: "Bowl",
+        ingredients: [
+          makeIngredient("2", "cups", grain, "cooked"),
+          makeIngredient("1", "lb", protein),
+          makeIngredient("1", "cup", veg, "sliced"),
+          makeIngredient("1", "tbsp", "olive oil"),
+          makeIngredient("1", "tsp", "kosher salt"),
+          makeIngredient("1/2", "tsp", "black pepper"),
+        ],
+      },
+      {
+        title: "Dressing",
+        ingredients: [
+          makeIngredient("2", "tbsp", "olive oil"),
+          makeIngredient("1", "tbsp", "lemon juice"),
+          makeIngredient("1", "tsp", "honey"),
+          makeIngredient("1", "tsp", "Dijon mustard"),
+          makeIngredient("1", "tbsp", herb, "chopped"),
+        ],
+      },
+    ],
+    stepGroups: [
+      {
+        title: "Assemble",
+        steps: [
+          "Season the protein with salt and pepper, then cook until browned and cooked through.",
+          "Warm the grain and toss with a drizzle of olive oil.",
+          "Whisk dressing ingredients until smooth.",
+          "Build bowls with grain, protein, and vegetables. Drizzle with dressing.",
+        ],
+      },
+    ],
+  };
+}
+
+function buildSeedRecipe(): SeedRecipe {
+  const builders = [
+    buildSkilletDinner,
+    buildSheetPanDinner,
+    buildPastaDinner,
+    buildBreakfastScramble,
+    buildDessertCrisp,
+    buildLunchBowl,
+  ];
+  return faker.helpers.arrayElement(builders)();
+}
+
+async function ensureSeedTags(userId: string) {
+  const existing = await db.tag.findMany({ orderBy: { name: "asc" } });
+  if (existing.length >= 4) return existing;
+
+  const fallbackTags = [
+    "Quick",
+    "Family Favorite",
+    "Meal Prep",
+    "Budget Friendly",
+    "One-Pan",
+    "Vegetarian",
+    "Gluten Free",
+    "High Protein",
+    "Freezer Friendly",
+    "Weeknight",
+  ];
+
+  await db.$transaction(
+    fallbackTags.map((name) =>
+      db.tag.upsert({
+        where: { slug: name.toLowerCase().replace(/\s+/g, "-") },
+        update: { name },
+        create: {
+          name,
+          slug: name.toLowerCase().replace(/\s+/g, "-"),
+          createdBy: userId,
+        },
+      }),
+    ),
+  );
+
+  return db.tag.findMany({ orderBy: { name: "asc" } });
 }
