@@ -23,6 +23,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { openAddTagDialog } from "~/hooks/use-add-tag-dialog";
 import { IngredientList } from "./IngredientList";
@@ -55,6 +62,22 @@ export function RecipeClient(props: { id: number }) {
     },
   });
   const upsertTag = api.tag.upsertByName.useMutation();
+  const updateType = api.recipe.updateRecipeType.useMutation({
+    onSuccess: async () => {
+      await utils.recipe.getRecipe.invalidate({ id });
+    },
+  });
+  const addTagToRecipe = api.tag.addTagToRecipe.useMutation({
+    onSuccess: async () => {
+      await utils.recipe.getRecipe.invalidate({ id });
+    },
+  });
+  const removeTagFromRecipe = api.tag.removeTagFromRecipe.useMutation({
+    onSuccess: async () => {
+      await utils.recipe.getRecipe.invalidate({ id });
+    },
+  });
+  const { data: allTagsData } = api.tag.all.useQuery();
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -62,6 +85,9 @@ export function RecipeClient(props: { id: number }) {
   const [type, setType] = useState<RecipeType | undefined>(undefined);
   const [tags, setTags] = useState<string[]>([]);
   const [cookMinutes, setCookMinutes] = useState<number | undefined>(undefined);
+  const [addSelectValues, setAddSelectValues] = useState<
+    Record<number, string | undefined>
+  >({});
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -141,7 +167,9 @@ export function RecipeClient(props: { id: number }) {
                         : undefined,
                     );
                     setTags(
-                      (recipe.tags ?? []).map((rt) => rt.tag.name).filter(Boolean),
+                      (recipe.tags ?? [])
+                        .map((rt) => rt.tag.name)
+                        .filter(Boolean),
                     );
                   }
                 }}
@@ -154,7 +182,9 @@ export function RecipeClient(props: { id: number }) {
                 <DialogContent className="max-w-3xl">
                   <DialogHeader>
                     <DialogTitle>Edit recipe</DialogTitle>
-                    <DialogDescription>Update recipe details.</DialogDescription>
+                    <DialogDescription>
+                      Update recipe details.
+                    </DialogDescription>
                   </DialogHeader>
 
                   <form
@@ -169,7 +199,9 @@ export function RecipeClient(props: { id: number }) {
                         cookMinutes,
                       });
                       // ensure tag slugs
-                      const tagNames = tags.map((t) => t.trim()).filter(Boolean);
+                      const tagNames = tags
+                        .map((t) => t.trim())
+                        .filter(Boolean);
                       for (const name of tagNames) {
                         await upsertTag.mutateAsync({ name });
                       }
@@ -270,7 +302,10 @@ export function RecipeClient(props: { id: number }) {
                       >
                         Cancel
                       </Button>
-                      <Button type="submit" isLoading={updateMutation.isPending}>
+                      <Button
+                        type="submit"
+                        isLoading={updateMutation.isPending}
+                      >
                         Save
                       </Button>
                     </DialogFooter>
@@ -287,26 +322,100 @@ export function RecipeClient(props: { id: number }) {
             ) : null}
 
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-muted px-3 py-1 text-xs">
-                {recipe.type}
-              </span>
               {typeof recipe.cookMinutes === "number" && (
                 <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
                   {recipe.cookMinutes} min
                 </span>
               )}
-              {(recipe.tags ?? []).length > 0 ? (
-                (recipe.tags ?? []).map((rt) => (
-                  <span
-                    key={rt.tag.id}
-                    className="rounded-full bg-muted px-3 py-1 text-xs"
+
+              <Select
+                value={recipe.type}
+                onValueChange={(v) =>
+                  updateType.mutate({
+                    id: recipe.id,
+                    type: v as RecipeType,
+                  })
+                }
+              >
+                <SelectTrigger className="h-7 w-auto rounded-full border px-3 py-0 text-xs">
+                  <SelectValue placeholder={recipe.type} />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(RecipeType).map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {(recipe.tags ?? []).map((rt) => (
+                <span
+                  key={rt.tag.id}
+                  className="flex items-center gap-1 rounded-full bg-accent/60 px-3 py-0.5 text-xs"
+                >
+                  {rt.tag.name}
+                  <button
+                    aria-label={`Remove ${rt.tag.name}`}
+                    className="-mr-1 ml-1 rounded px-1 text-muted-foreground hover:bg-muted-foreground/10 hover:text-foreground"
+                    onClick={async () => {
+                      await removeTagFromRecipe.mutateAsync({
+                        recipeId: recipe.id,
+                        tagSlug: rt.tag.slug,
+                      });
+                    }}
                   >
-                    {rt.tag.name}
-                  </span>
-                ))
-              ) : (
-                <span className="text-xs text-muted-foreground">No tags</span>
-              )}
+                    ×
+                  </button>
+                </span>
+              ))}
+
+              <Select
+                value={addSelectValues[recipe.id] ?? ""}
+                onValueChange={async (slug) => {
+                  if (slug === "__new__") {
+                    openAddTagDialog({
+                      recipeId: recipe.id,
+                      existingTagSlugs: (recipe.tags ?? []).map(
+                        (rt) => rt.tag.slug,
+                      ),
+                      onSuccess: () =>
+                        setAddSelectValues((prev) => ({
+                          ...prev,
+                          [recipe.id]: "",
+                        })),
+                    });
+                    return;
+                  }
+                  await addTagToRecipe.mutateAsync({
+                    recipeId: recipe.id,
+                    tagSlug: slug,
+                  });
+                  setAddSelectValues((prev) => ({
+                    ...prev,
+                    [recipe.id]: "",
+                  }));
+                }}
+              >
+                <SelectTrigger className="h-7 w-auto rounded-full bg-muted px-3 py-0 text-xs text-muted-foreground hover:bg-muted/80">
+                  + Tag
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  <SelectItem value="__new__">Add new tag…</SelectItem>
+                  {(allTagsData ?? [])
+                    .filter(
+                      (t) =>
+                        !(recipe.tags ?? []).some(
+                          (rt) => rt.tag.slug === t.slug,
+                        ),
+                    )
+                    .map((t) => (
+                      <SelectItem key={t.slug} value={t.slug}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -462,11 +571,11 @@ export function RecipeClient(props: { id: number }) {
   );
 }
 
-  function InlineTagEditor(props: {
-    values: string[];
-    onChange: (vals: string[]) => void;
-    recipeId?: number;
-  }) {
+function InlineTagEditor(props: {
+  values: string[];
+  onChange: (vals: string[]) => void;
+  recipeId?: number;
+}) {
   const { values, onChange, recipeId } = props;
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -524,7 +633,7 @@ export function RecipeClient(props: { id: number }) {
           ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Add or search tags"
+          placeholder="Add a tag"
           className="max-w-sm"
           onKeyDown={(e) => {
             if (e.key === "Enter") {
