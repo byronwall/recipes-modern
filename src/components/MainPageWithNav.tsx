@@ -12,25 +12,38 @@ export async function MainPageWithNav(props: { children: React.ReactNode }) {
       <div
         className={`flex w-full items-center ${session ? "justify-between" : "justify-center"}`}
       >
-        <div className="flex flex-wrap items-end gap-6 font-bold tracking-tight">
+        <div className="flex flex-wrap items-center gap-2 text-lg font-semibold tracking-tight">
           {session ? (
             <>
-              <NavLink href="/" className="text-4xl">
+              <NavLink href="/" className="text-lg">
                 recipes
               </NavLink>
-              <NavLink href="/plan">plan</NavLink>
-              <NavLink href="/list">list</NavLink>
-              <NavLink href="/purchases">purchases</NavLink>
-              <NavLink href="/ai/recipe">ai</NavLink>
-              <NavLink href="/kroger">kroger</NavLink>
+              <NavLink href="/plan" className="text-lg">
+                plan
+              </NavLink>
+              <NavLink href="/list" className="text-lg">
+                list
+              </NavLink>
+              <NavLink href="/purchases" className="text-lg">
+                purchases
+              </NavLink>
+              <NavLink href="/ai/recipe" className="text-lg">
+                ai
+              </NavLink>
+              <NavLink href="/kroger" className="text-lg">
+                kroger
+              </NavLink>
             </>
           ) : (
-            <div className="px-2 py-1 text-4xl">family recipes</div>
+            <div className="px-3 py-1 text-lg font-semibold">family recipes</div>
           )}
         </div>
 
         {session && (
-          <Link href="/api/auth/signout" className="text-lg">
+          <Link
+            href="/api/auth/signout"
+            className="rounded-full px-3 py-1 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
             sign out
           </Link>
         )}
