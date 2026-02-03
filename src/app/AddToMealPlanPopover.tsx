@@ -8,6 +8,12 @@ import {
 } from "~/components/ui/popover";
 import { Calendar } from "~/components/ui/calendar";
 import { CalendarPlus } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 
 export function AddToMealPlanPopover(props: { recipeId: number }) {
   const { recipeId } = props;
@@ -20,27 +26,33 @@ export function AddToMealPlanPopover(props: { recipeId: number }) {
 
   return (
     <div>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline">
-            <CalendarPlus />
-            Add to Plan
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent>
-          <div>
-            <Calendar
-              mode="single"
-              onSelect={async (date) => {
-                if (!date) {
-                  return;
-                }
-                await handleAddToMealPlan(recipeId, date);
-              }}
-            />
-          </div>
-        </PopoverContent>
-      </Popover>
+      <TooltipProvider delayDuration={100}>
+        <Tooltip>
+          <Popover>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                <Button size="icon" variant="outline" aria-label="Add to plan">
+                  <CalendarPlus className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <PopoverContent>
+              <div>
+                <Calendar
+                  mode="single"
+                  onSelect={async (date) => {
+                    if (!date) {
+                      return;
+                    }
+                    await handleAddToMealPlan(recipeId, date);
+                  }}
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
+          <TooltipContent>Add to plan</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 }

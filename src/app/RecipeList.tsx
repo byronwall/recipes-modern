@@ -23,6 +23,12 @@ import { RecipeActions } from "./recipes/[id]/RecipeActions";
 import ImageLightbox from "~/components/ImageLightbox";
 import { buildLightboxImages, getImageUrl } from "~/lib/media";
 import { NewRecipeDialog } from "./recipes/new/NewRecipeDialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 
 const defaultRecipes: Recipe[] = [];
 
@@ -264,12 +270,15 @@ export function RecipeList() {
                 key: primaryImage.image.key,
               })
             : undefined;
+          const tagList = recipe.tags ?? [];
+          const visibleTags = tagList.slice(0, 2);
+          const hiddenTags = tagList.slice(2);
           return (
             <div
               key={recipe.id}
               className="flex h-full flex-col rounded-2xl border bg-card shadow-sm transition-shadow hover:shadow-md"
             >
-              <div className="flex items-start gap-3 p-4">
+              <div className="flex items-start gap-3 p-3">
                 {imageUrl ? (
                   <button
                     type="button"
@@ -287,7 +296,7 @@ export function RecipeList() {
                       setLightboxIndex(idx < 0 ? 0 : idx);
                       setLightboxOpen(true);
                     }}
-                    className="h-16 w-16 flex-none overflow-hidden rounded-xl ring-1 ring-muted"
+                    className="h-14 w-14 flex-none overflow-hidden rounded-xl ring-1 ring-muted"
                   >
                     <img
                       src={imageUrl}
@@ -305,11 +314,6 @@ export function RecipeList() {
                     >
                       {recipe.name}
                     </Link>
-                    <Link href={`/recipes/${recipe.id}`}>
-                      <Button size="sm" variant="outline">
-                        Open
-                      </Button>
-                    </Link>
                   </div>
                   {recipe.description &&
                   recipe.description.trim().toLowerCase() !== "desc" ? (
@@ -320,7 +324,7 @@ export function RecipeList() {
                 </div>
               </div>
 
-              <div className="px-4 pb-4">
+              <div className="px-3 pb-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Select
                     value={recipe.type}
@@ -343,7 +347,7 @@ export function RecipeList() {
                     </SelectContent>
                   </Select>
 
-                  {recipe.tags?.map((rt) => (
+                  {visibleTags.map((rt) => (
                     <span
                       key={rt.tag.id}
                       className="flex items-center gap-1 rounded-full bg-muted px-3 py-0.5 text-xs"
@@ -370,6 +374,20 @@ export function RecipeList() {
                       />
                     </span>
                   ))}
+                  {hiddenTags.length > 0 && (
+                    <TooltipProvider delayDuration={100}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="rounded-full bg-muted px-3 py-0.5 text-xs text-muted-foreground">
+                            +{hiddenTags.length} more
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs text-xs">
+                          {tagList.map((t) => t.tag.name).join(", ")}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
 
                   <Select
                     value={addSelectValues[recipe.id] ?? ""}
@@ -420,8 +438,8 @@ export function RecipeList() {
                 </div>
               </div>
 
-              <div className="mt-auto border-t px-4 py-3">
-                <div className="flex flex-wrap gap-2">
+              <div className="mt-auto border-t px-3 py-2">
+                <div className="flex w-full">
                   <RecipeActions recipeId={recipe.id} />
                 </div>
               </div>
