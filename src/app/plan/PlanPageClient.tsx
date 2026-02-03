@@ -82,34 +82,42 @@ export function PlanPageClient() {
 
   return (
     <div className="flex flex-col gap-4">
-      <H1>Planned Meals</H1>
-
-      <div className="flex items-center gap-2">
-        <Switch
-          checked={shouldHideCompleted}
-          onCheckedChange={setShouldHideCompleted}
-          id="hide-completed"
-        />
-        <Label htmlFor="hide-completed" className="cursor-pointer">
-          Hide made meals
-        </Label>
+      <div className="rounded-2xl border bg-card/70 p-5 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <H1>Planned Meals</H1>
+          <div className="flex items-center gap-2 rounded-full border bg-background/80 px-3 py-2">
+            <Switch
+              checked={shouldHideCompleted}
+              onCheckedChange={setShouldHideCompleted}
+              id="hide-completed"
+            />
+            <Label htmlFor="hide-completed" className="cursor-pointer text-sm">
+              Hide made meals
+            </Label>
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {plansThisMonth.map((plan) => (
           <PlanCard key={plan.id} plan={plan} />
         ))}
 
-        <div className="flex min-h-28 w-[276px] items-center gap-4 rounded border border-gray-200">
-          <StylishDatePicker value={newDate} onChange={setNewDate} />
-          <RecipePickerPopover
-            onRecipeSelected={async (recipeId) => {
-              await handleAddToMealPlan(
-                recipeId,
-                startOfDay(newDate ?? new Date()),
-              );
-            }}
-          />
+        <div className="flex h-full min-h-[190px] flex-col gap-3 rounded-2xl border bg-card/70 p-3 shadow-sm">
+          <div className="flex items-start gap-3">
+            <StylishDatePicker value={newDate} onChange={setNewDate} />
+            <div className="min-h-[76px] flex-1" />
+          </div>
+          <div className="mt-auto flex items-center justify-between gap-2 border-t pt-2">
+            <RecipePickerPopover
+              onRecipeSelected={async (recipeId) => {
+                await handleAddToMealPlan(
+                  recipeId,
+                  startOfDay(newDate ?? new Date()),
+                );
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>
