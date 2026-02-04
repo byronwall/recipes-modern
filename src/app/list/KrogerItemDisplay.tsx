@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "~/components/ui/button";
 import { type KrogerProduct } from "../kroger/model";
 import { cn } from "~/lib/utils";
 import Link from "next/link";

@@ -25,17 +25,12 @@ import { Search } from "lucide-react";
 
 export function PurchasesList() {
   const { data, isLoading, error } = api.purchases.list.useQuery();
-  const purchases = data ?? [];
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p>Error loading purchases</p>;
-
-  if (!purchases || purchases.length === 0) return <p>No purchases yet.</p>;
+  const purchases = useMemo(() => data ?? [], [data]);
 
   const categoryOptions = useMemo(() => {
     const categories = new Set<string>();
@@ -58,7 +53,11 @@ export function PurchasesList() {
 
       if (categoryFilter !== "all") {
         const categories = purchase.krogerCategories ?? [];
-        if (!categories.some((c) => c.toLowerCase() === categoryFilter.toLowerCase())) {
+        if (
+          !categories.some(
+            (c) => c.toLowerCase() === categoryFilter.toLowerCase(),
+          )
+        ) {
           return false;
         }
       }
@@ -80,6 +79,11 @@ export function PurchasesList() {
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
+
+  if (isLoading) return <p>Loading...</p>;
+  if (error) return <p>Error loading purchases</p>;
+
+  if (!purchases || purchases.length === 0) return <p>No purchases yet.</p>;
 
   return (
     <div className="flex flex-col gap-4">
