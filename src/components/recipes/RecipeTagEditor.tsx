@@ -17,7 +17,7 @@ import {
 } from "~/components/ui/tooltip";
 
 type TagItem = {
-  id: string;
+  id: number | string;
   name: string;
   slug: string;
 };

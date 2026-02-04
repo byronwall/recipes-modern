@@ -161,10 +161,10 @@ export function parseAndValidate(json: unknown): {
       typeof (j as any)?.cookMinutes === "number" && (j as any).cookMinutes >= 0
         ? ((j as any).cookMinutes as number)
         : undefined,
-    type: ((): any => {
+    type: ((): RecipeType => {
       const t = String((j as any)?.type ?? "OTHER").toUpperCase();
-      const allowed = Object.values(RecipeType);
-      return allowed.includes(t) ? (t as any) : "OTHER";
+      const allowed = new Set(Object.values(RecipeType));
+      return allowed.has(t as RecipeType) ? (t as RecipeType) : RecipeType.OTHER;
     })(),
     tags: Array.isArray((j as any)?.tags)
       ? ((j as any).tags as unknown[])
