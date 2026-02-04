@@ -67,6 +67,10 @@ This file documents the key UI and code patterns established in this repo. It sh
 - **`IconTextButton`**: Standard icon + label spacing with `shrink-0` icons.
 - **`RecipeTagEditor`**: Shared add/remove tag UI with optional overflow and confirm remove; use for list + detail tags.
 - **`InlineTagEditor`**: Form-focused tag input used inside dialogs/edit modals.
+- **`ListPanel`**: Reusable popover list container with matching item + empty-state components.
+- **`PageHeaderCard`**: Standard header card surface for page-level titles/controls.
+- **`CardGrid`**: Shared grid container for card layouts.
+- **`RecipeMetaInline`**: Inline metadata editor for cook time, type, and tags on recipe detail.
 
 ## Recommended Utilities
 

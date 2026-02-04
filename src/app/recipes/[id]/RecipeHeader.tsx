@@ -2,6 +2,7 @@
 
 import { H2 } from "~/components/ui/typography";
 import { RecipeMetaInline } from "~/components/recipes/RecipeMetaInline";
+import { PageHeaderCard } from "~/components/layout/PageHeaderCard";
 import { RecipeActionsPanel } from "./RecipeActionsPanel";
 import { RecipeEditDialog } from "./RecipeEditDialog";
 import { type Recipe } from "./recipe-types";
@@ -9,7 +10,7 @@ import { type Recipe } from "./recipe-types";
 export function RecipeHeader(props: { recipe: Recipe }) {
   const { recipe } = props;
   return (
-    <section className="rounded-2xl border bg-card/70 p-6 shadow-sm">
+    <PageHeaderCard className="p-6">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-4">
           <div className="flex items-center gap-2">
@@ -31,6 +32,6 @@ export function RecipeHeader(props: { recipe: Recipe }) {
 
         <RecipeActionsPanel recipeId={recipe.id} />
       </div>
-    </section>
+    </PageHeaderCard>
   );
 }

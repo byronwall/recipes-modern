@@ -11,6 +11,11 @@ import { Input } from "~/components/ui/input";
 import { Plus } from "lucide-react";
 import { H3 } from "~/components/ui/typography";
 import { TooltipButton } from "~/components/ui/tooltip-button";
+import {
+  ListPanel,
+  ListPanelEmpty,
+  ListPanelItem,
+} from "~/components/ui/list-panel";
 
 export function RecipePickerPopover(props: {
   onRecipeSelected: (recipeId: number) => void;
@@ -45,23 +50,20 @@ export function RecipePickerPopover(props: {
               onChange={(e) => setSearch(e.target.value)}
               className="text-base"
             />
-            <div className="flex flex-col gap-1">
+            <ListPanel>
               {filteredRecipes.map((recipe) => (
-                <button
+                <ListPanelItem
                   key={recipe.id}
                   onClick={() => props.onRecipeSelected(recipe.id)}
-                  className="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition hover:border-foreground/20 hover:bg-muted"
                 >
                   <span className="line-clamp-2">{recipe.name}</span>
                   <span className="text-xs text-muted-foreground">Add</span>
-                </button>
+                </ListPanelItem>
               ))}
               {filteredRecipes.length === 0 && (
-                <div className="rounded-lg border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
-                  No recipes match that search.
-                </div>
+                <ListPanelEmpty>No recipes match that search.</ListPanelEmpty>
               )}
-            </div>
+            </ListPanel>
           </div>
         </PopoverContent>
         <PopoverTrigger asChild>

@@ -32,6 +32,8 @@ This document flags key refactor opportunities, large components, and layout pat
 
 - Reduces layout drift and makes future UI refinements easier.
 
+**Status:** Completed
+
 ---
 
 ### 2. Recipe actions vary by view but use prop branching
@@ -52,6 +54,8 @@ This document flags key refactor opportunities, large components, and layout pat
 
 - Cleaner rendering logic, easier styling changes per view.
 
+**Status:** Completed
+
 ---
 
 ### 3. Inline metadata editing on detail page could be reusable
@@ -70,6 +74,8 @@ This document flags key refactor opportunities, large components, and layout pat
 **Benefit:**
 
 - Makes it simpler to reuse or move metadata editing without re‑implementing.
+
+**Status:** Completed
 
 ---
 
@@ -90,6 +96,8 @@ This document flags key refactor opportunities, large components, and layout pat
 **Benefit:**
 
 - Predictable alignment without relying on hardcoded heights.
+
+**Status:** Completed
 
 ---
 
@@ -113,13 +121,13 @@ This document flags key refactor opportunities, large components, and layout pat
 
 ### Medium Priority
 
-1. **Create layout wrappers** (header card, grid).
-2. **Create `RecipeMetaInline` for reuse**.
+1. **Create layout wrappers** (header card, grid). (Completed)
+2. **Create `RecipeMetaInline` for reuse**. (Completed)
 
 ### Low Priority
 
-1. **Clamp plan card titles**.
-2. **Refine popover list components** into reusable list panels.
+1. **Clamp plan card titles**. (Completed)
+2. **Refine popover list components** into reusable list panels. (Completed)
 
 ---
 
