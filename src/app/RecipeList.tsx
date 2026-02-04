@@ -8,7 +8,6 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 
-import SimpleAlertDialog from "~/components/SimpleAlertDialog";
 import { Button } from "~/components/ui/button";
 import {
   Select,
@@ -17,18 +16,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { openAddTagDialog } from "~/hooks/use-add-tag-dialog";
 import { api } from "~/trpc/react";
 import { RecipeActions } from "./recipes/[id]/RecipeActions";
+import { RecipeTagEditor } from "~/components/recipes/RecipeTagEditor";
 import ImageLightbox from "~/components/ImageLightbox";
 import { buildLightboxImages, getImageUrl } from "~/lib/media";
 import { NewRecipeDialog } from "./recipes/new/NewRecipeDialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
 
 const defaultRecipes: Recipe[] = [];
 
@@ -51,10 +44,6 @@ export function RecipeList() {
   const [search, setSearch] = useState("");
   const [type, setType] = useState<RecipeType | undefined>(undefined);
   const [tags, setTags] = useState<{ slug: string; name: string }[]>([]);
-  // controlled select value per recipe so we can reset after applying
-  const [addSelectValues, setAddSelectValues] = useState<
-    Record<number, string | undefined>
-  >({});
   // global add tag dialog handles creation
 
   const { data: _recipes } = api.recipe.list.useQuery({
@@ -271,8 +260,6 @@ export function RecipeList() {
               })
             : undefined;
           const tagList = recipe.tags ?? [];
-          const visibleTags = tagList.slice(0, 2);
-          const hiddenTags = tagList.slice(2);
           return (
             <div
               key={recipe.id}
@@ -347,94 +334,26 @@ export function RecipeList() {
                     </SelectContent>
                   </Select>
 
-                  {visibleTags.map((rt) => (
-                    <span
-                      key={rt.tag.id}
-                      className="flex items-center gap-1 rounded-full bg-muted px-3 py-0.5 text-xs"
-                    >
-                      {rt.tag.name}
-                      <SimpleAlertDialog
-                        title="Remove tag?"
-                        description={`Remove “${rt.tag.name}” from this recipe?`}
-                        confirmText="Remove"
-                        trigger={
-                          <button
-                            aria-label={`Remove ${rt.tag.name}`}
-                            className="-mr-1 ml-1 rounded px-1 text-muted-foreground hover:bg-muted-foreground/10 hover:text-foreground"
-                          >
-                            ×
-                          </button>
-                        }
-                        onConfirm={async () => {
-                          await removeTagFromRecipe.mutateAsync({
-                            recipeId: recipe.id,
-                            tagSlug: rt.tag.slug,
-                          });
-                        }}
-                      />
-                    </span>
-                  ))}
-                  {hiddenTags.length > 0 && (
-                    <TooltipProvider delayDuration={100}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="rounded-full bg-muted px-3 py-0.5 text-xs text-muted-foreground">
-                            +{hiddenTags.length} more
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs text-xs">
-                          {tagList.map((t) => t.tag.name).join(", ")}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-
-                  <Select
-                    value={addSelectValues[recipe.id] ?? ""}
-                    onValueChange={async (slug) => {
-                      if (slug === "__new__") {
-                        openAddTagDialog({
-                          recipeId: recipe.id,
-                          existingTagSlugs: (recipe.tags ?? []).map(
-                            (rt) => rt.tag.slug,
-                          ),
-                          onSuccess: () =>
-                            setAddSelectValues((prev) => ({
-                              ...prev,
-                              [recipe.id]: "",
-                            })),
-                        });
-                        return;
-                      }
+                  <RecipeTagEditor
+                    recipeId={recipe.id}
+                    tags={tagList.map((rt) => rt.tag)}
+                    allTags={allTagsData ?? []}
+                    displayLimit={2}
+                    chipClassName="bg-muted"
+                    confirmRemove
+                    onAddTag={async (slug) => {
                       await addTagToRecipe.mutateAsync({
                         recipeId: recipe.id,
                         tagSlug: slug,
                       });
-                      setAddSelectValues((prev) => ({
-                        ...prev,
-                        [recipe.id]: "",
-                      }));
                     }}
-                  >
-                    <SelectTrigger className="h-7 w-auto rounded-full bg-muted px-3 py-0 text-xs text-muted-foreground hover:bg-muted/80">
-                      + Tag
-                    </SelectTrigger>
-                    <SelectContent className="max-h-72">
-                      <SelectItem value="__new__">Add new tag…</SelectItem>
-                      {(allTagsData ?? [])
-                        .filter(
-                          (t) =>
-                            !(recipe.tags ?? []).some(
-                              (rt) => rt.tag.slug === t.slug,
-                            ),
-                        )
-                        .map((t) => (
-                          <SelectItem key={t.slug} value={t.slug}>
-                            {t.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                    onRemoveTag={async (slug) => {
+                      await removeTagFromRecipe.mutateAsync({
+                        recipeId: recipe.id,
+                        tagSlug: slug,
+                      });
+                    }}
+                  />
                 </div>
               </div>
 

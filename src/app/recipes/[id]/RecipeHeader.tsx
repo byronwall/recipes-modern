@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { RecipeType } from "@prisma/client";
 import { H2 } from "~/components/ui/typography";
 import {
@@ -11,7 +10,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { api } from "~/trpc/react";
-import { openAddTagDialog } from "~/hooks/use-add-tag-dialog";
+import { RecipeTagEditor } from "~/components/recipes/RecipeTagEditor";
 import { RecipeActionsPanel } from "./RecipeActionsPanel";
 import { RecipeEditDialog } from "./RecipeEditDialog";
 import { type Recipe } from "./recipe-types";
@@ -35,10 +34,6 @@ export function RecipeHeader(props: { recipe: Recipe }) {
     },
   });
   const { data: allTagsData } = api.tag.all.useQuery();
-
-  const [addSelectValues, setAddSelectValues] = useState<
-    Record<number, string | undefined>
-  >({});
 
   return (
     <section className="rounded-2xl border bg-card/70 p-6 shadow-sm">
@@ -86,73 +81,24 @@ export function RecipeHeader(props: { recipe: Recipe }) {
               </SelectContent>
             </Select>
 
-            {(recipe.tags ?? []).map((rt) => (
-              <span
-                key={rt.tag.id}
-                className="flex items-center gap-1 rounded-full bg-accent/60 px-3 py-0.5 text-xs"
-              >
-                {rt.tag.name}
-                <button
-                  aria-label={`Remove ${rt.tag.name}`}
-                  className="-mr-1 ml-1 rounded px-1 text-muted-foreground hover:bg-muted-foreground/10 hover:text-foreground"
-                  onClick={async () => {
-                    await removeTagFromRecipe.mutateAsync({
-                      recipeId: recipe.id,
-                      tagSlug: rt.tag.slug,
-                    });
-                  }}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-
-            <Select
-              value={addSelectValues[recipe.id] ?? ""}
-              onValueChange={async (slug) => {
-                if (slug === "__new__") {
-                  openAddTagDialog({
-                    recipeId: recipe.id,
-                    existingTagSlugs: (recipe.tags ?? []).map(
-                      (rt) => rt.tag.slug,
-                    ),
-                    onSuccess: () =>
-                      setAddSelectValues((prev) => ({
-                        ...prev,
-                        [recipe.id]: "",
-                      })),
-                  });
-                  return;
-                }
+            <RecipeTagEditor
+              recipeId={recipe.id}
+              tags={(recipe.tags ?? []).map((rt) => rt.tag)}
+              allTags={allTagsData ?? []}
+              chipClassName="bg-accent/60"
+              onAddTag={async (slug) => {
                 await addTagToRecipe.mutateAsync({
                   recipeId: recipe.id,
                   tagSlug: slug,
                 });
-                setAddSelectValues((prev) => ({
-                  ...prev,
-                  [recipe.id]: "",
-                }));
               }}
-            >
-              <SelectTrigger className="h-7 w-auto rounded-full bg-muted px-3 py-0 text-xs text-muted-foreground hover:bg-muted/80">
-                + Tag
-              </SelectTrigger>
-              <SelectContent className="max-h-72">
-                <SelectItem value="__new__">Add new tag…</SelectItem>
-                {(allTagsData ?? [])
-                  .filter(
-                    (t) =>
-                      !(recipe.tags ?? []).some(
-                        (rt) => rt.tag.slug === t.slug,
-                      ),
-                  )
-                  .map((t) => (
-                    <SelectItem key={t.slug} value={t.slug}>
-                      {t.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+              onRemoveTag={async (slug) => {
+                await removeTagFromRecipe.mutateAsync({
+                  recipeId: recipe.id,
+                  tagSlug: slug,
+                });
+              }}
+            />
           </div>
         </div>
 
