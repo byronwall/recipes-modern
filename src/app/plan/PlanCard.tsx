@@ -43,7 +43,7 @@ export function PlanCard(props: { plan: PlannedMealWithRecipe }) {
 
         <div className="flex min-h-[76px] flex-1 flex-col gap-2">
           <Link href={`/recipes/${plan.Recipe.id}`}>
-            <H4 className="leading-tight">{plan.Recipe.name}</H4>
+            <H4 className="line-clamp-2 leading-tight">{plan.Recipe.name}</H4>
           </Link>
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <span className="rounded-full border px-2 py-0.5">
