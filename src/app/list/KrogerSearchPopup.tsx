@@ -76,6 +76,7 @@ export function KrogerSearchPopup({ ingredient, originalListItemId }: Props) {
         <IconTextButton
           onClick={() => setIsModalOpen(true)}
           size="sm"
+          variant="secondary"
           icon={<Search className="h-4 w-4 shrink-0" />}
           label="Search Kroger"
         />

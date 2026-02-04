@@ -18,9 +18,10 @@ export function ShoppingRecipeItem(props: { id: string; name: string }) {
           <SimpleAlertDialog
             trigger={
               <Button
-                variant="destructive-outline"
+                variant="ghost"
                 size="icon"
                 aria-label="Remove recipe"
+                className="text-destructive hover:text-destructive"
               >
                 <Trash className="h-4 w-4 shrink-0" aria-hidden="true" />
               </Button>

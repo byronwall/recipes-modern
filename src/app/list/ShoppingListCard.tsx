@@ -25,21 +25,22 @@ export function ShoppingListCard(props: {
   const { handleDeleteItem, handleMarkAsBought } = useShoppingListActions();
 
   const ingredientLabel = getIngredientLabel(item);
+  const isBought = item.isBought ?? false;
   // if display mode is aisle, show the recipe; flip if display mode is recipe
   const extraLabel =
     props.displayMode === "aisle" ? item.Recipe?.name : item.ingredient?.aisle;
 
   return (
-    <div className="rounded-2xl border bg-background/80 p-3">
-      <div className="flex w-full flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <div className="flex min-w-0 items-start gap-3">
+    <div className="rounded-2xl bg-background/60 px-2 py-1.5 transition-colors hover:bg-accent/30">
+      <div className="flex w-full flex-col justify-between gap-2 sm:flex-row sm:items-center">
+        <div className="flex min-w-0 items-start gap-2">
           <Checkbox
-            checked={item.isBought ?? false}
+            checked={isBought}
             onCheckedChange={async () => {
               await handleMarkAsBought(item.id);
             }}
             id={`checkbox-${item.id}`}
-            className="mt-1 h-5 w-5"
+            className="mt-0.5 h-5 w-5"
           />
           <div className="min-w-0">
             <Label
@@ -47,14 +48,13 @@ export function ShoppingListCard(props: {
               className={cn(
                 "cursor-pointer break-words text-base font-semibold leading-snug hover:bg-accent/40",
                 {
-                  "text-sm font-normal text-muted-foreground line-through":
-                    item.isBought ?? false,
+                  "text-muted-foreground line-through": isBought,
                 },
               )}
             >
               {ingredientLabel}
             </Label>
-            {extraLabel ? (
+            {extraLabel && !isBought ? (
               <p className="mt-1 truncate text-xs text-muted-foreground">
                 {extraLabel}
               </p>
@@ -62,7 +62,12 @@ export function ShoppingListCard(props: {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div
+          className={cn(
+            "flex flex-wrap items-center gap-2",
+            isBought && "invisible",
+          )}
+        >
           <KrogerSearchPopup
             originalListItemId={item.id}
             ingredient={item.ingredient?.ingredient}
@@ -78,9 +83,10 @@ export function ShoppingListCard(props: {
               <SimpleAlertDialog
                 trigger={
                   <Button
-                    variant="destructive-outline"
+                    variant="ghost"
                     size="icon"
                     aria-label="Remove item"
+                    className="text-destructive hover:text-destructive"
                   >
                     <Trash className="h-4 w-4 shrink-0" aria-hidden="true" />
                   </Button>

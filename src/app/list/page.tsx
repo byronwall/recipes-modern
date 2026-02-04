@@ -12,18 +12,13 @@ export default async function ListPage() {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <PageHeaderCard className="p-5">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-xs uppercase text-muted-foreground">
-              Shopping
-            </p>
-            <H1>Shopping list</H1>
-          </div>
+      <PageHeaderCard className="border-0 bg-transparent p-0 shadow-none">
+        <div className="flex flex-col">
+          <H1 className="leading-tight">Shopping list</H1>
         </div>
       </PageHeaderCard>
 
-      <ShoppingList actions={<ShoppingListActions layout="column" />} />
+      <ShoppingList actions={<ShoppingListActions layout="row" />} />
     </div>
   );
 }
