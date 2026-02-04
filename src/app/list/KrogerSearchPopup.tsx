@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { api } from "~/trpc/react";
 import { type KrogerProduct } from "../kroger/model";
 import { KrogerItemDisplay } from "./KrogerItemDisplay";
@@ -81,63 +82,82 @@ export function KrogerSearchPopup({ ingredient, originalListItemId }: Props) {
           label="Search Kroger"
         />
       </DialogTrigger>
-      <DialogContent className="max-h-[80vh]  max-w-4xl shrink-0  overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between gap-2 text-2xl">
-            <p>
-              Kroger Search for <span className="underline">{ingredient}</span>
-            </p>
-            <div className="flex items-center gap-2 text-lg">
-              <Switch
-                checked={shouldMarkAsBought}
-                onCheckedChange={setShouldMarkAsBought}
-                id="shouldMarkAsBought"
+      <DialogContent className="max-h-[85vh] max-w-5xl shrink-0 overflow-y-auto p-0">
+        <div className="flex flex-col gap-4 p-5">
+          <DialogHeader>
+            <DialogTitle className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-1">
+                <Label className="text-xs uppercase text-muted-foreground">
+                  Kroger search
+                </Label>
+                <p className="text-2xl font-semibold">
+                  {ingredient ?? "Search products"}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 rounded-full border bg-background/80 px-3 py-2">
+                <Switch
+                  checked={shouldMarkAsBought}
+                  onCheckedChange={setShouldMarkAsBought}
+                  id="shouldMarkAsBought"
+                />
+                <label
+                  htmlFor="shouldMarkAsBought"
+                  className="text-sm font-medium"
+                >
+                  Mark as bought after add
+                </label>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={(e) => e.preventDefault()}>
+            <div className="flex max-w-3xl flex-col gap-2 rounded-2xl border bg-card/70 p-3 sm:flex-row sm:items-center">
+              <div className="relative w-full">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchIngredient}
+                  onChange={(e) => setSearchIngredient(e.target.value)}
+                  placeholder="Search Kroger for..."
+                  className="pl-9"
+                />
+              </div>
+              <IconTextButton
+                onClick={searchKroger}
+                disabled={searchMutation.isPending}
+                variant="secondary"
+                icon={<Search className="h-4 w-4 shrink-0" />}
+                label="Search"
+                className="w-full sm:w-auto"
               />
-              <label htmlFor="shouldMarkAsBought">
-                Mark as bought after add
-              </label>
             </div>
-          </DialogTitle>
-        </DialogHeader>
+          </form>
 
-        <form onSubmit={(e) => e.preventDefault()}>
-          <div className="flex gap-2">
-            <Input
-              value={searchIngredient}
-              onChange={(e) => setSearchIngredient(e.target.value)}
-              placeholder="Search Kroger for..."
-              className="text-xl"
-            />
-            <IconTextButton
-              onClick={searchKroger}
-              disabled={searchMutation.isPending}
-              icon={<Search className="h-4 w-4 shrink-0" />}
-              label="Search"
-            />
+          {searchMutation.isPending && (
+            <p className="text-sm text-muted-foreground">Searching...</p>
+          )}
+
+          {searchMutation.error && (
+            <p className="text-sm text-destructive">
+              Error searching: {searchMutation.error.message}
+            </p>
+          )}
+
+          {searchMutation.isSuccess && searchResults.length === 0 && (
+            <p className="text-sm text-muted-foreground">No results found</p>
+          )}
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {searchResults.map((result) => (
+              <KrogerItemDisplay
+                key={result.productId}
+                result={result}
+                originalListItemId={
+                  shouldMarkAsBought ? originalListItemId : undefined
+                }
+                onCloseModal={() => setIsModalOpen(false)}
+              />
+            ))}
           </div>
-        </form>
-
-        {searchMutation.isPending && <p>Searching...</p>}
-
-        {searchMutation.error && (
-          <p>Error searching: {searchMutation.error.message}</p>
-        )}
-
-        {searchMutation.isSuccess && searchResults.length === 0 && (
-          <p>No results found</p>
-        )}
-
-        <div className="grid grid-cols-auto-fit-260 gap-2">
-          {searchResults.map((result) => (
-            <KrogerItemDisplay
-              key={result.productId}
-              result={result}
-              originalListItemId={
-                shouldMarkAsBought ? originalListItemId : undefined
-              }
-              onCloseModal={() => setIsModalOpen(false)}
-            />
-          ))}
         </div>
       </DialogContent>
     </Dialog>
