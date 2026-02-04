@@ -26,6 +26,8 @@ export function KrogerItemDisplay({
   const displayPrice = hasPromo
     ? result.items[0]?.price?.promo
     : result.items[0]?.price?.regular;
+  const regularPrice = result.items[0]?.price?.regular ?? undefined;
+  const promoPrice = result.items[0]?.price?.promo ?? undefined;
 
   // search through images to get front one and thumbnail size
   const image =
@@ -52,6 +54,12 @@ export function KrogerItemDisplay({
         sku: result.upc,
         productId: result.productId,
         name: result.description,
+        brand: result.brand,
+        categories: result.categories,
+        itemId: result.items[0]?.itemId,
+        soldBy: result.items[0]?.soldBy,
+        priceRegular: regularPrice,
+        pricePromo: promoPrice,
         price: displayPrice ?? 0,
         quantity,
         size: result.items[0]?.size ?? "",

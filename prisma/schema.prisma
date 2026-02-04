@@ -224,6 +224,12 @@ model KrogerPurchase {
     krogerSku       String // UPC
     krogerProductId String
     krogerName      String
+    krogerBrand     String?
+    krogerCategories String[] @default([])
+    krogerItemId    String?
+    krogerSoldBy    String?
+    krogerPriceRegular Float?
+    krogerPricePromo   Float?
     price           Float
     quantity        Int
     itemSize        String
