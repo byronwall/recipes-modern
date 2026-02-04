@@ -1,30 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
-import { Label } from "~/components/ui/label";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 
 export function useRadioList(items: readonly string[], defaultValue: string) {
   const [groupMode, setGroupMode] = useState(defaultValue);
 
   const radioGroupComp = (
-    <RadioGroup
-      defaultValue={groupMode}
-      onValueChange={(value) => setGroupMode(value)}
-      className="flex gap-2"
+    <ToggleGroup
+      type="single"
+      value={groupMode}
+      onValueChange={(value) => {
+        if (value) setGroupMode(value);
+      }}
+      variant="outline"
+      size="sm"
+      className="flex flex-wrap justify-start gap-2"
     >
       {items.map((mode) => (
-        <div key={mode} className="flex items-center space-x-2">
-          <RadioGroupItem value={mode} className="h-6 w-6" id={mode} />
-          <Label
-            className="cursor-pointer text-lg font-medium hover:bg-gray-100"
-            htmlFor={mode}
-          >
-            {mode}
-          </Label>
-        </div>
+        <ToggleGroupItem key={mode} value={mode} className="capitalize">
+          {mode}
+        </ToggleGroupItem>
       ))}
-    </RadioGroup>
+    </ToggleGroup>
   );
   return { groupMode, radioGroupComp };
 }

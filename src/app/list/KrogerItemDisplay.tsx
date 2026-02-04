@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "~/components/ui/button";
 import { type KrogerProduct } from "../kroger/model";
 import { cn } from "~/lib/utils";
 import Link from "next/link";
@@ -9,7 +8,7 @@ import { useState } from "react";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 import { ShoppingCart } from "lucide-react";
-import { env } from "~/env";
+import { IconTextButton } from "~/components/ui/icon-text-button";
 
 type KrogerItemDisplayProps = {
   result: KrogerProduct;
@@ -26,6 +25,8 @@ export function KrogerItemDisplay({
   const displayPrice = hasPromo
     ? result.items[0]?.price?.promo
     : result.items[0]?.price?.regular;
+  const regularPrice = result.items[0]?.price?.regular ?? undefined;
+  const promoPrice = result.items[0]?.price?.promo ?? undefined;
 
   // search through images to get front one and thumbnail size
   const image =
@@ -52,6 +53,12 @@ export function KrogerItemDisplay({
         sku: result.upc,
         productId: result.productId,
         name: result.description,
+        brand: result.brand,
+        categories: result.categories,
+        itemId: result.items[0]?.itemId,
+        soldBy: result.items[0]?.soldBy,
+        priceRegular: regularPrice,
+        pricePromo: promoPrice,
         price: displayPrice ?? 0,
         quantity,
         size: result.items[0]?.size ?? "",
@@ -65,56 +72,64 @@ export function KrogerItemDisplay({
   };
 
   return (
-    <div key={result.productId} className="flex w-64 flex-col gap-1 border p-2">
-      <div className="flex gap-2">
+    <div
+      key={result.productId}
+      className="flex w-64 flex-col gap-2 rounded-2xl border bg-card/70 p-3 shadow-sm transition-shadow hover:shadow-md"
+    >
+      <div className="flex gap-3">
         <Link
           href={"https://www.kroger.com/p/x/" + result.upc}
           target="_blank"
           rel="noreferrer"
-          className="hover:underline"
+          className="text-sm font-semibold leading-snug hover:underline"
         >
           <p>{result.description}</p>
         </Link>
         <img
           src={imageUrl}
           alt={result.description}
-          className="h-28 w-28 object-cover "
+          className="h-20 w-20 rounded-lg object-cover"
         />
       </div>
-      <p className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-2">
         <span
-          className={cn("rounded-sm p-1 text-lg font-bold", {
-            "bg-yellow-300 ": hasPromo,
+          className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", {
+            "bg-yellow-300/80 text-black": hasPromo,
+            "bg-accent/60 text-foreground": !hasPromo,
           })}
         >
           {formatMoney(displayPrice)}
         </span>
 
         {hasPromo && (
-          <span className="text-gray-500 line-through">
-            {result.items[0]?.price?.regular}
+          <span className="text-xs text-muted-foreground line-through">
+            {formatMoney(result.items[0]?.price?.regular)}
           </span>
         )}
 
-        <span className="border p-1">{result.items[0]?.size}</span>
-      </p>
+        <span className="rounded-full bg-accent/60 px-2 py-0.5 text-xs">
+          {result.items[0]?.size}
+        </span>
+      </div>
 
-      <div className="flex w-full gap-2 bg-purple-50 p-2">
+      <div className="flex w-full items-center gap-2 rounded-xl bg-background/80 p-2">
         <Input
           type="number"
           value={quantity}
           min={1}
           onChange={(e) => setQuantity(parseInt(e.target.value))}
-          className="w-16"
+          className="h-9 w-14"
         />
 
-        <Button
+        <IconTextButton
           onClick={() => handleAddToCart(result.upc)}
           disabled={addToCartMutation.isPending}
-        >
-          <ShoppingCart size={20} />
-          cart
-        </Button>
+          variant="secondary"
+          size="sm"
+          icon={<ShoppingCart className="h-4 w-4 shrink-0" />}
+          label="Add to cart"
+          className="w-full justify-center"
+        />
       </div>
     </div>
   );
