@@ -2,7 +2,6 @@
 
 import { Edit, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Button } from "~/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -19,6 +18,7 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
+import { IconTextButton } from "~/components/ui/icon-text-button";
 
 type Props = {
   ingredientId: number;
@@ -62,10 +62,12 @@ export function AislePickerDialog({ ingredientId, currentAisle }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="secondary">
-          <Edit />
-          Aisle
-        </Button>
+        <IconTextButton
+          variant="secondary"
+          size="sm"
+          icon={<Edit className="h-4 w-4 shrink-0" />}
+          label="Aisle"
+        />
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
@@ -106,16 +108,15 @@ export function AislePickerDialog({ ingredientId, currentAisle }: Props) {
                   }
                 }}
               />
-              <Button
+              <IconTextButton
                 onClick={async () => {
                   if (!newAisle.trim()) return;
                   await applyAisle(newAisle.trim());
                 }}
                 title="Add new aisle"
-              >
-                <Plus />
-                Add
-              </Button>
+                icon={<Plus className="h-4 w-4 shrink-0" />}
+                label="Add"
+              />
             </div>
           </div>
         </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "~/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +14,7 @@ import { type KrogerProduct } from "../kroger/model";
 import { KrogerItemDisplay } from "./KrogerItemDisplay";
 import { Search } from "lucide-react";
 import { Switch } from "~/components/ui/switch";
+import { IconTextButton } from "~/components/ui/icon-text-button";
 
 type Props = {
   ingredient?: string;
@@ -73,10 +73,12 @@ export function KrogerSearchPopup({ ingredient, originalListItemId }: Props) {
       open={isModalOpen}
     >
       <DialogTrigger asChild>
-        <Button onClick={() => setIsModalOpen(true)}>
-          <Search />
-          Search Kroger
-        </Button>
+        <IconTextButton
+          onClick={() => setIsModalOpen(true)}
+          size="sm"
+          icon={<Search className="h-4 w-4 shrink-0" />}
+          label="Search Kroger"
+        />
       </DialogTrigger>
       <DialogContent className="max-h-[80vh]  max-w-4xl shrink-0  overflow-y-auto">
         <DialogHeader>
@@ -105,10 +107,12 @@ export function KrogerSearchPopup({ ingredient, originalListItemId }: Props) {
               placeholder="Search Kroger for..."
               className="text-xl"
             />
-            <Button onClick={searchKroger} disabled={searchMutation.isPending}>
-              <Search size={24} />
-              Search
-            </Button>
+            <IconTextButton
+              onClick={searchKroger}
+              disabled={searchMutation.isPending}
+              icon={<Search className="h-4 w-4 shrink-0" />}
+              label="Search"
+            />
           </div>
         </form>
 

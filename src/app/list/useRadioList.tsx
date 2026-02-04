@@ -11,13 +11,16 @@ export function useRadioList(items: readonly string[], defaultValue: string) {
     <RadioGroup
       defaultValue={groupMode}
       onValueChange={(value) => setGroupMode(value)}
-      className="flex gap-2"
+      className="flex flex-wrap gap-2"
     >
       {items.map((mode) => (
-        <div key={mode} className="flex items-center space-x-2">
-          <RadioGroupItem value={mode} className="h-6 w-6" id={mode} />
+        <div
+          key={mode}
+          className="flex items-center gap-2 rounded-full border bg-background/80 px-3 py-2"
+        >
+          <RadioGroupItem value={mode} className="h-4 w-4" id={mode} />
           <Label
-            className="cursor-pointer text-lg font-medium hover:bg-gray-100"
+            className="cursor-pointer text-sm font-medium capitalize"
             htmlFor={mode}
           >
             {mode}

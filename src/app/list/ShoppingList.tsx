@@ -1,6 +1,6 @@
 "use client";
 
-import { H2 } from "~/components/ui/typography";
+import type { ReactNode } from "react";
 
 import { ShoppingListCard } from "./ShoppingListCard";
 import { api } from "~/trpc/react";
@@ -9,10 +9,12 @@ import { useState } from "react";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { useRadioList } from "./useRadioList";
+import { CardGrid } from "~/components/layout/CardGrid";
 
 export const groupModes = ["recipe", "aisle"] as const;
 
-export function ShoppingList() {
+export function ShoppingList(props: { actions?: ReactNode }) {
+  const { actions } = props;
   const { data: _shoppingList } = api.shoppingList.getShoppingList.useQuery();
 
   const shoppingList = _shoppingList ?? [];
@@ -74,61 +76,114 @@ export function ShoppingList() {
   });
 
   return (
-    <>
-      <H2>Recipes included</H2>
-      <div className="flex flex-col gap-2">
-        {recipeNames.map(([id, name]) => (
-          <ShoppingRecipeItem key={id} id={id} name={name} />
-        ))}
-      </div>
-      <div className="flex  items-center gap-4">
-        <H2>Group Mode</H2>
-        {radioGroupComp}
-      </div>
-
+    <CardGrid className="lg:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)]">
       <div className="flex flex-col gap-6">
-        {groupedKeys.map((key) => {
-          const items = groupedShoppingList[key]!;
-          const isVisible = !hiddenKeys.includes(key);
+        <section className="rounded-2xl border bg-card/70 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <Label className="text-xs uppercase text-muted-foreground">
+              Recipes included
+            </Label>
+            <span className="text-xs text-muted-foreground">
+              {recipeNames.length} recipes
+            </span>
+          </div>
+          <div className="mt-3 flex flex-col gap-2">
+            {recipeNames.length > 0 ? (
+              recipeNames.map(([id, name]) => (
+                <ShoppingRecipeItem key={id} id={id} name={name} />
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No recipes added yet.
+              </p>
+            )}
+          </div>
+        </section>
 
-          return (
-            <div key={key}>
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={isVisible}
-                  onCheckedChange={(_checked) =>
-                    setHiddenKeys((keys) => {
-                      if (keys.includes(key)) {
-                        return keys.filter((k) => k !== key);
-                      } else {
-                        return [...keys, key];
-                      }
-                    })
-                  }
-                  id={`group-${key}`}
-                />
-                <Label
-                  htmlFor={`group-${key}`}
-                  className="cursor-pointer select-none"
-                >
-                  <H2>{key}</H2>
-                </Label>
-              </div>
-              {isVisible ? (
-                <div className="pl-8">
-                  {items.map((item) => (
-                    <ShoppingListCard
-                      key={item.id}
-                      item={item}
-                      displayMode={groupMode === "recipe" ? "recipe" : "aisle"}
-                    />
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
+        <section className="rounded-2xl border bg-card/70 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <Label className="text-xs uppercase text-muted-foreground">
+              List items
+            </Label>
+            <span className="text-xs text-muted-foreground">
+              {shoppingList.length} items
+            </span>
+          </div>
+          <div className="mt-4 flex flex-col gap-5">
+            {groupedKeys.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No items added yet.
+              </p>
+            ) : (
+              groupedKeys.map((key) => {
+                const items = groupedShoppingList[key]!;
+                const isVisible = !hiddenKeys.includes(key);
+
+                return (
+                  <div key={key} className="flex flex-col gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Switch
+                        checked={isVisible}
+                        onCheckedChange={(_checked) =>
+                          setHiddenKeys((keys) => {
+                            if (keys.includes(key)) {
+                              return keys.filter((k) => k !== key);
+                            } else {
+                              return [...keys, key];
+                            }
+                          })
+                        }
+                        id={`group-${key}`}
+                      />
+                      <Label
+                        htmlFor={`group-${key}`}
+                        className="cursor-pointer select-none text-lg font-semibold"
+                      >
+                        {key}
+                      </Label>
+                      <span className="text-xs text-muted-foreground">
+                        {items.length} items
+                      </span>
+                    </div>
+                    {isVisible ? (
+                      <div className="flex flex-col gap-3">
+                        {items.map((item) => (
+                          <ShoppingListCard
+                            key={item.id}
+                            item={item}
+                            displayMode={
+                              groupMode === "recipe" ? "recipe" : "aisle"
+                            }
+                          />
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </section>
       </div>
-    </>
+
+      <aside className="flex flex-col gap-6 border-t pt-6 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+        {actions ? (
+          <div className="space-y-3">
+            <Label className="text-xs uppercase text-muted-foreground">
+              Actions
+            </Label>
+            <div className="flex flex-col items-stretch gap-2">
+              {actions}
+            </div>
+          </div>
+        ) : null}
+        <div className="space-y-3">
+          <Label className="text-xs uppercase text-muted-foreground">
+            Group mode
+          </Label>
+          {radioGroupComp}
+        </div>
+      </aside>
+    </CardGrid>
   );
 }
