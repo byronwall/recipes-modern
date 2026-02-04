@@ -10,18 +10,6 @@ This document lists pages and components that have **not** yet received the rece
 - `src/app/auth/LoginForm.tsx`
   **Notes:** Likely still uses older input spacing and button styles. Should adopt the new card layout and pill‑style controls.
 
-### Shopping List
-
-- `src/app/list/page.tsx`
-- `src/app/list/ShoppingList.tsx`
-- `src/app/list/ShoppingListCard.tsx`
-- `src/app/list/ShoppingRecipeItem.tsx`
-- `src/app/list/ShoppingAddLoose.tsx`
-- `src/app/list/AislePickerDialog.tsx`
-- `src/app/list/KrogerSearchPopup.tsx`
-- `src/app/list/KrogerItemDisplay.tsx`
-  **Notes:** This section is still using older table/list styling. Should align with the updated card system and action/tooltips.
-
 ### Purchases
 
 - `src/app/purchases/page.tsx`
