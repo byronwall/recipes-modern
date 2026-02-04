@@ -72,6 +72,14 @@ This file documents the key UI and code patterns established in this repo. It sh
 - **`CardGrid`**: Shared grid container for card layouts.
 - **`RecipeMetaInline`**: Inline metadata editor for cook time, type, and tags on recipe detail.
 
+## UI Goals
+
+- **Compact, readable layout**: Favor tight spacing and aligned baselines; avoid overly airy screens.
+- **Soft surface hierarchy**: Subtle card surfaces and borders; keep contrast calm.
+- **Action clarity by context**: Icon-only actions for dense lists; text actions for detail views.
+- **Inline edits for working screens**: Keep tags, type, and time editable in place when practical.
+- **Consistency over novelty**: Reuse established chips, tooltips, and card patterns across pages.
+
 ## Recommended Utilities
 
 - If adding repeated action patterns, create a shared `TooltipButton`.
