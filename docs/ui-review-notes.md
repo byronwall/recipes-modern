@@ -10,85 +10,7 @@ This document flags key refactor opportunities, large components, and layout pat
 
 ## Key Findings
 
-### 1. `RecipeClient` is doing too much (large component)
-
-**File:** `src/app/recipes/[id]/RecipeClient.tsx`
-
-- This file now owns: page layout, edit modal, tags editor, image upload, lightbox, and inline metadata editing.
-- The edit modal markup is large and intertwined with page layout concerns.
-- Inline tag editing (for the modal) and quick tag editing (for detail view) are both in the same file, each with their own UI patterns.
-
-**Recommendation:**
-
-- Split into subcomponents:
-  - `RecipeHeader` (title + description + inline metadata chips)
-  - `RecipeActionsPanel`
-  - `RecipeEditDialog`
-  - `RecipeImagesSection`
-  - `InlineTagEditor` should move into its own file under `src/components/recipes/`.
-
-**Benefit:**
-
-- Easier to reason about page layout vs. modal forms.
-- Lower risk when adding new fields or changing layout.
-
----
-
-### 2. Button variants and tooltips are duplicated
-
-**Files:**
-
-- `src/app/recipes/[id]/RecipeActions.tsx`
-- `src/app/AddToMealPlanPopover.tsx`
-- `src/app/AddRecipeToShoppingList.tsx`
-- `src/app/plan/PlanCard.tsx`
-- `src/app/plan/RecipePickerPopover.tsx`
-
-**Issue:**
-
-- Similar tooltip patterns are repeated across multiple files.
-- Icon + text spacing (`ml-1`, `shrink-0`) is being manually applied each time.
-- Two versions of “Add to plan/list” exist with prop‑based branching.
-
-**Recommendation:**
-
-- Create a small shared component like `IconTextButton` or `ActionButton`:
-  - Handles `icon`, `label`, `size`, tooltip text, and `shrink-0` icon spacing.
-- Consider a `TooltipButton` wrapper with consistent delay + styling.
-
-**Benefit:**
-
-- Centralizes spacing and tooltip behavior.
-- Minimizes future drift in look & feel.
-
----
-
-### 3. Tag editing logic is duplicated across list + detail
-
-**Files:**
-
-- `src/app/RecipeList.tsx`
-- `src/app/recipes/[id]/RecipeClient.tsx`
-
-**Issue:**
-
-- Tag add/remove logic appears in two places, with minor styling differences.
-- Each implementation uses `Select` + inline removal buttons.
-
-**Recommendation:**
-
-- Extract a shared `TagEditor` component with optional props:
-  - `mode="compact" | "detail"`
-  - `showAddSelect`, `showInlineRemove`
-- Keep only layout-specific wrappers in the page files.
-
-**Benefit:**
-
-- Faster iteration on tag UX without duplicating logic.
-
----
-
-### 4. Layout patterns are repeated without an abstraction
+### 1. Layout patterns are repeated without an abstraction
 
 **Files:**
 
@@ -112,7 +34,7 @@ This document flags key refactor opportunities, large components, and layout pat
 
 ---
 
-### 5. Recipe actions vary by view but use prop branching
+### 2. Recipe actions vary by view but use prop branching
 
 **File:** `src/app/recipes/[id]/RecipeActions.tsx`
 
@@ -132,7 +54,7 @@ This document flags key refactor opportunities, large components, and layout pat
 
 ---
 
-### 6. Inline metadata editing on detail page could be reusable
+### 3. Inline metadata editing on detail page could be reusable
 
 **File:** `src/app/recipes/[id]/RecipeClient.tsx`
 
@@ -151,7 +73,7 @@ This document flags key refactor opportunities, large components, and layout pat
 
 ---
 
-### 7. Plan cards are consistent but rely on fixed min-heights
+### 4. Plan cards are consistent but rely on fixed min-heights
 
 **File:** `src/app/plan/PlanCard.tsx`
 
@@ -178,9 +100,7 @@ This document flags key refactor opportunities, large components, and layout pat
 - `TagChip` (for selected tags, variant for type vs. tag)
 - `PageHeaderCard`
 - `ActionBar`
-- `TooltipButton`
 - `RecipeMetaInline`
-- `RecipeEditDialog`
 
 ### Suggested hooks/helpers
 
@@ -190,12 +110,6 @@ This document flags key refactor opportunities, large components, and layout pat
 ---
 
 ## Recommendations by Priority
-
-### High Priority (Next iteration)
-
-1. **Split `RecipeClient` into subcomponents**.
-2. **Extract tooltip + icon button patterns** into shared components.
-3. **Unify tag editing logic** between list and detail.
 
 ### Medium Priority
 

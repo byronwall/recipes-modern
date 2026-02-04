@@ -61,6 +61,13 @@ This file documents the key UI and code patterns established in this repo. It sh
 - Page-level UI: `src/app/<route>/`
 - Shared UI primitives: `src/components/ui/`
 
+## Common Components
+
+- **`TooltipButton`**: Wraps tooltip + trigger with standard delay; use for icon-only buttons instead of repeating `TooltipProvider`.
+- **`IconTextButton`**: Standard icon + label spacing with `shrink-0` icons.
+- **`RecipeTagEditor`**: Shared add/remove tag UI with optional overflow and confirm remove; use for list + detail tags.
+- **`InlineTagEditor`**: Form-focused tag input used inside dialogs/edit modals.
+
 ## Recommended Utilities
 
 - If adding repeated action patterns, create a shared `TooltipButton`.
