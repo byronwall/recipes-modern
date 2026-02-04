@@ -7,14 +7,10 @@ import { AddRecipeToShoppingList } from "~/app/AddRecipeToShoppingList";
 import { AddToMealPlanPopover } from "~/app/AddToMealPlanPopover";
 import { useRecipeActions } from "~/app/useRecipeActions";
 import { Button } from "~/components/ui/button";
+import { IconTextButton } from "~/components/ui/icon-text-button";
+import { TooltipButton } from "~/components/ui/tooltip-button";
 import { SimpleAlertDialog } from "~/components/SimpleAlertDialog";
 import { useCookingMode } from "./useCookingMode";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
 
 export function RecipeActions(props: {
   recipeId: number;
@@ -34,59 +30,51 @@ export function RecipeActions(props: {
     <>
       {!cookingMode &&
         (isCompact ? (
-          <TooltipProvider delayDuration={100}>
-            <div className="flex w-full items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <AddToMealPlanPopover recipeId={recipeId} display="icon" />
+          <div className="flex w-full items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <AddToMealPlanPopover recipeId={recipeId} display="icon" />
 
-                <AddRecipeToShoppingList recipeId={recipeId} display="icon" />
+              <AddRecipeToShoppingList recipeId={recipeId} display="icon" />
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link href={`/recipes/${recipeId}/touch-up`}>
-                      <Button
-                        variant={"secondary"}
-                        size="icon"
-                        aria-label="Touch up with AI"
-                      >
-                        <Sparkles className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent>Touch up with AI</TooltipContent>
-                </Tooltip>
-              </div>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <SimpleAlertDialog
-                      trigger={
-                        <Button
-                          variant={"destructive-outline"}
-                          size={"icon"}
-                          aria-label="Delete recipe"
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      }
-                      title={"Delete recipe?"}
-                      description={
-                        "This action cannot be undone. This will permanently delete the recipe."
-                      }
-                      confirmText={"Delete"}
-                      cancelText={"Cancel"}
-                      confirmVariant="destructive"
-                      onConfirm={async () => {
-                        await handleDelete(props.recipeId);
-                      }}
-                    />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>Delete recipe</TooltipContent>
-              </Tooltip>
+              <TooltipButton content="Touch up with AI">
+                <Link href={`/recipes/${recipeId}/touch-up`}>
+                  <Button
+                    variant={"secondary"}
+                    size="icon"
+                    aria-label="Touch up with AI"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </TooltipButton>
             </div>
-          </TooltipProvider>
+
+            <TooltipButton content="Delete recipe">
+              <span className="inline-flex">
+                <SimpleAlertDialog
+                  trigger={
+                    <Button
+                      variant={"destructive-outline"}
+                      size={"icon"}
+                      aria-label="Delete recipe"
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  }
+                  title={"Delete recipe?"}
+                  description={
+                    "This action cannot be undone. This will permanently delete the recipe."
+                  }
+                  confirmText={"Delete"}
+                  cancelText={"Cancel"}
+                  confirmVariant="destructive"
+                  onConfirm={async () => {
+                    await handleDelete(props.recipeId);
+                  }}
+                />
+              </span>
+            </TooltipButton>
+          </div>
         ) : (
           <div className="flex w-full items-start justify-between gap-3">
             <div className="grid grid-cols-2 gap-2">
@@ -103,21 +91,22 @@ export function RecipeActions(props: {
               />
 
               <Link href={`/recipes/${recipeId}/touch-up`}>
-                <Button variant={"secondary"} className="w-full justify-start">
-                  <Sparkles className="h-4 w-4 shrink-0" />
-                  <span className="ml-1">Touch up</span>
-                </Button>
+                <IconTextButton
+                  variant={"secondary"}
+                  className="w-full justify-start"
+                  icon={<Sparkles className="h-4 w-4" />}
+                  label="Touch up"
+                />
               </Link>
 
               {!cookingMode && (
-                <Button
+                <IconTextButton
                   onClick={toggleCookingMode}
                   variant="outline"
                   className="w-full justify-start"
-                >
-                  <ChefHat className="h-4 w-4 shrink-0" />
-                  <span className="ml-1">Cook it</span>
-                </Button>
+                  icon={<ChefHat className="h-4 w-4" />}
+                  label="Cook it"
+                />
               )}
             </div>
 
@@ -147,20 +136,15 @@ export function RecipeActions(props: {
         ))}
 
       {shouldShowCookingMode && isCompact && !cookingMode && (
-        <TooltipProvider delayDuration={100}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={toggleCookingMode}
-                size="icon"
-                aria-label="Enter cooking mode"
-              >
-                <ChefHat className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Enter cooking mode</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <TooltipButton content="Enter cooking mode">
+          <Button
+            onClick={toggleCookingMode}
+            size="icon"
+            aria-label="Enter cooking mode"
+          >
+            <ChefHat className="h-4 w-4" />
+          </Button>
+        </TooltipButton>
       )}
     </>
   );

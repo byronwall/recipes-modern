@@ -1,5 +1,7 @@
 "use client";
 import { Button } from "~/components/ui/button";
+import { IconTextButton } from "~/components/ui/icon-text-button";
+import { TooltipButton } from "~/components/ui/tooltip-button";
 import { useRecipeActions } from "./useRecipeActions";
 import {
   Popover,
@@ -8,12 +10,6 @@ import {
 } from "~/components/ui/popover";
 import { Calendar } from "~/components/ui/calendar";
 import { CalendarPlus } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
 
 export function AddToMealPlanPopover(props: {
   recipeId: number;
@@ -31,40 +27,39 @@ export function AddToMealPlanPopover(props: {
   return (
     <div>
       {display === "icon" ? (
-        <TooltipProvider delayDuration={100}>
-          <Tooltip>
-            <Popover>
-              <TooltipTrigger asChild>
-                <PopoverTrigger asChild>
-                  <Button size="icon" variant="outline" aria-label="Add to plan">
-                    <CalendarPlus className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-              </TooltipTrigger>
-              <PopoverContent>
-                <div>
-                  <Calendar
-                    mode="single"
-                    onSelect={async (date) => {
-                      if (!date) {
-                        return;
-                      }
-                      await handleAddToMealPlan(recipeId, date);
-                    }}
-                  />
-                </div>
-              </PopoverContent>
-            </Popover>
-            <TooltipContent>Add to plan</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Popover>
+          <TooltipButton content="Add to plan">
+            <span className="inline-flex">
+              <PopoverTrigger asChild>
+                <Button size="icon" variant="outline" aria-label="Add to plan">
+                  <CalendarPlus className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+            </span>
+          </TooltipButton>
+          <PopoverContent>
+            <div>
+              <Calendar
+                mode="single"
+                onSelect={async (date) => {
+                  if (!date) {
+                    return;
+                  }
+                  await handleAddToMealPlan(recipeId, date);
+                }}
+              />
+            </div>
+          </PopoverContent>
+        </Popover>
       ) : (
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" className={className}>
-              <CalendarPlus className="h-4 w-4 shrink-0" />
-              <span className="ml-1">Plan</span>
-            </Button>
+            <IconTextButton
+              variant="outline"
+              className={className}
+              icon={<CalendarPlus className="h-4 w-4" />}
+              label="Plan"
+            />
           </PopoverTrigger>
           <PopoverContent>
             <div>

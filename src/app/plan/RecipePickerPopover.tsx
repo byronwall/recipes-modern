@@ -10,12 +10,7 @@ import { useState } from "react";
 import { Input } from "~/components/ui/input";
 import { Plus } from "lucide-react";
 import { H3 } from "~/components/ui/typography";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
+import { TooltipButton } from "~/components/ui/tooltip-button";
 
 export function RecipePickerPopover(props: {
   onRecipeSelected: (recipeId: number) => void;
@@ -71,17 +66,12 @@ export function RecipePickerPopover(props: {
         </PopoverContent>
         <PopoverTrigger asChild>
           <span className="inline-flex">
-            <TooltipProvider delayDuration={100}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" className="h-10 rounded-full">
-                    <Plus className="h-4 w-4" />
-                    Add meal
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Add meal</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <TooltipButton content="Add meal">
+              <Button variant="outline" className="h-10 rounded-full">
+                <Plus className="h-4 w-4" />
+                Add meal
+              </Button>
+            </TooltipButton>
           </span>
         </PopoverTrigger>
       </Popover>
