@@ -61,6 +61,25 @@ This file documents the key UI and code patterns established in this repo. It sh
 - Page-level UI: `src/app/<route>/`
 - Shared UI primitives: `src/components/ui/`
 
+## Common Components
+
+- **`TooltipButton`**: Wraps tooltip + trigger with standard delay; use for icon-only buttons instead of repeating `TooltipProvider`.
+- **`IconTextButton`**: Standard icon + label spacing with `shrink-0` icons.
+- **`RecipeTagEditor`**: Shared add/remove tag UI with optional overflow and confirm remove; use for list + detail tags.
+- **`InlineTagEditor`**: Form-focused tag input used inside dialogs/edit modals.
+- **`ListPanel`**: Reusable popover list container with matching item + empty-state components.
+- **`PageHeaderCard`**: Standard header card surface for page-level titles/controls.
+- **`CardGrid`**: Shared grid container for card layouts.
+- **`RecipeMetaInline`**: Inline metadata editor for cook time, type, and tags on recipe detail.
+
+## UI Goals
+
+- **Compact, readable layout**: Favor tight spacing and aligned baselines; avoid overly airy screens.
+- **Soft surface hierarchy**: Subtle card surfaces and borders; keep contrast calm.
+- **Action clarity by context**: Icon-only actions for dense lists; text actions for detail views.
+- **Inline edits for working screens**: Keep tags, type, and time editable in place when practical.
+- **Consistency over novelty**: Reuse established chips, tooltips, and card patterns across pages.
+
 ## Recommended Utilities
 
 - If adding repeated action patterns, create a shared `TooltipButton`.

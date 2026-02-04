@@ -9,12 +9,7 @@ import { useMealPlanActions } from "../useMealPlanActions";
 import { ShoppingBasket, Trash } from "lucide-react";
 import { useRecipeActions } from "../useRecipeActions";
 import { StylishDatePicker } from "./StylishDatePicker";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
+import { TooltipButton } from "~/components/ui/tooltip-button";
 
 type PlannedMealWithRecipe = RouterOutputs["recipe"]["getMealPlans"][0];
 
@@ -48,7 +43,7 @@ export function PlanCard(props: { plan: PlannedMealWithRecipe }) {
 
         <div className="flex min-h-[76px] flex-1 flex-col gap-2">
           <Link href={`/recipes/${plan.Recipe.id}`}>
-            <H4 className="leading-tight">{plan.Recipe.name}</H4>
+            <H4 className="line-clamp-2 leading-tight">{plan.Recipe.name}</H4>
           </Link>
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <span className="rounded-full border px-2 py-0.5">
@@ -64,60 +59,45 @@ export function PlanCard(props: { plan: PlannedMealWithRecipe }) {
       </div>
 
       <div className="mt-auto flex items-center justify-between gap-2 border-t pt-2">
-        <TooltipProvider delayDuration={100}>
-          <div className="flex items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={() => handleDelete(plan.id)}
-                  variant="destructive-outline"
-                  size="icon"
-                  aria-label="Delete meal"
-                >
-                  <Trash size={16} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Delete meal</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={() => addMealPlanToList.mutateAsync({ id: plan.id })}
-                  disabled={
-                    addMealPlanToList.isPending || plan.isOnShoppingList
-                  }
-                  size="icon"
-                  variant="outline"
-                  aria-label="Add to list"
-                >
-                  <ShoppingBasket />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {plan.isOnShoppingList ? "Already on list" : "Add to list"}
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={() => {
-                  updatePlan.mutate({
-                    id: plan.id,
-                    isMade: !plan.isMade,
-                  });
-                }}
-                disabled={updatePlan.isPending}
-                size="sm"
-              >
-                {plan.isMade ? "Not made" : "Made"}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {plan.isMade ? "Mark not made" : "Mark made"}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <div className="flex items-center gap-2">
+          <TooltipButton content="Delete meal">
+            <Button
+              onClick={() => handleDelete(plan.id)}
+              variant="destructive-outline"
+              size="icon"
+              aria-label="Delete meal"
+            >
+              <Trash size={16} />
+            </Button>
+          </TooltipButton>
+          <TooltipButton
+            content={plan.isOnShoppingList ? "Already on list" : "Add to list"}
+          >
+            <Button
+              onClick={() => addMealPlanToList.mutateAsync({ id: plan.id })}
+              disabled={addMealPlanToList.isPending || plan.isOnShoppingList}
+              size="icon"
+              variant="outline"
+              aria-label="Add to list"
+            >
+              <ShoppingBasket />
+            </Button>
+          </TooltipButton>
+        </div>
+        <TooltipButton content={plan.isMade ? "Mark not made" : "Mark made"}>
+          <Button
+            onClick={() => {
+              updatePlan.mutate({
+                id: plan.id,
+                isMade: !plan.isMade,
+              });
+            }}
+            disabled={updatePlan.isPending}
+            size="sm"
+          >
+            {plan.isMade ? "Not made" : "Made"}
+          </Button>
+        </TooltipButton>
       </div>
     </div>
   );
