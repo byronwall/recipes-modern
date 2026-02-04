@@ -22,6 +22,8 @@ import { RecipeTagEditor } from "~/components/recipes/RecipeTagEditor";
 import ImageLightbox from "~/components/ImageLightbox";
 import { buildLightboxImages, getImageUrl } from "~/lib/media";
 import { NewRecipeDialog } from "./recipes/new/NewRecipeDialog";
+import { CardGrid } from "~/components/layout/CardGrid";
+import { PageHeaderCard } from "~/components/layout/PageHeaderCard";
 
 const defaultRecipes: Recipe[] = [];
 
@@ -97,7 +99,7 @@ export function RecipeList() {
     <>
       {/* Global Add Tag Dialog is mounted in layout */}
 
-      <div className="mb-6 rounded-2xl border bg-card/70 p-4 shadow-sm">
+      <PageHeaderCard className="mb-6 p-4">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
           <div className="flex flex-col gap-3">
             <Label className="text-xs uppercase text-muted-foreground">
@@ -246,9 +248,9 @@ export function RecipeList() {
             <NewRecipeDialog />
           </div>
         </div>
-      </div>
+      </PageHeaderCard>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <CardGrid className="md:grid-cols-2 xl:grid-cols-3">
         {filteredRecipes.map((recipe) => {
           const primaryImage =
             (recipe.images ?? []).find((ri) => ri.role === ImageRole.HERO) ??
@@ -365,7 +367,7 @@ export function RecipeList() {
             </div>
           );
         })}
-      </div>
+      </CardGrid>
 
       <ImageLightbox
         open={lightboxOpen}

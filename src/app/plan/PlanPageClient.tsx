@@ -10,6 +10,8 @@ import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { StylishDatePicker } from "./StylishDatePicker";
 import { addDays, startOfDay } from "date-fns";
+import { CardGrid } from "~/components/layout/CardGrid";
+import { PageHeaderCard } from "~/components/layout/PageHeaderCard";
 
 export function PlanPageClient() {
   const { data } = api.recipe.getMealPlans.useQuery();
@@ -82,7 +84,7 @@ export function PlanPageClient() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-2xl border bg-card/70 p-5 shadow-sm">
+      <PageHeaderCard className="p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <H1>Planned Meals</H1>
           <div className="flex items-center gap-2 rounded-full border bg-background/80 px-3 py-2">
@@ -96,9 +98,9 @@ export function PlanPageClient() {
             </Label>
           </div>
         </div>
-      </div>
+      </PageHeaderCard>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <CardGrid className="sm:grid-cols-2 lg:grid-cols-3">
         {plansThisMonth.map((plan) => (
           <PlanCard key={plan.id} plan={plan} />
         ))}
@@ -119,7 +121,7 @@ export function PlanPageClient() {
             />
           </div>
         </div>
-      </div>
+      </CardGrid>
     </div>
   );
 }
