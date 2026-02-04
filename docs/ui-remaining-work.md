@@ -11,10 +11,7 @@ This document lists pages and components that have **not** yet received the rece
   **Notes:** Likely still uses older input spacing and button styles. Should adopt the new card layout and pill‑style controls.
 
 ### Purchases
-
-- `src/app/purchases/page.tsx`
-- `src/app/purchases/PurchasesList.tsx`
-  **Notes:** The purchases list is currently a basic list view. Should be refactored into cards with tighter spacing and consistent typography.
+  (recently updated)
 
 ### Kroger
 
@@ -65,13 +62,11 @@ This document lists pages and components that have **not** yet received the rece
 
 ## Next Suggested Workstreams
 
-1. **Shopping List Section**
-   - Modernize list cards, add tooltips, and unify action buttons.
-2. **AI + Touch-up Flows**
+1. **AI + Touch-up Flows**
    - Align to the new card/modal language.
-3. **Auth Page**
+2. **Auth Page**
    - Update layout and spacing for first‑run consistency.
-4. **Kroger + Purchases**
+3. **Kroger**
    - Normalize content into a card-based layout.
 
 ## Validation Checklist (When Updating Each Page)
