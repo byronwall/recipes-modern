@@ -9,7 +9,7 @@ import {
 } from "~/components/ui/resizable";
 import { H4 } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
-import { type Recipe } from "./RecipeClient";
+import { type Recipe } from "./recipe-types";
 import { useCookingMode } from "./useCookingMode";
 import { Button } from "~/components/ui/button";
 import { ListRestart } from "lucide-react";

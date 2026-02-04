@@ -4,7 +4,7 @@ import { Ban, Edit } from "lucide-react";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { H3, H4 } from "~/components/ui/typography";
-import { type Recipe } from "./RecipeClient";
+import { type Recipe } from "./recipe-types";
 import { StepListEditMode } from "./StepListEditMode";
 
 export type StepListProps = {

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { H3, H4 } from "~/components/ui/typography";
 import { IngredientListEditMode } from "./IngredientListEditMode";
-import { type Recipe } from "./RecipeClient";
+import { type Recipe } from "./recipe-types";
 
 export interface IngredientListProps {
   recipe: Recipe;
