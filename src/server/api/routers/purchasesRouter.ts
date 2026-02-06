@@ -10,11 +10,39 @@ export const purchasesRouter = createTRPCRouter({
     const purchases = await db.krogerPurchase.findMany({
       where: { userId },
       include: {
-        ingredient: true,
+        Recipe: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        ingredient: {
+          include: {
+            group: {
+              select: {
+                Recipe: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
-    return purchases;
+    return purchases.map((purchase) => {
+      const linkedRecipe = purchase.ingredient?.group?.Recipe ?? purchase.Recipe;
+      return {
+        ...purchase,
+        ingredientName: purchase.ingredient?.ingredient ?? null,
+        linkedRecipe: linkedRecipe
+          ? { id: linkedRecipe.id, name: linkedRecipe.name }
+          : null,
+      };
+    });
   }),
 
   seedDevPurchases: protectedProcedure
@@ -32,8 +60,33 @@ export const purchasesRouter = createTRPCRouter({
 
       const userId = ctx.session.user.id;
       const count = input?.count ?? 12;
+      const ingredients = await db.ingredient.findMany({
+        where: {
+          group: {
+            Recipe: {
+              userId,
+            },
+          },
+        },
+        select: {
+          id: true,
+          group: {
+            select: {
+              recipeId: true,
+            },
+          },
+        },
+      });
+
+      if (ingredients.length === 0) {
+        throw new Error(
+          "No ingredients found. Seed or create recipes before seeding purchases.",
+        );
+      }
 
       const purchases = Array.from({ length: count }, () => {
+        const ingredient =
+          ingredients[faker.number.int({ min: 0, max: ingredients.length - 1 })]!;
         const size = faker.number.int({ min: 6, max: 48 });
         const price = Number(faker.commerce.price({ min: 1.5, max: 12 }));
         const regularPrice = Number(
@@ -45,6 +98,8 @@ export const purchasesRouter = createTRPCRouter({
             : null;
         return {
           userId,
+          ingredientId: ingredient.id,
+          recipeId: ingredient.group.recipeId,
           krogerSku: faker.string.numeric({ length: 12 }),
           krogerProductId: faker.string.numeric({ length: 8 }),
           krogerName: faker.commerce.productName(),

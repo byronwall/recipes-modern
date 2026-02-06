@@ -95,18 +95,21 @@ export const krogerRouter = createTRPCRouter({
         const userId = ctx.session.user.id;
 
         let ingredientId: number | null = null;
+        let recipeId: number | null = null;
         if (input.listItemId) {
           const listItem = await db.shoppingList.findUnique({
             where: { id: input.listItemId },
-            select: { ingredientId: true },
+            select: { ingredientId: true, recipeId: true },
           });
           ingredientId = listItem?.ingredientId ?? null;
+          recipeId = listItem?.recipeId ?? null;
         }
 
         const created = await db.krogerPurchase.create({
           data: {
             userId,
             ingredientId: ingredientId ?? undefined,
+            recipeId: recipeId ?? undefined,
             krogerSku: input.purchaseDetails.sku,
             krogerProductId: input.purchaseDetails.productId,
             krogerName: input.purchaseDetails.name,

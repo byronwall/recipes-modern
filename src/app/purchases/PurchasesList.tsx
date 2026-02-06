@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { api } from "~/trpc/react";
 import { formatMoney } from "../list/formatMoney";
+import Link from "next/link";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import {
@@ -158,64 +159,79 @@ export function PurchasesList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {pagedPurchases.map((purchase) => (
-              <TableRow key={purchase.id}>
-                <TableCell className="py-3">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={purchase.imageUrl}
-                      alt={purchase.krogerName}
-                      className="h-12 w-12 rounded-md object-cover"
-                    />
-                    <div>
-                      <div className="font-semibold">
-                        {purchase.krogerName}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {[purchase.krogerBrand, purchase.krogerSku, purchase.krogerProductId, purchase.itemSize]
-                          .filter(Boolean)
-                          .join(" • ")}
-                      </div>
-                      {purchase.ingredient && (
+            {pagedPurchases.map((purchase) => {
+              const linkedRecipe = purchase.linkedRecipe;
+
+              return (
+                <TableRow key={purchase.id}>
+                  <TableCell className="py-3">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={purchase.imageUrl}
+                        alt={purchase.krogerName}
+                        className="h-12 w-12 rounded-md object-cover"
+                      />
+                      <div>
+                        <div className="font-semibold">
+                          {purchase.krogerName}
+                        </div>
                         <div className="text-xs text-muted-foreground">
-                          From ingredient: {purchase.ingredient.ingredient}
+                          {[purchase.krogerBrand, purchase.krogerSku, purchase.krogerProductId, purchase.itemSize]
+                            .filter(Boolean)
+                            .join(" • ")}
                         </div>
-                      )}
-                      {purchase.note && (
-                        <div className="text-xs text-destructive">
-                          Note: {purchase.note}
-                        </div>
-                      )}
+                        {purchase.ingredientName && (
+                          <div className="text-xs text-muted-foreground">
+                            From ingredient: {purchase.ingredientName}
+                          </div>
+                        )}
+                        {linkedRecipe && (
+                          <div className="text-xs text-muted-foreground">
+                            Recipe:{" "}
+                            <Link
+                              href={`/recipes/${linkedRecipe.id}`}
+                              className="font-medium text-foreground underline-offset-2 hover:underline"
+                            >
+                              {linkedRecipe.name}
+                            </Link>
+                          </div>
+                        )}
+                        {purchase.note && (
+                          <div className="text-xs text-destructive">
+                            Note: {purchase.note}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </TableCell>
-                <TableCell className="py-3 text-sm">
-                  <div className="font-semibold">
-                    {formatMoney(purchase.price)} × {purchase.quantity}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Total {formatMoney(purchase.price * purchase.quantity)}
-                  </div>
-                </TableCell>
-                <TableCell className="py-3 text-sm">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs ${
-                      purchase.wasAddedToCart
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {purchase.wasAddedToCart ? "Added" : "Attempted"}
-                  </span>
-                </TableCell>
-                <TableCell className="py-3 text-xs text-muted-foreground">
-                  {purchase.krogerCategories?.[0] ?? "—"}
-                </TableCell>
-                <TableCell className="py-3 text-right text-xs text-muted-foreground">
-                  {new Date(purchase.createdAt).toLocaleString()}
-                </TableCell>
-              </TableRow>
-            ))}
+                  </TableCell>
+                  <TableCell className="py-3 text-sm">
+                    <div className="font-semibold">
+                      {formatMoney(purchase.price)} × {purchase.quantity}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Total {formatMoney(purchase.price * purchase.quantity)}
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-3 text-sm">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs ${
+                        purchase.wasAddedToCart
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {purchase.wasAddedToCart ? "Added" : "Attempted"}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-3 text-xs text-muted-foreground">
+                    {purchase.krogerCategories?.[0] ?? "—"}
+                  </TableCell>
+                  <TableCell className="py-3 text-right text-xs text-muted-foreground">
+                    {new Date(purchase.createdAt).toLocaleString()}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
         {filteredPurchases.length === 0 && (
