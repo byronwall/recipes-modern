@@ -19,6 +19,7 @@ import {
 
 export function RecipePickerPopover(props: {
   onRecipeSelected: (recipeId: number) => void;
+  iconOnly?: boolean;
 }) {
   const { data: recipes = [] } = api.recipe.getRecipes.useQuery();
 
@@ -69,10 +70,21 @@ export function RecipePickerPopover(props: {
         <PopoverTrigger asChild>
           <span className="inline-flex">
             <TooltipButton content="Add meal">
-              <Button variant="outline" className="h-10 rounded-full">
-                <Plus className="h-4 w-4" />
-                Add meal
-              </Button>
+              {props.iconOnly ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Add meal"
+                  className="text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                >
+                  <Plus className="h-4 w-4 shrink-0" />
+                </Button>
+              ) : (
+                <Button variant="outline" className="h-10 rounded-full">
+                  <Plus className="h-4 w-4 shrink-0" />
+                  Add meal
+                </Button>
+              )}
             </TooltipButton>
           </span>
         </PopoverTrigger>
