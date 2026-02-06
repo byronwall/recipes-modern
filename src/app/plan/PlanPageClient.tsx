@@ -10,7 +10,13 @@ import {
   startOfDay,
   startOfWeek,
 } from "date-fns";
-import { CalendarDays, ShoppingBasket, Trash } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  ShoppingBasket,
+  Trash,
+} from "lucide-react";
 
 import { PageHeaderCard } from "~/components/layout/PageHeaderCard";
 import { Button } from "~/components/ui/button";
@@ -27,6 +33,7 @@ import { H1 } from "~/components/ui/typography";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { cn } from "~/lib/utils";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { AddToMealPlanPopover } from "../AddToMealPlanPopover";
 import { useMealPlanActions } from "../useMealPlanActions";
 import { useRecipeActions } from "../useRecipeActions";
 import { RecipePickerPopover } from "./RecipePickerPopover";
@@ -34,6 +41,11 @@ import { RecipePickerPopover } from "./RecipePickerPopover";
 type PlannedMealWithRecipe = RouterOutputs["recipe"]["getMealPlans"][0];
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function toPlanDate(value: Date | string): Date | null {
+  const parsed = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
 
 function MealPlanRow(props: {
   plan: PlannedMealWithRecipe;
@@ -133,7 +145,7 @@ function MealPlanRow(props: {
                 <PopoverContent side="right" align="start" className="w-auto p-2">
                   <Calendar
                     mode="single"
-                    selected={plan.date}
+                    selected={toPlanDate(plan.date) ?? undefined}
                     onSelect={async (date) => {
                       if (!date) return;
                       await onReschedule(plan, startOfDay(date));
@@ -160,17 +172,17 @@ function MealPlanRow(props: {
 }
 
 export function PlanPageClient() {
-  const { data } = api.recipe.getMealPlans.useQuery();
-
   const [shouldHideCompleted, setShouldHideCompleted] = useState(true);
+  const [calendarStart, setCalendarStart] = useState(() =>
+    startOfWeek(startOfDay(new Date()), { weekStartsOn: 0 }),
+  );
+  const calendarEnd = endOfDay(addDays(calendarStart, 20));
+
+  const { data } = api.recipe.getMealPlans.useQuery();
 
   const { handleDelete } = useMealPlanActions();
   const { handleAddToMealPlan, addMealPlanToList } = useRecipeActions();
   const updatePlan = api.mealPlan.updateMealPlan.useMutation();
-
-  const today = startOfDay(new Date());
-  const calendarStart = startOfWeek(today, { weekStartsOn: 0 });
-  const calendarEnd = endOfDay(addDays(calendarStart, 20));
 
   const calendarDays = useMemo(
     () => Array.from({ length: 21 }, (_, index) => addDays(calendarStart, index)),
@@ -180,18 +192,64 @@ export function PlanPageClient() {
   const visiblePlans = useMemo(() => {
     return (data ?? [])
       .filter((plan) => {
-        const planDate = plan.date;
+        const planDate = toPlanDate(plan.date);
+        if (!planDate) return false;
         return planDate >= calendarStart && planDate <= calendarEnd;
       })
       .filter((plan) => (!shouldHideCompleted ? true : !plan.isMade))
-      .sort((a, b) => a.date.getTime() - b.date.getTime());
+      .sort((a, b) => {
+        const aDate = toPlanDate(a.date);
+        const bDate = toPlanDate(b.date);
+        if (!aDate || !bDate) return 0;
+        return aDate.getTime() - bDate.getTime();
+      });
   }, [calendarEnd, calendarStart, data, shouldHideCompleted]);
+
+  const popularDishes = useMemo(() => {
+    const counts = new Map<
+      number,
+      { recipeId: number; name: string; type: string; madeCount: number }
+    >();
+
+    for (const plan of data ?? []) {
+      if (!plan.isMade) continue;
+      const existing = counts.get(plan.Recipe.id);
+      if (existing) {
+        existing.madeCount += 1;
+        continue;
+      }
+      counts.set(plan.Recipe.id, {
+        recipeId: plan.Recipe.id,
+        name: plan.Recipe.name,
+        type: plan.Recipe.type,
+        madeCount: 1,
+      });
+    }
+
+    return Array.from(counts.values())
+      .sort((a, b) => b.madeCount - a.madeCount || a.name.localeCompare(b.name))
+      .slice(0, 10);
+  }, [data]);
+
+  const recentlyMade = useMemo(() => {
+    return (data ?? [])
+      .filter((plan) => plan.isMade)
+      .sort((a, b) => {
+        const aDate = toPlanDate(a.date);
+        const bDate = toPlanDate(b.date);
+        if (!aDate || !bDate) return 0;
+        return bDate.getTime() - aDate.getTime();
+      })
+      .slice(0, 5);
+  }, [data]);
 
   const plansByDay = useMemo(() => {
     const map = new Map<string, PlannedMealWithRecipe[]>();
 
     for (const plan of visiblePlans) {
-      const key = format(startOfDay(plan.date), "yyyy-MM-dd");
+      const planDate = toPlanDate(plan.date);
+      if (!planDate) continue;
+      const key = format(startOfDay(planDate), "yyyy-MM-dd");
       const current = map.get(key);
       if (!current) {
         map.set(key, [plan]);
@@ -208,15 +266,52 @@ export function PlanPageClient() {
       <PageHeaderCard className="border-0 bg-transparent p-0 shadow-none">
         <div className="flex flex-col gap-3">
           <H1 className="leading-tight">Planned Meals</H1>
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={shouldHideCompleted}
-              onCheckedChange={setShouldHideCompleted}
-              id="hide-completed"
-            />
-            <Label htmlFor="hide-completed" className="cursor-pointer text-sm">
-              Hide made meals
-            </Label>
+
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={shouldHideCompleted}
+                onCheckedChange={setShouldHideCompleted}
+                id="hide-completed"
+              />
+              <Label htmlFor="hide-completed" className="cursor-pointer text-sm">
+                Hide made meals
+              </Label>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <TooltipButton content="Previous week">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Previous week"
+                  onClick={() => setCalendarStart((current) => addDays(current, -7))}
+                >
+                  <ChevronLeft className="h-4 w-4 shrink-0" />
+                </Button>
+              </TooltipButton>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setCalendarStart(startOfWeek(startOfDay(new Date()), { weekStartsOn: 0 }))
+                }
+              >
+                Today
+              </Button>
+
+              <TooltipButton content="Next week">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Next week"
+                  onClick={() => setCalendarStart((current) => addDays(current, 7))}
+                >
+                  <ChevronRight className="h-4 w-4 shrink-0" />
+                </Button>
+              </TooltipButton>
+            </div>
           </div>
         </div>
       </PageHeaderCard>
@@ -296,6 +391,77 @@ export function PlanPageClient() {
           );
         })}
       </div>
+
+      <section className="rounded-2xl border bg-card/70 p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold tracking-tight">Popular Dishes</h2>
+          <span className="text-xs text-muted-foreground">Top 10 by times made</span>
+        </div>
+        {popularDishes.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No made meals yet.</p>
+        ) : (
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {popularDishes.map((dish, index) => (
+              <div
+                key={dish.recipeId}
+                className="flex items-center justify-between gap-3 rounded-xl border bg-background/80 px-3 py-2"
+              >
+                <div className="min-w-0 flex-1">
+                  <Link
+                    href={`/recipes/${dish.recipeId}`}
+                    className="block truncate text-sm font-medium hover:underline"
+                  >
+                    {index + 1}. {dish.name}
+                  </Link>
+                  <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>{dish.type}</span>
+                    <span className="rounded-full bg-muted px-2 py-0.5 font-medium">
+                      {dish.madeCount}x
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <AddToMealPlanPopover recipeId={dish.recipeId} display="icon" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-2xl border bg-card/70 p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold tracking-tight">Recently Made</h2>
+          <span className="text-xs text-muted-foreground">Last 5 made meals</span>
+        </div>
+        {recentlyMade.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nothing marked made yet.</p>
+        ) : (
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {recentlyMade.map((plan) => {
+              const planDate = toPlanDate(plan.date);
+              return (
+                  <Link
+                    key={plan.id}
+                    href={`/recipes/${plan.Recipe.id}`}
+                    className="flex min-h-[120px] flex-col gap-2 rounded-xl border bg-background/80 p-3 transition-colors hover:bg-background"
+                  >
+                    <div className="line-clamp-2 text-sm font-semibold leading-tight">
+                      {plan.Recipe.name}
+                    </div>
+                    <div className="mt-auto flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <span>{plan.Recipe.type}</span>
+                      <span>
+                        {planDate ? format(planDate, "MMM d, yyyy") : "Unknown date"}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
