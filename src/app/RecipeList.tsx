@@ -149,7 +149,10 @@ export function RecipeList() {
                     (t) => t.slug === slug,
                   );
                   if (picked)
-                    setTags([...tags, { slug: picked.slug, name: picked.name }]);
+                    setTags([
+                      ...tags,
+                      { slug: picked.slug, name: picked.name },
+                    ]);
                 }}
               >
                 <SelectTrigger className="w-[200px]">

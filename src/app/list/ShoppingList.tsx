@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { ShoppingListCard } from "./ShoppingListCard";
 import { api } from "~/trpc/react";
 import { ShoppingRecipeItem } from "./ShoppingRecipeItem";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Label } from "~/components/ui/label";
 import { useRadioList } from "./useRadioList";
 
@@ -14,8 +14,33 @@ export const groupModes = ["recipe", "aisle"] as const;
 export function ShoppingList(props: { actions?: ReactNode }) {
   const { actions } = props;
   const { data: _shoppingList } = api.shoppingList.getShoppingList.useQuery();
-
-  const shoppingList = _shoppingList ?? [];
+  const shoppingList = useMemo(() => _shoppingList ?? [], [_shoppingList]);
+  const ingredientIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          shoppingList
+            .map((item) => item.ingredient?.id)
+            .filter((id): id is number => typeof id === "number"),
+        ),
+      ),
+    [shoppingList],
+  );
+  const { data: recentByIngredient } =
+    api.purchases.recentByIngredientIds.useQuery(
+      { ingredientIds, limit: 3 },
+      { enabled: ingredientIds.length > 0 },
+    );
+  const purchasesByIngredient = useMemo(
+    () =>
+      new Map(
+        (recentByIngredient?.ingredientPurchases ?? []).map((entry) => [
+          entry.ingredientId,
+          entry.purchases,
+        ]),
+      ),
+    [recentByIngredient],
+  );
 
   // group by recipe name + ID
   const recipesIncluded = shoppingList.filter((item) => item.Recipe);
@@ -157,6 +182,12 @@ export function ShoppingList(props: { actions?: ReactNode }) {
                           item={item}
                           displayMode={
                             groupMode === "recipe" ? "recipe" : "aisle"
+                          }
+                          recentPurchases={
+                            item.ingredient?.id
+                              ? purchasesByIngredient.get(item.ingredient.id) ??
+                                []
+                              : []
                           }
                         />
                       ))}

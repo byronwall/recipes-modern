@@ -27,6 +27,9 @@ export async function MainPageWithNav(props: { children: React.ReactNode }) {
               <NavLink href="/purchases" className="text-lg">
                 purchases
               </NavLink>
+              <NavLink href="/ingredients" className="text-lg">
+                ingredients
+              </NavLink>
               <NavLink href="/ai/recipe" className="text-lg">
                 ai
               </NavLink>
@@ -35,7 +38,9 @@ export async function MainPageWithNav(props: { children: React.ReactNode }) {
               </NavLink>
             </>
           ) : (
-            <div className="px-3 py-1 text-lg font-semibold">family recipes</div>
+            <div className="px-3 py-1 text-lg font-semibold">
+              family recipes
+            </div>
           )}
         </div>
 

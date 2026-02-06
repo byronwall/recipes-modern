@@ -47,6 +47,7 @@ model Recipe {
 
     PlannedMeal  PlannedMeal[]
     ShoppingList ShoppingList[]
+    KrogerPurchase KrogerPurchase[]
 
     // categorization
     type        RecipeType  @default(OTHER)
@@ -219,6 +220,10 @@ model KrogerPurchase {
     // optional link back to an ingredient (if purchase originated from a list item)
     ingredientId Int?
     ingredient   Ingredient? @relation(fields: [ingredientId], references: [id])
+
+    // optional link to recipe when ingredient is not known
+    recipeId Int?
+    Recipe   Recipe? @relation(fields: [recipeId], references: [id])
 
     // kroger specific details
     krogerSku       String // UPC

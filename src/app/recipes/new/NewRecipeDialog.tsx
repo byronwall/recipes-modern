@@ -8,6 +8,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -26,9 +27,12 @@ export function NewRecipeDialog() {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="grid h-[90vh] max-h-[90vh] max-w-5xl grid-rows-[auto,1fr,auto] overflow-hidden">
+      <DialogContent className="grid max-h-[90vh] max-w-4xl grid-rows-[auto,1fr,auto] gap-3 overflow-hidden p-5">
         <DialogHeader>
           <DialogTitle>Create New Recipe</DialogTitle>
+          <DialogDescription>
+            Add details, tags, ingredients, and steps.
+          </DialogDescription>
         </DialogHeader>
 
         <NewRecipeForm
@@ -38,11 +42,11 @@ export function NewRecipeDialog() {
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="outline">Cancel</Button>
           </DialogClose>
-          <Button type="submit" form={formId} disabled={isSubmitting}>
+          <Button type="submit" form={formId} isLoading={isSubmitting}>
             <Plus />
-            Create Recipe!
+            Create recipe
           </Button>
         </DialogFooter>
       </DialogContent>

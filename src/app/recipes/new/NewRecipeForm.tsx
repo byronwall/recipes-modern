@@ -1,32 +1,21 @@
 "use client";
 
-import * as React from "react";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, type SubmitHandler } from "react-hook-form";
-import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
-import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
 import { RecipeType } from "@prisma/client";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import { H3 } from "~/components/ui/typography";
-import { api } from "~/trpc/react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
-import { Plus } from "lucide-react";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { api } from "~/trpc/react";
+import { InlineTagEditor } from "~/components/recipes/InlineTagEditor";
 
 type NewRecipe = {
   title: string;
@@ -35,6 +24,7 @@ type NewRecipe = {
   steps: string;
   type?: RecipeType;
   tagSlugs?: string[];
+  cookMinutes?: number;
 };
 
 type NewRecipeFormProps = {
@@ -57,13 +47,26 @@ export function NewRecipeForm({
   onSubmittingChange,
 }: NewRecipeFormProps) {
   const { register, handleSubmit, formState, setValue, watch } =
-    useForm<NewRecipe>();
+    useForm<NewRecipe>({
+      defaultValues: {
+        title: "My Recipe",
+        description: "",
+        ingredients: defaultIngredients,
+        steps: defaultSteps,
+        type: undefined,
+        tagSlugs: [],
+        cookMinutes: undefined,
+      },
+    });
 
   const router = useRouter();
 
   const createRecipeMutation =
     api.recipe.createRecipeFromTextInput.useMutation();
   const upsertTag = api.tag.upsertByName.useMutation();
+  const selectedType = watch("type");
+  const cookMinutes = watch("cookMinutes");
+  const tagValues = watch("tagSlugs") ?? [];
 
   useEffect(() => {
     onSubmittingChange?.(formState.isSubmitting);
@@ -88,214 +91,120 @@ export function NewRecipeForm({
     <form
       id={formId}
       onSubmit={handleSubmit(onSubmit)}
-      className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden"
+      className="min-h-0 overflow-y-auto pr-1"
     >
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="flex items-center gap-4">
-          <H3 className="w-36 text-xl">Title</H3>
-          <Input
-            defaultValue="My Recipe"
-            {...register("title")}
-            placeholder="Title of the recipe"
-            className="w-full text-base font-semibold"
-          />
-        </div>
+      <div className="grid gap-4 pb-2 md:gap-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-2 md:grid-cols-[7.5rem_minmax(0,1fr)] md:items-center md:gap-1.5">
+            <Label htmlFor="new-recipe-title">Name</Label>
+            <Input
+              id="new-recipe-title"
+              {...register("title")}
+              placeholder="Title of the recipe"
+              className="h-12 text-base"
+              autoFocus
+            />
+          </div>
 
-        <div className="flex items-center gap-4">
-          <H3 className="w-36 text-xl">Type</H3>
-          <RadioGroup
-            className="flex flex-wrap gap-2"
-            onValueChange={(v) => setValue("type", v as RecipeType)}
-          >
-            {Object.values(RecipeType).map((t) => (
-              <div key={t} className="flex items-center gap-2">
-                <RadioGroupItem value={t} id={`type-${t}`} />
-                <Label htmlFor={`type-${t}`}>{t}</Label>
-              </div>
-            ))}
-          </RadioGroup>
-        </div>
-
-        <div className="flex items-start gap-4">
-          <H3 className="w-36 text-xl">Description</H3>
-          <Textarea
-            autoResize
-            placeholder="A short description of the recipe"
-            className="text-base"
-            {...register("description")}
-          />
-        </div>
-
-        <div className="flex items-center gap-4">
-          <H3 className="w-36 text-xl">Tags</H3>
-          <TagSelector
-            values={watch("tagSlugs") ?? []}
-            onChange={(vals) => setValue("tagSlugs", vals)}
-          />
-        </div>
-      </div>
-
-      <div className="grid min-h-0 flex-1 gap-6 md:auto-rows-[1fr] md:grid-cols-2">
-        <div className="flex min-h-0 items-start gap-4 self-stretch">
-          <H3 className="w-36 text-xl">Ingredients</H3>
-          <div className="min-h-0 w-full flex-1 self-stretch">
-            <Textarea
-              defaultValue={defaultIngredients}
-              className="h-full min-h-[200px] text-base md:min-h-0"
-              {...register("ingredients")}
+          <div className="grid gap-2 md:grid-cols-[7.5rem_minmax(0,1fr)] md:items-center md:gap-1.5">
+            <Label htmlFor="new-recipe-cook-minutes">
+              Cooking time (minutes)
+            </Label>
+            <Input
+              id="new-recipe-cook-minutes"
+              type="number"
+              min={0}
+              placeholder="e.g. 30"
+              value={cookMinutes ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                setValue("cookMinutes", val ? Number(val) : undefined);
+              }}
             />
           </div>
         </div>
 
-        <div className="flex min-h-0  items-start gap-4">
-          <H3 className="w-36 text-xl">Steps</H3>
-          <div className="flex min-h-0 w-full flex-grow flex-col self-stretch">
-            <p className="mb-2 shrink-0 text-xs text-muted-foreground">
-              Step numbers automatically created for new lines.
-            </p>
-            <div className="min-h-0 flex-grow">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-2 md:grid-cols-[7.5rem_minmax(0,1fr)] md:items-start md:gap-1.5">
+            <Label htmlFor="new-recipe-description" className="md:pt-2">
+              Description
+            </Label>
+            <Textarea
+              id="new-recipe-description"
+              autoResize
+              placeholder="A short description of the recipe"
+              className="min-h-[72px] text-base"
+              {...register("description")}
+            />
+          </div>
+
+          <div className="grid gap-2 md:grid-cols-[7.5rem_minmax(0,1fr)] md:items-center md:gap-1.5">
+            <Label>Type</Label>
+            <Select
+              value={selectedType ?? "__none__"}
+              onValueChange={(v) =>
+                setValue(
+                  "type",
+                  v === "__none__" ? undefined : (v as RecipeType),
+                )
+              }
+            >
+              <SelectTrigger className="h-8 w-fit min-w-[160px] rounded-full border px-3 py-0 text-xs capitalize">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">No type</SelectItem>
+                {Object.values(RecipeType).map((t) => (
+                  <SelectItem key={t} value={t} className="capitalize">
+                    {t.toLowerCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-2 md:grid-cols-[7.5rem_minmax(0,1fr)] md:items-start md:gap-1.5">
+            <Label className="md:pt-2">Tags</Label>
+            <InlineTagEditor
+              values={tagValues}
+              onChange={(vals) => setValue("tagSlugs", vals)}
+              controlsLayout="stacked"
+              addButtonClassName="md:-ml-[8rem]"
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-2 md:grid-cols-[7.5rem_minmax(0,1fr)] md:items-start md:gap-1.5">
+            <Label htmlFor="new-recipe-ingredients" className="md:pt-2">
+              Ingredients
+            </Label>
+            <Textarea
+              id="new-recipe-ingredients"
+              className="min-h-[220px] text-base md:min-h-[200px]"
+              {...register("ingredients")}
+            />
+          </div>
+
+          <div className="grid gap-2 md:grid-cols-[7.5rem_minmax(0,1fr)] md:items-start md:gap-1.5">
+            <Label htmlFor="new-recipe-steps" className="md:pt-2">
+              Steps
+            </Label>
+            <div className="space-y-1.5">
+              <p className="text-xs text-muted-foreground">
+                Step numbers automatically created for new lines.
+              </p>
               <Textarea
-                defaultValue={defaultSteps}
+                id="new-recipe-steps"
                 {...register("steps")}
-                className="h-full min-h-[200px] text-base md:min-h-0"
+                className="min-h-[220px] text-base md:min-h-[200px]"
               />
             </div>
           </div>
         </div>
-      </div>
-      <div className="flex justify-end">
-        <Button type="submit" isLoading={createRecipeMutation.isPending}>
-          Create Recipe
-        </Button>
       </div>
     </form>
-  );
-}
-
-function TagSelector(props: {
-  values: string[];
-  onChange: (vals: string[]) => void;
-}) {
-  const { values, onChange } = props;
-  const [input, setInput] = React.useState("");
-  const [addOpen, setAddOpen] = React.useState(false);
-  const [newTagName, setNewTagName] = React.useState("");
-
-  const { data } = api.tag.search.useQuery({ q: input, limit: 10 });
-
-  function addTag(name: string) {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    const exists = values.some(
-      (v) => v.toLowerCase() === trimmed.toLowerCase(),
-    );
-    if (exists) return;
-    onChange([...values, trimmed]);
-    setInput("");
-  }
-
-  function removeTag(name: string) {
-    onChange(values.filter((v) => v !== name));
-  }
-
-  return (
-    <div className="flex w-full flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <div className="flex flex-wrap gap-2">
-          {values.map((v) => (
-            <span key={v} className="rounded bg-muted px-2 py-1 text-xs">
-              {v}
-              <button
-                className="ml-1"
-                onClick={() => removeTag(v)}
-                aria-label={`Remove ${v}`}
-              >
-                ×
-              </button>
-            </span>
-          ))}
-        </div>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="icon" aria-label="Add tag">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add a tag</DialogTitle>
-              <DialogDescription>
-                Create a new tag and add it to this recipe.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-2">
-              <Label htmlFor="new-tag-name">Tag name</Label>
-              <Input
-                id="new-tag-name"
-                value={newTagName}
-                onChange={(e) => setNewTagName(e.target.value)}
-                placeholder="e.g. Vegetarian"
-                autoFocus
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setAddOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  const name = newTagName.trim();
-                  if (!name) return;
-                  const exists = values.some(
-                    (v) => v.toLowerCase() === name.toLowerCase(),
-                  );
-                  if (!exists) onChange([...values, name]);
-                  setAddOpen(false);
-                  setNewTagName("");
-                }}
-              >
-                Add tag
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Search or create tag"
-          />
-        </PopoverTrigger>
-        <PopoverContent className="w-64 p-0">
-          <div className="max-h-60 overflow-auto py-1">
-            {data?.length ? (
-              data.map((t) => (
-                <button
-                  key={t.id}
-                  className="block w-full px-3 py-2 text-left hover:bg-muted"
-                  onClick={() => addTag(t.name)}
-                >
-                  {t.name}
-                </button>
-              ))
-            ) : (
-              <div className="px-3 py-2 text-sm text-muted-foreground">
-                No tags
-              </div>
-            )}
-            {input.trim() && (
-              <button
-                className="block w-full px-3 py-2 text-left hover:bg-muted"
-                onClick={() => addTag(input)}
-              >
-                Create: {input}
-              </button>
-            )}
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
   );
 }
