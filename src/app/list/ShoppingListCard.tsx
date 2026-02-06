@@ -12,15 +12,19 @@ import { getIngredientLabel } from "./getIngredientLabel";
 import { SimpleAlertDialog } from "~/components/SimpleAlertDialog";
 import { AislePickerDialog } from "./AislePickerDialog";
 import { TooltipButton } from "~/components/ui/tooltip-button";
+import { IngredientPurchaseHistory } from "~/components/ingredients/IngredientPurchaseHistory";
 
 export type ShoppingListItem =
   RouterOutputs["shoppingList"]["getShoppingList"][0];
+type RecentPurchase =
+  RouterOutputs["purchases"]["recentByIngredientIds"]["ingredientPurchases"][number]["purchases"][number];
 
 export function ShoppingListCard(props: {
   item: ShoppingListItem;
   displayMode: "recipe" | "aisle";
+  recentPurchases: RecentPurchase[];
 }) {
-  const { item } = props;
+  const { item, recentPurchases } = props;
 
   const { handleDeleteItem, handleMarkAsBought } = useShoppingListActions();
 
@@ -68,6 +72,16 @@ export function ShoppingListCard(props: {
             isBought && "invisible",
           )}
         >
+          {item.ingredient && recentPurchases.length > 0 ? (
+            <IngredientPurchaseHistory
+              purchases={recentPurchases}
+              currentRecipeId={item.Recipe?.id}
+              ingredientId={item.ingredient.id}
+              listItemId={item.id}
+              compact
+              hideEmpty
+            />
+          ) : null}
           <KrogerSearchPopup
             originalListItemId={item.id}
             ingredient={item.ingredient?.ingredient}

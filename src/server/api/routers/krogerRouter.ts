@@ -66,6 +66,8 @@ export const krogerRouter = createTRPCRouter({
           }),
         ),
         listItemId: z.number().optional(),
+        ingredientId: z.number().optional(),
+        recipeId: z.number().optional(),
         purchaseDetails: z
           .object({
             sku: z.string(),
@@ -94,8 +96,8 @@ export const krogerRouter = createTRPCRouter({
       if (input.purchaseDetails) {
         const userId = ctx.session.user.id;
 
-        let ingredientId: number | null = null;
-        let recipeId: number | null = null;
+        let ingredientId: number | null = input.ingredientId ?? null;
+        let recipeId: number | null = input.recipeId ?? null;
         if (input.listItemId) {
           const listItem = await db.shoppingList.findUnique({
             where: { id: input.listItemId },
@@ -103,6 +105,19 @@ export const krogerRouter = createTRPCRouter({
           });
           ingredientId = listItem?.ingredientId ?? null;
           recipeId = listItem?.recipeId ?? null;
+        }
+        if (ingredientId && !recipeId) {
+          const ingredient = await db.ingredient.findUnique({
+            where: { id: ingredientId },
+            select: {
+              group: {
+                select: {
+                  recipeId: true,
+                },
+              },
+            },
+          });
+          recipeId = ingredient?.group.recipeId ?? null;
         }
 
         const created = await db.krogerPurchase.create({

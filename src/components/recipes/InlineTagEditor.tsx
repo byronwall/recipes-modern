@@ -9,13 +9,21 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
 export function InlineTagEditor(props: {
   values: string[];
   onChange: (vals: string[]) => void;
+  controlsLayout?: "inline" | "stacked";
+  addButtonClassName?: string;
 }) {
-  const { values, onChange } = props;
+  const {
+    values,
+    onChange,
+    controlsLayout = "inline",
+    addButtonClassName,
+  } = props;
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { data } = api.tag.search.useQuery({ q: input, limit: 10 });
@@ -57,13 +65,19 @@ export function InlineTagEditor(props: {
           </span>
         ))}
       </div>
-      <div className="flex items-center gap-2">
+      <div
+        className={
+          controlsLayout === "stacked"
+            ? "flex flex-col items-start gap-2"
+            : "flex items-center gap-2"
+        }
+      >
         <Input
           ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Add a tag"
-          className="max-w-sm"
+          className={controlsLayout === "stacked" ? "w-full" : "max-w-sm"}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -73,7 +87,12 @@ export function InlineTagEditor(props: {
         />
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" aria-label="Add tag">
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label="Add tag"
+              className={cn(addButtonClassName)}
+            >
               <ChevronDown className="h-4 w-4" />
               Add tag
             </Button>
