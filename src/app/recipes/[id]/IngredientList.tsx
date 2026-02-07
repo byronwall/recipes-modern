@@ -1,10 +1,7 @@
 "use client";
 
-import { Ban, Edit } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Button } from "~/components/ui/button";
+import { useMemo } from "react";
 import { H3, H4 } from "~/components/ui/typography";
-import { IngredientListEditMode } from "./IngredientListEditMode";
 import { type Recipe } from "./recipe-types";
 import { IngredientPurchaseHistory } from "~/components/ingredients/IngredientPurchaseHistory";
 import { api, type RouterOutputs } from "~/trpc/react";
@@ -16,8 +13,8 @@ export interface IngredientListProps {
   recipe: Recipe;
 }
 export function IngredientList({ recipe }: IngredientListProps) {
-  const [isEditing, setIsEditing] = useState(false);
   const { data: ingredientsCatalog } = api.purchases.ingredientsCatalog.useQuery();
+
   const purchasesByIngredientName = useMemo(() => {
     const m = new Map<string, RecentPurchase[]>();
     for (const ingredient of ingredientsCatalog ?? []) {
@@ -65,32 +62,10 @@ export function IngredientList({ recipe }: IngredientListProps) {
     </ul>
   );
 
-  const cancelBtn = (
-    <Button onClick={() => setIsEditing(!isEditing)} variant="outline">
-      <Ban />
-      Cancel
-    </Button>
-  );
   return (
     <>
-      <div className="flex items-center gap-4">
-        <H3>ingredients</H3>
-        {!isEditing && (
-          <Button onClick={() => setIsEditing(!isEditing)}>
-            <Edit />
-            Edit
-          </Button>
-        )}
-      </div>
-      {isEditing ? (
-        <IngredientListEditMode
-          recipe={recipe}
-          cancelButton={cancelBtn}
-          onDoneEditing={() => setIsEditing(false)}
-        />
-      ) : (
-        mainComp
-      )}
+      <H3 className="text-xl font-medium text-muted-foreground">ingredients</H3>
+      {mainComp}
     </>
   );
 }

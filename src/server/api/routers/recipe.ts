@@ -189,12 +189,48 @@ export const recipeRouter = createTRPCRouter({
         throw new Error("Recipe not found");
       }
 
+      const groupsToDelete = input.ingredientGroups.filter((group) => group.id < 0);
+
+      for (const group of groupsToDelete) {
+        await db.ingredientGroup.delete({
+          where: { id: -group.id },
+        });
+      }
+
+      const activeGroups = input.ingredientGroups.filter((group) => group.id >= 0);
+
+      const newGroups = activeGroups.filter((group) => group.id === 0);
+      for (const [order, group] of newGroups.entries()) {
+        const sourceIndex = activeGroups.findIndex((g) => g === group);
+        await db.ingredientGroup.create({
+          data: {
+            title: group.title,
+            order: sourceIndex >= 0 ? sourceIndex : order,
+            recipeId: recipe.id,
+            ingredients: {
+              create: group.ingredients
+                .filter((ingredient) => ingredient.id >= 0)
+                .map((ingredient) => ({
+                  ingredient: ingredient.ingredient,
+                  amount: ingredient.amount,
+                  modifier: ingredient.modifier,
+                  unit: ingredient.unit,
+                })),
+            },
+          },
+        });
+      }
+
+      const updatedGroups = activeGroups.filter((group) => group.id > 0);
+
       // update the ingredient groups
-      for (const group of input.ingredientGroups) {
+      for (const group of updatedGroups) {
+        const order = activeGroups.findIndex((g) => g.id === group.id);
         await db.ingredientGroup.update({
           where: { id: group.id },
           data: {
             title: group.title,
+            order: order >= 0 ? order : 0,
           },
         });
 

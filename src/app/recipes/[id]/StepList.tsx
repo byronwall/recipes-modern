@@ -1,18 +1,12 @@
 "use client";
 
-import { Ban, Edit } from "lucide-react";
-import { useState } from "react";
-import { Button } from "~/components/ui/button";
 import { H3, H4 } from "~/components/ui/typography";
 import { type Recipe } from "./recipe-types";
-import { StepListEditMode } from "./StepListEditMode";
 
 export type StepListProps = {
   recipe: Recipe;
 };
 export function StepList({ recipe }: StepListProps) {
-  const [isEditing, setIsEditing] = useState(false);
-
   if (!recipe) {
     return null;
   }
@@ -44,34 +38,10 @@ export function StepList({ recipe }: StepListProps) {
     </div>
   );
 
-  const cancelBtn = (
-    <Button onClick={() => setIsEditing(!isEditing)} variant="outline">
-      <Ban />
-      Cancel
-    </Button>
-  );
-
   return (
     <>
-      <div className="flex gap-4">
-        <H3>instructions</H3>
-        {!isEditing && (
-          <Button onClick={() => setIsEditing(!isEditing)}>
-            <Edit />
-            Edit
-          </Button>
-        )}
-      </div>
-
-      {isEditing ? (
-        <StepListEditMode
-          recipe={recipe}
-          cancelButton={cancelBtn}
-          onDoneEditing={() => setIsEditing(false)}
-        />
-      ) : (
-        mainComp
-      )}
+      <H3 className="text-xl font-medium text-muted-foreground">instructions</H3>
+      {mainComp}
     </>
   );
 }

@@ -1,205 +1,245 @@
 "use client";
 
-import { type StepGroup } from "@prisma/client";
 import { produce } from "immer";
-import { ListPlus, ListX, Plus, Save, Trash } from "lucide-react";
-import { useState } from "react";
-import { useRecipeActions } from "~/app/useRecipeActions";
+import { FolderPlus, Plus, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
+import { TooltipButton } from "~/components/ui/tooltip-button";
 import { cn } from "~/lib/utils";
-import { type StepListProps } from "./StepList";
+import { type Recipe } from "./recipe-types";
 
-type AddlProps = {
-  cancelButton: React.ReactNode;
-  onDoneEditing: () => void;
-};
+type StepGroups = Recipe["stepGroups"];
 
-export function StepListEditMode({
-  recipe,
-  cancelButton,
-  onDoneEditing,
-}: StepListProps & AddlProps) {
-  const [stepGroups, setStepGroups] = useState(recipe.stepGroups);
+export function StepListEditMode(props: {
+  stepGroups: StepGroups;
+  originalStepGroups: StepGroups;
+  onStepGroupsChange: (stepGroups: StepGroups) => void;
+}) {
+  const { stepGroups, originalStepGroups, onStepGroupsChange } = props;
+  const [pendingFocus, setPendingFocus] = useState<{
+    groupIdx: number;
+    stepIdx: number;
+  } | null>(null);
+  const stepTextareaRefs = useRef<Record<string, HTMLTextAreaElement | null>>(
+    {},
+  );
 
-  const { updateStepGroups } = useRecipeActions();
+  function getOriginalGroup(group: StepGroups[number]) {
+    if (group.id <= 0) {
+      return undefined;
+    }
+    return originalStepGroups.find((original) => original.id === group.id);
+  }
 
-  function handleStepChange(groupIdx: number, stepIdx: number, value: string) {
-    setStepGroups(
-      produce((draft) => {
-        const group = draft[groupIdx];
-        if (!group) {
-          return;
-        }
-        group.steps[stepIdx] = value;
-      }),
+  function dirtyClass(isDirty: boolean) {
+    return cn(
+      "transition-colors hover:bg-primary/10 focus-visible:bg-primary/10",
+      isDirty && "border border-primary/30 shadow-[0_1px_0_0_hsl(var(--primary)/0.2)]",
     );
   }
 
-  function handleAddStep(groupIdx: number) {
-    setStepGroups(
-      produce((draft) => {
-        const group = draft[groupIdx];
-        if (!group) {
-          return;
-        }
-        group.steps.push("New step");
-      }),
-    );
+  function setStepGroups(recipeUpdater: (draft: StepGroups) => void) {
+    onStepGroupsChange(produce(stepGroups, recipeUpdater));
   }
 
-  function handleDeleteStep(groupIdx: number, stepIdx: number) {
-    setStepGroups(
-      produce((draft) => {
-        const group = draft[groupIdx];
-        if (!group) {
-          return;
-        }
-        group.steps.splice(stepIdx, 1);
-      }),
-    );
-  }
-
-  function handleTitleChange(groupIdx: number, value: string) {
-    setStepGroups(
-      produce((draft) => {
-        const group = draft[groupIdx];
-        if (!group) {
-          return;
-        }
-        group.title = value;
-      }),
-    );
-  }
-
-  async function handleSave() {
-    const shouldSave = confirm("Are you sure you want to save these changes?");
-
-    if (!shouldSave) {
+  useEffect(() => {
+    if (!pendingFocus) {
       return;
     }
 
-    await updateStepGroups.mutateAsync({
-      recipeId: recipe.id,
-      stepGroups,
-    });
+    const key = `${pendingFocus.groupIdx}-${pendingFocus.stepIdx}`;
+    const target = stepTextareaRefs.current[key];
 
-    onDoneEditing();
+    if (target) {
+      requestAnimationFrame(() => {
+        target.focus();
+        target.select();
+      });
+      setPendingFocus(null);
+    }
+  }, [stepGroups, pendingFocus]);
+
+  function handleStepChange(groupIdx: number, stepIdx: number, value: string) {
+    setStepGroups((draft) => {
+      const group = draft[groupIdx];
+      if (!group) {
+        return;
+      }
+      group.steps[stepIdx] = value;
+    });
+  }
+
+  function handleAddStep(groupIdx: number) {
+    const nextStepIdx = stepGroups[groupIdx]?.steps.length ?? 0;
+
+    setStepGroups((draft) => {
+      const group = draft[groupIdx];
+      if (!group) {
+        return;
+      }
+      group.steps.push("");
+    });
+    setPendingFocus({ groupIdx, stepIdx: nextStepIdx });
+  }
+
+  function handleDeleteStep(groupIdx: number, stepIdx: number) {
+    setStepGroups((draft) => {
+      const group = draft[groupIdx];
+      if (!group) {
+        return;
+      }
+      group.steps.splice(stepIdx, 1);
+    });
+  }
+
+  function handleTitleChange(groupIdx: number, value: string) {
+    setStepGroups((draft) => {
+      const group = draft[groupIdx];
+      if (!group) {
+        return;
+      }
+      group.title = value;
+    });
   }
 
   function handleToggleDeleteGroup(groupIdx: number) {
-    setStepGroups(
-      produce((draft) => {
-        // set the ID to negative to indicate that it should be deleted
-        const group = draft[groupIdx];
+    setStepGroups((draft) => {
+      const group = draft[groupIdx];
 
-        if (!group) {
-          return;
-        }
+      if (!group) {
+        return;
+      }
 
-        // if it's a new group, just remove it
-        if (group.id === 0) {
-          draft.splice(groupIdx, 1);
-          return;
-        }
+      if (group.id === 0) {
+        draft.splice(groupIdx, 1);
+        return;
+      }
 
-        group.id = -group.id;
-      }),
-    );
+      group.id = -group.id;
+    });
   }
 
   function handleAddNewGroup() {
-    setStepGroups(
-      produce((draft) => {
-        const newGroup: StepGroup = {
-          id: 0,
-          title: "New group",
-          steps: ["New step"],
-          order: draft.length,
-          recipeId: -1,
-        };
-
-        draft.push(newGroup as any);
-      }),
-    );
+    setStepGroups((draft) => {
+      const recipeId = draft[0]?.recipeId ?? -1;
+      draft.push({
+        id: 0,
+        title: "New group",
+        steps: [""],
+        order: draft.length,
+        recipeId,
+      });
+    });
   }
 
   return (
-    <div className="w-full">
-      <div className="flex gap-1">
-        <Button onClick={handleSave}>
-          <Save />
-          Save
-        </Button>
-        {cancelButton}
-      </div>
+    <div className="w-full space-y-4">
       {stepGroups.map((group, groupIdx) => {
         const isDeleted = group.id < 0;
         const isNew = group.id === 0;
+        const originalGroup = getOriginalGroup(group);
+        const isTitleDirty =
+          originalGroup?.title !== undefined
+            ? group.title !== originalGroup.title
+            : group.title !== "New group";
+        const titleWidthCh = Math.max(8, group.title.trim().length + 1);
         return (
           <div
-            key={groupIdx}
+            key={group.id || groupIdx}
             className={cn(
-              { "bg-red-100 opacity-80": isDeleted },
-              { "bg-green-100 opacity-80": isNew },
-              "rounded-lg p-2",
+              "space-y-1.5 rounded-md bg-card/40",
+              isDeleted && "bg-red-100/50",
+              isNew && "bg-emerald-100/20",
             )}
           >
-            <div className="flex flex-col gap-1 md:flex-row">
+            <div className="flex items-center gap-1">
               <Input
+                id={`step-group-title-${group.id || groupIdx}`}
                 value={group.title}
-                className="text-lg font-bold"
+                className={cn(
+                  "h-10 w-auto max-w-[calc(100%-2.25rem)] rounded-sm bg-background/80 text-lg font-semibold",
+                  dirtyClass(isTitleDirty),
+                )}
+                style={{ width: `${titleWidthCh}ch` }}
                 onChange={(e) => handleTitleChange(groupIdx, e.target.value)}
-                placeholder="Group Title"
+                placeholder="Group title"
               />
-              <Button
-                onClick={() => handleToggleDeleteGroup(groupIdx)}
-                variant="destructive-outline"
-              >
-                <ListX />
-                Delete Group
-              </Button>
-            </div>
-            <ul className="flex list-inside list-decimal flex-col gap-2 p-2">
-              {group.steps.map((step, stepIdx) => (
-                <li
-                  key={stepIdx}
-                  className="ml-4 flex flex-col items-center gap-1 border-l-2 bg-gray-50 p-1 pl-4 md:flex-row"
+              <TooltipButton content={isDeleted ? "Restore group" : "Delete group"}>
+                <Button
+                  onClick={() => handleToggleDeleteGroup(groupIdx)}
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-sm text-destructive/80 hover:bg-destructive/10 hover:text-destructive"
                 >
+                  <Trash2 className="size-4 shrink-0" />
+                </Button>
+              </TooltipButton>
+            </div>
+
+            <div className="ml-2 space-y-2">
+              {group.steps.map((step, stepIdx) => {
+                const isStepDirty =
+                  originalGroup?.steps?.[stepIdx] !== undefined
+                    ? step !== originalGroup.steps[stepIdx]
+                    : step.trim().length > 0;
+
+                return (
+                <div
+                  key={`${group.id || groupIdx}-${stepIdx}`}
+                  className="grid grid-cols-[2.5rem_1fr_auto] items-start gap-2 rounded-sm bg-background/55 p-2"
+                >
+                  <div className="flex h-9 items-center justify-center rounded-sm bg-muted/40 text-sm font-semibold text-muted-foreground">
+                    {stepIdx + 1}
+                  </div>
                   <Textarea
+                    ref={(node) => {
+                      stepTextareaRefs.current[`${groupIdx}-${stepIdx}`] = node;
+                    }}
                     value={step}
                     onChange={(e) =>
                       handleStepChange(groupIdx, stepIdx, e.target.value)
                     }
                     autoResize
-                    className="w-full text-lg"
+                    rows={1}
+                    className={cn(
+                      "h-10 min-h-0 rounded-sm bg-background/80 text-base",
+                      dirtyClass(isStepDirty),
+                    )}
+                    placeholder="Describe this step"
                   />
-                  <Button
-                    onClick={() => handleDeleteStep(groupIdx, stepIdx)}
-                    variant="destructive-outline"
-                  >
-                    <Trash />
-                  </Button>
-                </li>
-              ))}
+                  <TooltipButton content="Delete step">
+                    <Button
+                      onClick={() => handleDeleteStep(groupIdx, stepIdx)}
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 rounded-sm text-destructive/70 hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2 className="size-4 shrink-0" />
+                    </Button>
+                  </TooltipButton>
+                </div>
+                );
+              })}
+            </div>
 
-              <Button
-                className="ml-4 self-start"
-                onClick={() => handleAddStep(groupIdx)}
-              >
-                <Plus />
-                Add step
-              </Button>
-            </ul>
-
-            <Button onClick={handleAddNewGroup}>
-              <ListPlus />
-              Add New Group
+            <Button
+              className="ml-2 rounded-md"
+              onClick={() => handleAddStep(groupIdx)}
+              variant="secondary"
+            >
+              <Plus className="shrink-0" />
+              Add step
             </Button>
           </div>
         );
       })}
+
+      <Button onClick={handleAddNewGroup} className="rounded-md">
+        <FolderPlus className="shrink-0" />
+        Add New Group
+      </Button>
     </div>
   );
 }
