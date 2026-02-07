@@ -29,11 +29,40 @@ This file documents the key UI and code patterns established in this repo. It sh
 - **Editable metadata**: Use the same inline `Select` + tag add/remove behavior as the index view.
 - **Title underline**: Remove underline from H2 when used as recipe title.
 
+## Recipe Content Editing (Ingredients + Steps)
+
+- **Single editing flow**: Treat ingredients and steps as one unified edit mode with one shared save lifecycle.
+- **Edit entry points**: In read mode, place a subtle icon-only pencil button in the top-right of both ingredients and instructions cards; both should open the same edit mode.
+- **Read-mode section headers**: Keep read-mode `ingredients`/`instructions` headings more subtle (smaller + muted) than edit-mode headings.
+- **Edit-mode actions**: Show Save/Cancel at both top-right and bottom-right of the edit screen; both rows trigger the same handlers.
+- **Dirty cancel protection**: If there are unsaved edits, Cancel and `Escape` should open a confirmation dialog before leaving edit mode.
+- **Inner edit surfaces**: Avoid nested “card-in-card” chrome in edit mode. Prefer borderless inner sections that fill the outer card.
+- **Grouped content layout**: For ingredient/step groups, use spacing and background tint over heavy borders. Keep groups visually separated but compact.
+- **Group title row**: Title input and group delete icon should sit on the same row with tight spacing.
+- **Title input width**: Group title inputs should size to content (`ch`-based width) and grow as text grows, rather than spanning full width.
+- **Input affordance**: Editable fields should have subtle hover/focus purple tint (`bg-primary/10`) to indicate editability.
+- **Dirty field styling**: Dirty fields should get a subtle purple border and light bottom shadow (not a heavy glow).
+- **Ingredient advanced fields**: Only show the `Show advanced` toggle when amount/unit/modifier data is absent; hide the toggle once advanced data exists.
+- **Insert between steps**: Support inserting a step between existing rows with subtle inline `+` controls.
+  - Position these controls absolutely so they do not increase row spacing.
+  - Keep them visually close to the step number chip.
+- **Auto-focus on add/insert**: After adding an ingredient/step or inserting a step between rows, focus the new input/textarea automatically.
+- **List indentation**: Keep list content (table/rows and per-group add button) slightly indented from group titles for hierarchy.
+
 ## Modals
 
 - **Edit modal layout**: Two‑column grid layout with clear field groupings.
 - **Type pills**: Use chip-style selectors with hidden radio dots (`sr-only`).
 - **Name input**: Slightly larger than other inputs (`h-12 text-base`).
+- **Controlled-open search modals**: When opened programmatically (e.g., from hover cards), trigger the initial search immediately.
+- **Auto-search safety**: Guard controlled-open auto-search effects so they run once per open/query and do not create update loops.
+- **Search modal hierarchy**: Prefer the search input as the primary header element; remove redundant title text when the query context is already clear.
+- **Border restraint in search UIs**: Avoid nested bordered wrappers around input + button rows; keep one clear surface to reduce visual noise.
+- **No-results feedback**: Empty states should explicitly say no results were found and include the searched term when available.
+
+## Pricing Display
+
+- **Unit vs total clarity**: In compact chips, label price and quantity explicitly (e.g., `$/ea` and `N total`) rather than ambiguous values like plain price + `Qty N`.
 
 ## Plan Page
 
@@ -65,6 +94,8 @@ This file documents the key UI and code patterns established in this repo. It sh
 
 - **`TooltipButton`**: Wraps tooltip + trigger with standard delay; use for icon-only buttons instead of repeating `TooltipProvider`.
 - **`IconTextButton`**: Standard icon + label spacing with `shrink-0` icons.
+- **`EditModeActionButtons`**: Shared Save/Cancel action row used in recipe content edit mode (top and bottom placements).
+- **`DiscardChangesDialog`**: Shared confirm dialog for unsaved edit cancellation.
 - **`RecipeTagEditor`**: Shared add/remove tag UI with optional overflow and confirm remove; use for list + detail tags.
 - **`InlineTagEditor`**: Form-focused tag input used inside dialogs/edit modals.
 - **`ListPanel`**: Reusable popover list container with matching item + empty-state components.
@@ -84,3 +115,4 @@ This file documents the key UI and code patterns established in this repo. It sh
 
 - If adding repeated action patterns, create a shared `TooltipButton`.
 - If adding new layouts, consider shared `PageHeaderCard` and `CardGrid` components.
+- Use `dirtyInputClass` (recipe detail edit utility) for consistent dirty-field border/shadow styling.
