@@ -9,6 +9,7 @@ import { Toggle } from "~/components/ui/toggle";
 import { TooltipButton } from "~/components/ui/tooltip-button";
 import { cn } from "~/lib/utils";
 import { type Recipe } from "./recipe-types";
+import { dirtyInputClass } from "./edit-mode-utils";
 
 type IngredientGroups = Recipe["ingredientGroups"];
 type Ingredient = IngredientGroups[number]["ingredients"][number];
@@ -18,8 +19,11 @@ export function IngredientListEditMode(props: {
   originalIngredientGroups: IngredientGroups;
   onIngredientGroupsChange: (ingredientGroups: IngredientGroups) => void;
 }) {
-  const { ingredientGroups, originalIngredientGroups, onIngredientGroupsChange } =
-    props;
+  const {
+    ingredientGroups,
+    originalIngredientGroups,
+    onIngredientGroupsChange,
+  } = props;
   const hasAdvancedValues = ingredientGroups.some((group) =>
     group.ingredients.some((ingredient) => {
       if (ingredient.id < 0) {
@@ -70,7 +74,9 @@ export function IngredientListEditMode(props: {
     if (group.id <= 0) {
       return undefined;
     }
-    return originalIngredientGroups.find((original) => original.id === group.id);
+    return originalIngredientGroups.find(
+      (original) => original.id === group.id,
+    );
   }
 
   function getOriginalIngredient(
@@ -81,17 +87,14 @@ export function IngredientListEditMode(props: {
     if (!originalGroup || ingredient.id <= 0) {
       return undefined;
     }
-    return originalGroup.ingredients.find((original) => original.id === ingredient.id);
-  }
-
-  function dirtyClass(isDirty: boolean) {
-    return cn(
-      "transition-colors hover:bg-primary/10 focus-visible:bg-primary/10",
-      isDirty && "border border-primary/30 shadow-[0_1px_0_0_hsl(var(--primary)/0.2)]",
+    return originalGroup.ingredients.find(
+      (original) => original.id === ingredient.id,
     );
   }
 
-  function setIngredientGroups(recipeUpdater: (draft: IngredientGroups) => void) {
+  function setIngredientGroups(
+    recipeUpdater: (draft: IngredientGroups) => void,
+  ) {
     onIngredientGroupsChange(produce(ingredientGroups, recipeUpdater));
   }
 
@@ -151,7 +154,10 @@ export function IngredientListEditMode(props: {
     });
   }
 
-  function handleDeleteIngredient(ingredientGroupIdx: number, ingredientIdx: number) {
+  function handleDeleteIngredient(
+    ingredientGroupIdx: number,
+    ingredientIdx: number,
+  ) {
     setIngredientGroups((draft) => {
       const group = draft[ingredientGroupIdx];
 
@@ -276,7 +282,7 @@ export function IngredientListEditMode(props: {
                 id={`ingredient-group-title-${igGroup.id ?? gIdx}`}
                 className={cn(
                   "h-10 w-auto max-w-[calc(100%-2.5rem)] rounded-sm bg-background/80 text-xl font-semibold",
-                  dirtyClass(isTitleDirty),
+                  dirtyInputClass(isTitleDirty),
                 )}
                 style={{ width: `${titleWidthCh}ch` }}
                 value={igGroup.title}
@@ -296,150 +302,165 @@ export function IngredientListEditMode(props: {
               </TooltipButton>
             </div>
 
-          <div className="ml-8 space-y-2">
-          <table className="w-[calc(100%-1rem)] border-collapse">
-            <thead>
-              <tr className="border-b border-border/30 text-left text-sm font-semibold text-muted-foreground">
-                {shouldShowAdvanced ? <th className="w-[12%] py-2 pr-3">Amount</th> : null}
-                {shouldShowAdvanced ? <th className="w-[12%] py-2 pr-3">Unit</th> : null}
-                <th
-                  className={cn(
-                    "py-2 pr-3",
-                    shouldShowAdvanced ? "w-[60%]" : "w-[84%]",
-                  )}
-                >
-                  Ingredient
-                </th>
-                {shouldShowAdvanced ? <th className="w-[16%] py-2 pr-3">Modifier</th> : null}
-                <th className="w-[8%] py-2" />
-              </tr>
-            </thead>
-            <tbody>
-              {igGroup.ingredients.map((ingredient, iIdx) => {
-                const disableEdit = ingredient.id < 0;
-                const isNew = ingredient.id === 0;
-                const originalIngredient = getOriginalIngredient(igGroup, ingredient);
-                const isAmountDirty =
-                  originalIngredient?.amount !== undefined
-                    ? ingredient.amount !== originalIngredient.amount
-                    : ingredient.amount !== "";
-                const isUnitDirty =
-                  originalIngredient?.unit !== undefined
-                    ? ingredient.unit !== originalIngredient.unit
-                    : ingredient.unit !== "";
-                const isNameDirty =
-                  originalIngredient?.ingredient !== undefined
-                    ? ingredient.ingredient !== originalIngredient.ingredient
-                    : ingredient.ingredient !== "";
-                const isModifierDirty =
-                  originalIngredient?.modifier !== undefined
-                    ? ingredient.modifier !== originalIngredient.modifier
-                    : ingredient.modifier !== "";
-
-                return (
-                  <tr
-                    key={ingredient.id || `${gIdx}-${iIdx}`}
-                    className={cn({
-                      "bg-red-100/60": disableEdit,
-                      "bg-emerald-100/20": isNew,
-                    })}
-                  >
+            <div className="ml-8 space-y-2">
+              <table className="w-[calc(100%-1rem)] border-collapse">
+                <thead>
+                  <tr className="border-b border-border/30 text-left text-sm font-semibold text-muted-foreground">
                     {shouldShowAdvanced ? (
-                      <td className="py-2 pr-3 align-top">
-                        <Input
-                          value={ingredient.amount}
-                          className={cn(
-                            "h-9 rounded-sm bg-background/70",
-                            dirtyClass(isAmountDirty),
-                          )}
-                          onChange={(e) =>
-                            handleIngredientChange(
-                              gIdx,
-                              iIdx,
-                              "amount",
-                              e.target.value,
-                            )
-                          }
-                          disabled={disableEdit}
-                        />
-                      </td>
+                      <th className="w-[12%] py-2 pr-3">Amount</th>
                     ) : null}
                     {shouldShowAdvanced ? (
-                      <td className="py-2 pr-3 align-top">
-                        <Input
-                          value={ingredient.unit}
-                          className={cn(
-                            "h-9 rounded-sm bg-background/70",
-                            dirtyClass(isUnitDirty),
-                          )}
-                          onChange={(e) =>
-                            handleIngredientChange(gIdx, iIdx, "unit", e.target.value)
-                          }
-                          disabled={disableEdit}
-                        />
-                      </td>
+                      <th className="w-[12%] py-2 pr-3">Unit</th>
                     ) : null}
-                    <td className="py-2 pr-3 align-top">
-                      <Input
-                        ref={(node) => {
-                          ingredientInputRefs.current[
-                            `${gIdx}-${iIdx}-ingredient`
-                          ] = node;
-                        }}
-                        value={ingredient.ingredient}
-                        className={cn(
-                          "h-9 rounded-sm bg-background/70",
-                          dirtyClass(isNameDirty),
-                        )}
-                        onChange={(e) =>
-                          handleIngredientChange(
-                            gIdx,
-                            iIdx,
-                            "ingredient",
-                            e.target.value,
-                          )
-                        }
-                        disabled={disableEdit}
-                      />
-                    </td>
+                    <th
+                      className={cn(
+                        "py-2 pr-3",
+                        shouldShowAdvanced ? "w-[60%]" : "w-[84%]",
+                      )}
+                    >
+                      Ingredient
+                    </th>
                     {shouldShowAdvanced ? (
-                      <td className="py-2 pr-3 align-top">
-                        <Input
-                          value={ingredient.modifier}
-                          className={cn(
-                            "h-9 rounded-sm bg-background/70",
-                            dirtyClass(isModifierDirty),
-                          )}
-                          onChange={(e) =>
-                            handleIngredientChange(
-                              gIdx,
-                              iIdx,
-                              "modifier",
-                              e.target.value,
-                            )
-                          }
-                          disabled={disableEdit}
-                        />
-                      </td>
+                      <th className="w-[16%] py-2 pr-3">Modifier</th>
                     ) : null}
-                    <td className="py-2 align-top">
-                      <TooltipButton content="Delete ingredient">
-                        <Button
-                          onClick={() => handleDeleteIngredient(gIdx, iIdx)}
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-sm text-destructive/70 hover:bg-destructive/10 hover:text-destructive"
-                        >
-                          <Trash2 className="size-4 shrink-0" />
-                        </Button>
-                      </TooltipButton>
-                    </td>
+                    <th className="w-[8%] py-2" />
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          </div>
+                </thead>
+                <tbody>
+                  {igGroup.ingredients.map((ingredient, iIdx) => {
+                    const disableEdit = ingredient.id < 0;
+                    const isNew = ingredient.id === 0;
+                    const originalIngredient = getOriginalIngredient(
+                      igGroup,
+                      ingredient,
+                    );
+                    const isAmountDirty =
+                      originalIngredient?.amount !== undefined
+                        ? ingredient.amount !== originalIngredient.amount
+                        : ingredient.amount !== "";
+                    const isUnitDirty =
+                      originalIngredient?.unit !== undefined
+                        ? ingredient.unit !== originalIngredient.unit
+                        : ingredient.unit !== "";
+                    const isNameDirty =
+                      originalIngredient?.ingredient !== undefined
+                        ? ingredient.ingredient !==
+                          originalIngredient.ingredient
+                        : ingredient.ingredient !== "";
+                    const isModifierDirty =
+                      originalIngredient?.modifier !== undefined
+                        ? ingredient.modifier !== originalIngredient.modifier
+                        : ingredient.modifier !== "";
+
+                    return (
+                      <tr
+                        key={ingredient.id || `${gIdx}-${iIdx}`}
+                        className={cn({
+                          "bg-red-100/60": disableEdit,
+                          "bg-emerald-100/20": isNew,
+                        })}
+                      >
+                        {shouldShowAdvanced ? (
+                          <td className="py-2 pr-3 align-top">
+                            <Input
+                              value={ingredient.amount}
+                              className={cn(
+                                "h-9 rounded-sm bg-background/70",
+                                dirtyInputClass(isAmountDirty),
+                              )}
+                              onChange={(e) =>
+                                handleIngredientChange(
+                                  gIdx,
+                                  iIdx,
+                                  "amount",
+                                  e.target.value,
+                                )
+                              }
+                              disabled={disableEdit}
+                            />
+                          </td>
+                        ) : null}
+                        {shouldShowAdvanced ? (
+                          <td className="py-2 pr-3 align-top">
+                            <Input
+                              value={ingredient.unit}
+                              className={cn(
+                                "h-9 rounded-sm bg-background/70",
+                                dirtyInputClass(isUnitDirty),
+                              )}
+                              onChange={(e) =>
+                                handleIngredientChange(
+                                  gIdx,
+                                  iIdx,
+                                  "unit",
+                                  e.target.value,
+                                )
+                              }
+                              disabled={disableEdit}
+                            />
+                          </td>
+                        ) : null}
+                        <td className="py-2 pr-3 align-top">
+                          <Input
+                            ref={(node) => {
+                              ingredientInputRefs.current[
+                                `${gIdx}-${iIdx}-ingredient`
+                              ] = node;
+                            }}
+                            value={ingredient.ingredient}
+                            className={cn(
+                              "h-9 rounded-sm bg-background/70",
+                              dirtyInputClass(isNameDirty),
+                            )}
+                            onChange={(e) =>
+                              handleIngredientChange(
+                                gIdx,
+                                iIdx,
+                                "ingredient",
+                                e.target.value,
+                              )
+                            }
+                            disabled={disableEdit}
+                          />
+                        </td>
+                        {shouldShowAdvanced ? (
+                          <td className="py-2 pr-3 align-top">
+                            <Input
+                              value={ingredient.modifier}
+                              className={cn(
+                                "h-9 rounded-sm bg-background/70",
+                                dirtyInputClass(isModifierDirty),
+                              )}
+                              onChange={(e) =>
+                                handleIngredientChange(
+                                  gIdx,
+                                  iIdx,
+                                  "modifier",
+                                  e.target.value,
+                                )
+                              }
+                              disabled={disableEdit}
+                            />
+                          </td>
+                        ) : null}
+                        <td className="py-2 align-top">
+                          <TooltipButton content="Delete ingredient">
+                            <Button
+                              onClick={() => handleDeleteIngredient(gIdx, iIdx)}
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-sm text-destructive/70 hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <Trash2 className="size-4 shrink-0" />
+                            </Button>
+                          </TooltipButton>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
 
             <Button
               onClick={() => handleAddIngredient(gIdx)}

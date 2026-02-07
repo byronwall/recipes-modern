@@ -9,6 +9,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { TooltipButton } from "~/components/ui/tooltip-button";
 import { cn } from "~/lib/utils";
 import { type Recipe } from "./recipe-types";
+import { dirtyInputClass } from "./edit-mode-utils";
 
 type StepGroups = Recipe["stepGroups"];
 
@@ -31,13 +32,6 @@ export function StepListEditMode(props: {
       return undefined;
     }
     return originalStepGroups.find((original) => original.id === group.id);
-  }
-
-  function dirtyClass(isDirty: boolean) {
-    return cn(
-      "transition-colors hover:bg-primary/10 focus-visible:bg-primary/10",
-      isDirty && "border border-primary/30 shadow-[0_1px_0_0_hsl(var(--primary)/0.2)]",
-    );
   }
 
   function setStepGroups(recipeUpdater: (draft: StepGroups) => void) {
@@ -160,13 +154,15 @@ export function StepListEditMode(props: {
                 value={group.title}
                 className={cn(
                   "h-10 w-auto max-w-[calc(100%-2.25rem)] rounded-sm bg-background/80 text-lg font-semibold",
-                  dirtyClass(isTitleDirty),
+                  dirtyInputClass(isTitleDirty),
                 )}
                 style={{ width: `${titleWidthCh}ch` }}
                 onChange={(e) => handleTitleChange(groupIdx, e.target.value)}
                 placeholder="Group title"
               />
-              <TooltipButton content={isDeleted ? "Restore group" : "Delete group"}>
+              <TooltipButton
+                content={isDeleted ? "Restore group" : "Delete group"}
+              >
                 <Button
                   onClick={() => handleToggleDeleteGroup(groupIdx)}
                   variant="ghost"
@@ -186,40 +182,41 @@ export function StepListEditMode(props: {
                     : step.trim().length > 0;
 
                 return (
-                <div
-                  key={`${group.id || groupIdx}-${stepIdx}`}
-                  className="grid grid-cols-[2.5rem_1fr_auto] items-start gap-2 rounded-sm bg-background/55 p-2"
-                >
-                  <div className="flex h-9 items-center justify-center rounded-sm bg-muted/40 text-sm font-semibold text-muted-foreground">
-                    {stepIdx + 1}
+                  <div
+                    key={`${group.id || groupIdx}-${stepIdx}`}
+                    className="grid grid-cols-[2.5rem_1fr_auto] items-start gap-2 rounded-sm bg-background/55 p-2"
+                  >
+                    <div className="flex h-9 items-center justify-center rounded-sm bg-muted/40 text-sm font-semibold text-muted-foreground">
+                      {stepIdx + 1}
+                    </div>
+                    <Textarea
+                      ref={(node) => {
+                        stepTextareaRefs.current[`${groupIdx}-${stepIdx}`] =
+                          node;
+                      }}
+                      value={step}
+                      onChange={(e) =>
+                        handleStepChange(groupIdx, stepIdx, e.target.value)
+                      }
+                      autoResize
+                      rows={1}
+                      className={cn(
+                        "h-10 min-h-0 rounded-sm bg-background/80 text-base",
+                        dirtyInputClass(isStepDirty),
+                      )}
+                      placeholder="Describe this step"
+                    />
+                    <TooltipButton content="Delete step">
+                      <Button
+                        onClick={() => handleDeleteStep(groupIdx, stepIdx)}
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 rounded-sm text-destructive/70 hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="size-4 shrink-0" />
+                      </Button>
+                    </TooltipButton>
                   </div>
-                  <Textarea
-                    ref={(node) => {
-                      stepTextareaRefs.current[`${groupIdx}-${stepIdx}`] = node;
-                    }}
-                    value={step}
-                    onChange={(e) =>
-                      handleStepChange(groupIdx, stepIdx, e.target.value)
-                    }
-                    autoResize
-                    rows={1}
-                    className={cn(
-                      "h-10 min-h-0 rounded-sm bg-background/80 text-base",
-                      dirtyClass(isStepDirty),
-                    )}
-                    placeholder="Describe this step"
-                  />
-                  <TooltipButton content="Delete step">
-                    <Button
-                      onClick={() => handleDeleteStep(groupIdx, stepIdx)}
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 rounded-sm text-destructive/70 hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="size-4 shrink-0" />
-                    </Button>
-                  </TooltipButton>
-                </div>
                 );
               })}
             </div>
