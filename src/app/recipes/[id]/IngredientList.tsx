@@ -1,6 +1,9 @@
 "use client";
 
+import { Edit } from "lucide-react";
 import { useMemo } from "react";
+import { Button } from "~/components/ui/button";
+import { TooltipButton } from "~/components/ui/tooltip-button";
 import { H3, H4 } from "~/components/ui/typography";
 import { type Recipe } from "./recipe-types";
 import { IngredientPurchaseHistory } from "~/components/ingredients/IngredientPurchaseHistory";
@@ -11,8 +14,9 @@ type RecentPurchase =
 
 export interface IngredientListProps {
   recipe: Recipe;
+  onStartEditing: () => void;
 }
-export function IngredientList({ recipe }: IngredientListProps) {
+export function IngredientList({ recipe, onStartEditing }: IngredientListProps) {
   const { data: ingredientsCatalog } = api.purchases.ingredientsCatalog.useQuery();
 
   const purchasesByIngredientName = useMemo(() => {
@@ -64,7 +68,19 @@ export function IngredientList({ recipe }: IngredientListProps) {
 
   return (
     <>
-      <H3 className="text-xl font-medium text-muted-foreground">ingredients</H3>
+      <div className="flex items-center justify-between gap-2">
+        <H3 className="text-xl font-medium text-muted-foreground">ingredients</H3>
+        <TooltipButton content="Edit recipe content">
+          <Button
+            onClick={onStartEditing}
+            variant="ghost"
+            size="icon"
+            className="rounded-md text-primary/70 hover:bg-primary/10 hover:text-primary"
+          >
+            <Edit className="size-5 shrink-0" />
+          </Button>
+        </TooltipButton>
+      </div>
       {mainComp}
     </>
   );

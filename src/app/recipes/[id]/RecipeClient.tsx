@@ -1,9 +1,7 @@
 "use client";
 
-import { Edit } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRecipeActions } from "~/app/useRecipeActions";
-import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { IngredientList } from "./IngredientList";
 import { StepList } from "./StepList";
@@ -21,6 +19,9 @@ export function RecipeClient(props: { id: number }) {
   const { id } = props;
   const [isEditing, setIsEditing] = useState(false);
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
+  const [pendingScrollTarget, setPendingScrollTarget] = useState<
+    "ingredients" | "instructions" | null
+  >(null);
   const [ingredientGroupsDraft, setIngredientGroupsDraft] = useState<
     Recipe["ingredientGroups"]
   >([]);
@@ -29,6 +30,10 @@ export function RecipeClient(props: { id: number }) {
   );
   const { updateIngredientGroups, updateStepGroups } = useRecipeActions();
   const utils = api.useUtils();
+  const [ingredientsSectionEl, setIngredientsSectionEl] =
+    useState<HTMLDivElement | null>(null);
+  const [instructionsSectionEl, setInstructionsSectionEl] =
+    useState<HTMLDivElement | null>(null);
 
   const { data: recipe } = api.recipe.getRecipe.useQuery({
     id,
@@ -69,13 +74,34 @@ export function RecipeClient(props: { id: number }) {
     return () => window.removeEventListener("keydown", handleEscape);
   }, [hasAnyChanges, isCancelConfirmOpen, isEditing, recipe]);
 
+  useEffect(() => {
+    if (!isEditing || !pendingScrollTarget) {
+      return;
+    }
+
+    const targetEl =
+      pendingScrollTarget === "instructions"
+        ? instructionsSectionEl
+        : ingredientsSectionEl;
+
+    if (!targetEl) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      setPendingScrollTarget(null);
+    });
+  }, [ingredientsSectionEl, instructionsSectionEl, isEditing, pendingScrollTarget]);
+
   if (!recipe) {
     return <div>Recipe not found</div>;
   }
 
-  function beginEditing() {
+  function beginEditing(target: "ingredients" | "instructions") {
     setIngredientGroupsDraft(recipe.ingredientGroups);
     setStepGroupsDraft(recipe.stepGroups);
+    setPendingScrollTarget(target);
     setIsEditing(true);
   }
 
@@ -137,7 +163,7 @@ export function RecipeClient(props: { id: number }) {
           </div>
 
           <div className="space-y-6">
-            <div className="space-y-3">
+            <div className="space-y-3" ref={setIngredientsSectionEl}>
               <h3 className="text-3xl font-bold tracking-tight">ingredients</h3>
               <p className="text-sm text-muted-foreground">
                 Ingredients are organized in editable groups.
@@ -149,7 +175,7 @@ export function RecipeClient(props: { id: number }) {
               />
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3" ref={setInstructionsSectionEl}>
               <h3 className="text-3xl font-bold tracking-tight">
                 instructions
               </h3>
@@ -184,18 +210,18 @@ export function RecipeClient(props: { id: number }) {
         </section>
       ) : (
         <>
-          <div className="flex justify-end">
-            <Button onClick={beginEditing} className="rounded-md">
-              <Edit className="shrink-0" />
-              Edit Recipe Content
-            </Button>
-          </div>
           <CardGrid className="lg:grid-cols-[2fr_3fr]">
             <section className="rounded-xl border bg-card/70 p-6 shadow-sm">
-              <IngredientList recipe={recipe} />
+              <IngredientList
+                recipe={recipe}
+                onStartEditing={() => beginEditing("ingredients")}
+              />
             </section>
             <section className="rounded-xl border bg-card/70 p-6 shadow-sm">
-              <StepList recipe={recipe} />
+              <StepList
+                recipe={recipe}
+                onStartEditing={() => beginEditing("instructions")}
+              />
             </section>
           </CardGrid>
         </>
