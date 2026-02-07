@@ -11,6 +11,11 @@ import {
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 import { type KrogerProduct } from "../kroger/model";
+import {
+  MAX_KROGER_SEARCH_TERMS,
+  getKrogerSearchTerms,
+  normalizeKrogerSearchTerm,
+} from "../kroger/searchQuery";
 import { KrogerItemDisplay } from "./KrogerItemDisplay";
 import { Search } from "lucide-react";
 import { Switch } from "~/components/ui/switch";
@@ -41,10 +46,10 @@ export function KrogerSearchPopup({
   const [searchResults, setSearchResults] = useState<KrogerProduct[]>([]);
   const [lastSearchedQuery, setLastSearchedQuery] = useState("");
   const lastAutoSearchKeyRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    setSearchIngredient(ingredient ?? "");
-  }, [ingredient]);
+  const previousModalOpenRef = useRef(false);
+  const searchTerms = getKrogerSearchTerms(searchIngredient);
+  const isSearchTruncated = searchTerms.length > MAX_KROGER_SEARCH_TERMS;
+  const truncatedSearchIngredient = normalizeKrogerSearchTerm(searchIngredient);
 
   const searchMutation = api.kroger.searchProducts.useMutation();
 
@@ -82,10 +87,24 @@ export function KrogerSearchPopup({
   };
 
   useEffect(() => {
+    const wasModalOpen = previousModalOpenRef.current;
+
     if (!isModalOpen) {
+      if (wasModalOpen) {
+        setSearchIngredient(ingredient ?? "");
+        setSearchResults([]);
+        setLastSearchedQuery("");
+        searchMutation.reset();
+      }
       lastAutoSearchKeyRef.current = null;
+      previousModalOpenRef.current = false;
       return;
     }
+
+    if (!wasModalOpen) {
+      setSearchIngredient(ingredient ?? "");
+    }
+    previousModalOpenRef.current = true;
 
     const query = ingredient?.trim();
     if (!query) return;
@@ -95,7 +114,7 @@ export function KrogerSearchPopup({
 
     lastAutoSearchKeyRef.current = autoSearchKey;
     void searchKroger(query);
-  }, [ingredient, isControlled, isModalOpen, searchKroger]);
+  }, [ingredient, isControlled, isModalOpen, searchKroger, searchMutation]);
 
   return (
     <Dialog
@@ -146,6 +165,17 @@ export function KrogerSearchPopup({
                     className="h-12 w-full rounded-xl px-4 text-base sm:w-auto"
                   />
                 </div>
+                {isSearchTruncated && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Warning: Kroger allows up to {MAX_KROGER_SEARCH_TERMS} words
+                    per search. It will be truncated to{" "}
+                    <span aria-hidden>&quot;</span>
+                    <span className="font-medium text-foreground">
+                      {truncatedSearchIngredient}
+                    </span>
+                    <span aria-hidden>&quot;</span>.
+                  </p>
+                )}
               </form>
               <div className="flex items-center gap-2 rounded-full border bg-background/80 px-3 py-2">
                 <Switch

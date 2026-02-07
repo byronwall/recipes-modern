@@ -3,6 +3,7 @@ import {
   type API_KrogerSearch,
   type KrogerProduct,
 } from "~/app/kroger/model";
+import { normalizeKrogerSearchTerm } from "~/app/kroger/searchQuery";
 import { env } from "~/env";
 import { db } from "./db";
 import { getKrogerAccessToken } from "./api/routers/getKrogerAccessToken";
@@ -109,8 +110,9 @@ export async function doKrogerSearch(
   userId: string,
   shouldRetry: boolean,
 ): Promise<KrogerProduct[]> {
+  const normalizedFilterTerm = normalizeKrogerSearchTerm(postData.filterTerm);
   const url = encodeURI(
-    `https://api.kroger.com/v1/products?filter.term=${postData.filterTerm}&filter.locationId=02100086&filter.fulfillment=ais`,
+    `https://api.kroger.com/v1/products?filter.term=${normalizedFilterTerm}&filter.locationId=02100086&filter.fulfillment=ais`,
   );
 
   const accessToken = await getKrogerAccessToken(userId);
