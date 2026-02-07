@@ -36,8 +36,9 @@ export function KrogerSearchPopup({
   onOpenChange,
   hideTrigger = false,
 }: Props) {
+  const defaultSearchIngredient = ingredient ?? "";
   const [searchIngredient, setSearchIngredient] = useState<string>(
-    ingredient ?? "",
+    defaultSearchIngredient,
   );
 
   // this will determine if the original item is marked as bought
@@ -47,6 +48,8 @@ export function KrogerSearchPopup({
   const [lastSearchedQuery, setLastSearchedQuery] = useState("");
   const lastAutoSearchKeyRef = useRef<string | null>(null);
   const previousModalOpenRef = useRef(false);
+  const activeSearchRequestIdRef = useRef(0);
+  const isModalOpenRef = useRef(false);
   const searchTerms = getKrogerSearchTerms(searchIngredient);
   const isSearchTruncated = searchTerms.length > MAX_KROGER_SEARCH_TERMS;
   const truncatedSearchIngredient = normalizeKrogerSearchTerm(searchIngredient);
@@ -55,19 +58,30 @@ export function KrogerSearchPopup({
 
   const searchKroger = useCallback(
     async (queryOverride?: string) => {
-      const query = (queryOverride ?? searchIngredient).trim();
-      if (!query) {
+      const rawQuery = (queryOverride ?? searchIngredient).trim();
+      if (!rawQuery) {
         return;
       }
-      setLastSearchedQuery(query);
+      const normalizedQuery = normalizeKrogerSearchTerm(rawQuery);
+      if (!normalizedQuery) {
+        return;
+      }
+      setLastSearchedQuery(normalizedQuery);
+      const requestId = activeSearchRequestIdRef.current + 1;
+      activeSearchRequestIdRef.current = requestId;
 
       // clear results
       setSearchResults([]);
       try {
         const results = await searchMutation.mutateAsync({
-          query,
+          query: normalizedQuery,
         });
-        setSearchResults(results);
+        if (
+          requestId === activeSearchRequestIdRef.current &&
+          isModalOpenRef.current
+        ) {
+          setSearchResults(results);
+        }
       } catch (_err) {
         // Error will be reflected in searchMutation.error and rendered below
       }
@@ -87,11 +101,13 @@ export function KrogerSearchPopup({
   };
 
   useEffect(() => {
+    isModalOpenRef.current = isModalOpen;
     const wasModalOpen = previousModalOpenRef.current;
 
     if (!isModalOpen) {
       if (wasModalOpen) {
-        setSearchIngredient(ingredient ?? "");
+        activeSearchRequestIdRef.current += 1;
+        setSearchIngredient(defaultSearchIngredient);
         setSearchResults([]);
         setLastSearchedQuery("");
         searchMutation.reset();
@@ -102,7 +118,7 @@ export function KrogerSearchPopup({
     }
 
     if (!wasModalOpen) {
-      setSearchIngredient(ingredient ?? "");
+      setSearchIngredient(defaultSearchIngredient);
     }
     previousModalOpenRef.current = true;
 
@@ -114,11 +130,18 @@ export function KrogerSearchPopup({
 
     lastAutoSearchKeyRef.current = autoSearchKey;
     void searchKroger(query);
-  }, [ingredient, isControlled, isModalOpen, searchKroger, searchMutation]);
+  }, [
+    defaultSearchIngredient,
+    ingredient,
+    isControlled,
+    isModalOpen,
+    searchKroger,
+    searchMutation,
+  ]);
 
   return (
     <Dialog
-      onOpenChange={async (isOpen) => {
+      onOpenChange={(isOpen) => {
         setModalOpen(isOpen);
       }}
       open={isModalOpen}
