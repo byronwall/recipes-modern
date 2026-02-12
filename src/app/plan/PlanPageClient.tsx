@@ -68,16 +68,16 @@ function MealPlanRow(props: {
       onOpenChange={setIsHoverOpen}
     >
       <HoverCardTrigger asChild>
-        <button
-          type="button"
+        <Link
+          href={`/recipes/${plan.Recipe.id}`}
           className={cn(
-            "w-full truncate px-0 py-0.5 text-left text-sm font-medium transition-colors hover:text-foreground/80",
+            "block w-full truncate px-0 py-0.5 text-left text-sm font-medium transition-colors hover:text-foreground/80",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
             plan.isMade && "text-muted-foreground",
           )}
         >
           {plan.Recipe.name}
-        </button>
+        </Link>
       </HoverCardTrigger>
       <HoverCardContent
         align="start"
