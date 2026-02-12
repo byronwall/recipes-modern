@@ -22,7 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Search } from "lucide-react";
+import { CheckCircle2, CircleDashed, Search } from "lucide-react";
+import { formatDistanceToNowStrict } from "date-fns";
+import { TooltipButton } from "~/components/ui/tooltip-button";
 
 export function PurchasesList() {
   const { data, isLoading, error } = api.purchases.list.useQuery();
@@ -151,7 +153,8 @@ export function PurchasesList() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[48%]">Item</TableHead>
+              <TableHead className="w-[44%]">Item</TableHead>
+              <TableHead>Qty / Size</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Category</TableHead>
@@ -161,6 +164,20 @@ export function PurchasesList() {
           <TableBody>
             {pagedPurchases.map((purchase) => {
               const linkedRecipe = purchase.linkedRecipe;
+              const normalizedSku = (purchase.krogerSku ?? "").trim();
+              const normalizedProductId = (purchase.krogerProductId ?? "").trim();
+              const identifier =
+                normalizedSku.length > 0
+                  ? normalizedSku
+                  : normalizedProductId.length > 0
+                    ? normalizedProductId
+                    : null;
+              const itemMeta = [
+                purchase.krogerBrand,
+                identifier,
+              ]
+                .filter(Boolean)
+                .join(" • ");
 
               return (
                 <TableRow key={purchase.id}>
@@ -176,9 +193,7 @@ export function PurchasesList() {
                           {purchase.krogerName}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {[purchase.krogerBrand, purchase.krogerSku, purchase.krogerProductId, purchase.itemSize]
-                            .filter(Boolean)
-                            .join(" • ")}
+                          {itemMeta}
                         </div>
                         {purchase.ingredientName && (
                           <div className="text-xs text-muted-foreground">
@@ -204,30 +219,55 @@ export function PurchasesList() {
                       </div>
                     </div>
                   </TableCell>
+                  <TableCell className="py-3 text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">
+                      {purchase.quantity}
+                    </span>
+                    {purchase.itemSize ? ` × ${purchase.itemSize}` : ""}
+                  </TableCell>
                   <TableCell className="py-3 text-sm">
                     <div className="font-semibold">
-                      {formatMoney(purchase.price)} × {purchase.quantity}
+                      {formatMoney(purchase.price)} / ea
                     </div>
                     <div className="text-xs text-muted-foreground">
                       Total {formatMoney(purchase.price * purchase.quantity)}
                     </div>
                   </TableCell>
                   <TableCell className="py-3 text-sm">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs ${
+                    <TooltipButton
+                      content={
                         purchase.wasAddedToCart
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-muted text-muted-foreground"
-                      }`}
+                          ? "Added to cart"
+                          : "Attempted add"
+                      }
                     >
-                      {purchase.wasAddedToCart ? "Added" : "Attempted"}
-                    </span>
+                      <span
+                        className={`inline-flex h-6 w-6 items-center justify-center rounded-full ${
+                          purchase.wasAddedToCart
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                        aria-label={
+                          purchase.wasAddedToCart
+                            ? "Added to cart"
+                            : "Attempted add"
+                        }
+                      >
+                        {purchase.wasAddedToCart ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                        ) : (
+                          <CircleDashed className="h-3.5 w-3.5 shrink-0" />
+                        )}
+                      </span>
+                    </TooltipButton>
                   </TableCell>
                   <TableCell className="py-3 text-xs text-muted-foreground">
                     {purchase.krogerCategories?.[0] ?? "—"}
                   </TableCell>
                   <TableCell className="py-3 text-right text-xs text-muted-foreground">
-                    {new Date(purchase.createdAt).toLocaleString()}
+                    {formatDistanceToNowStrict(new Date(purchase.createdAt), {
+                      addSuffix: true,
+                    })}
                   </TableCell>
                 </TableRow>
               );
