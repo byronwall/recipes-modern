@@ -2,34 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { api } from "~/trpc/react";
-import { formatMoney } from "../list/formatMoney";
-import Link from "next/link";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
-import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import { CheckCircle2, CircleDashed, Search } from "lucide-react";
-import { formatDistanceToNowStrict } from "date-fns";
-import { TooltipButton } from "~/components/ui/tooltip-button";
+import { PurchasesFiltersPanel } from "./PurchasesFiltersPanel";
+import { type PurchaseStatusFilter } from "./PurchasesFiltersPanel";
+import { PurchasesTable } from "./PurchasesTable";
 
 export function PurchasesList() {
   const { data, isLoading, error } = api.purchases.list.useQuery();
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<PurchaseStatusFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -90,244 +70,29 @@ export function PurchasesList() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-2xl border bg-card/70 p-4 shadow-sm">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-          <div className="flex flex-col gap-2">
-            <Label className="text-xs uppercase text-muted-foreground">
-              Search
-            </Label>
-            <div className="relative w-full">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search name, SKU, or product ID"
-                className="pl-9"
-              />
-            </div>
-          </div>
+      <PurchasesFiltersPanel
+        search={search}
+        onSearchChange={setSearch}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        categoryFilter={categoryFilter}
+        onCategoryFilterChange={setCategoryFilter}
+        categoryOptions={categoryOptions}
+      />
 
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-2">
-              <Label className="text-xs uppercase text-muted-foreground">
-                Status
-              </Label>
-              <ToggleGroup
-                type="single"
-                value={statusFilter}
-                onValueChange={(value) => {
-                  if (value) setStatusFilter(value);
-                }}
-                variant="outline"
-                size="sm"
-                className="flex flex-wrap justify-start gap-2"
-              >
-                <ToggleGroupItem value="all">All</ToggleGroupItem>
-                <ToggleGroupItem value="added">Added</ToggleGroupItem>
-                <ToggleGroupItem value="attempted">Attempted</ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label className="text-xs uppercase text-muted-foreground">
-                Category
-              </Label>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="h-9 w-full text-sm">
-                  <SelectValue placeholder="All categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All categories</SelectItem>
-                  {categoryOptions.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-2xl border bg-card/70 shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[44%]">Item</TableHead>
-              <TableHead>Qty / Size</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead className="text-right">Date</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pagedPurchases.map((purchase) => {
-              const linkedRecipe = purchase.linkedRecipe;
-              const normalizedSku = (purchase.krogerSku ?? "").trim();
-              const normalizedProductId = (purchase.krogerProductId ?? "").trim();
-              const identifier =
-                normalizedSku.length > 0
-                  ? normalizedSku
-                  : normalizedProductId.length > 0
-                    ? normalizedProductId
-                    : null;
-              const itemMeta = [
-                purchase.krogerBrand,
-                identifier,
-              ]
-                .filter(Boolean)
-                .join(" • ");
-
-              return (
-                <TableRow key={purchase.id}>
-                  <TableCell className="py-3">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={purchase.imageUrl}
-                        alt={purchase.krogerName}
-                        className="h-12 w-12 rounded-md object-cover"
-                      />
-                      <div>
-                        <div className="font-semibold">
-                          {purchase.krogerName}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {itemMeta}
-                        </div>
-                        {purchase.ingredientName && (
-                          <div className="text-xs text-muted-foreground">
-                            From ingredient: {purchase.ingredientName}
-                          </div>
-                        )}
-                        {linkedRecipe && (
-                          <div className="text-xs text-muted-foreground">
-                            Recipe:{" "}
-                            <Link
-                              href={`/recipes/${linkedRecipe.id}`}
-                              className="font-medium text-foreground underline-offset-2 hover:underline"
-                            >
-                              {linkedRecipe.name}
-                            </Link>
-                          </div>
-                        )}
-                        {purchase.note && (
-                          <div className="text-xs text-destructive">
-                            Note: {purchase.note}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3 text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">
-                      {purchase.quantity}
-                    </span>
-                    {purchase.itemSize ? ` × ${purchase.itemSize}` : ""}
-                  </TableCell>
-                  <TableCell className="py-3 text-sm">
-                    <div className="font-semibold">
-                      {formatMoney(purchase.price)} / ea
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Total {formatMoney(purchase.price * purchase.quantity)}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3 text-sm">
-                    <TooltipButton
-                      content={
-                        purchase.wasAddedToCart
-                          ? "Added to cart"
-                          : "Attempted add"
-                      }
-                    >
-                      <span
-                        className={`inline-flex h-6 w-6 items-center justify-center rounded-full ${
-                          purchase.wasAddedToCart
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                        aria-label={
-                          purchase.wasAddedToCart
-                            ? "Added to cart"
-                            : "Attempted add"
-                        }
-                      >
-                        {purchase.wasAddedToCart ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                        ) : (
-                          <CircleDashed className="h-3.5 w-3.5 shrink-0" />
-                        )}
-                      </span>
-                    </TooltipButton>
-                  </TableCell>
-                  <TableCell className="py-3 text-xs text-muted-foreground">
-                    {purchase.krogerCategories?.[0] ?? "—"}
-                  </TableCell>
-                  <TableCell className="py-3 text-right text-xs text-muted-foreground">
-                    {formatDistanceToNowStrict(new Date(purchase.createdAt), {
-                      addSuffix: true,
-                    })}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-        {filteredPurchases.length === 0 && (
-          <div className="border-t p-6 text-sm text-muted-foreground">
-            No purchases match your filters.
-          </div>
-        )}
-        {filteredPurchases.length > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t px-4 py-3 text-sm">
-            <div className="text-muted-foreground">
-              Showing {(safePage - 1) * pageSize + 1}–
-              {Math.min(safePage * pageSize, filteredPurchases.length)} of{" "}
-              {filteredPurchases.length}
-            </div>
-            <div className="flex items-center gap-2">
-              <Select
-                value={String(pageSize)}
-                onValueChange={(value) => {
-                  setPageSize(Number(value));
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="h-8 w-[110px] text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {["10", "25", "50", "100"].map((size) => (
-                    <SelectItem key={size} value={size}>
-                      {size} / page
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="flex items-center gap-1">
-                <button
-                  className="rounded-md border px-2 py-1 text-xs disabled:opacity-50"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={safePage === 1}
-                >
-                  Prev
-                </button>
-                <span className="px-2 text-xs text-muted-foreground">
-                  Page {safePage} of {totalPages}
-                </span>
-                <button
-                  className="rounded-md border px-2 py-1 text-xs disabled:opacity-50"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={safePage === totalPages}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      <PurchasesTable
+        purchases={pagedPurchases}
+        filteredCount={filteredPurchases.length}
+        safePage={safePage}
+        pageSize={pageSize}
+        totalPages={totalPages}
+        onPageSizeChange={(value) => {
+          setPageSize(value);
+          setPage(1);
+        }}
+        onPreviousPage={() => setPage((p) => Math.max(1, p - 1))}
+        onNextPage={() => setPage((p) => Math.min(totalPages, p + 1))}
+      />
     </div>
   );
 }
