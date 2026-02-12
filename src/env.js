@@ -1,8 +1,6 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
-console.log("env", process.env);
-
 // Derive public media/S3 endpoints when not explicitly provided, mirroring docker-compose
 const publicScheme =
   process.env.PUBLIC_SCHEME ??
@@ -10,11 +8,6 @@ const publicScheme =
 const appHost = process.env.APP_HOST;
 const mediaPathPrefix = process.env.MEDIA_PATH_PREFIX ?? "/media";
 const s3Bucket = process.env.S3_BUCKET;
-
-console.log("publicScheme", publicScheme);
-console.log("appHost", appHost);
-console.log("mediaPathPrefix", mediaPathPrefix);
-console.log("s3Bucket", s3Bucket);
 
 // S3 endpoint used for generating signed URLs. IMPORTANT: do NOT include MEDIA_PATH_PREFIX here
 const derivedS3EndpointPublic =

@@ -15,15 +15,6 @@ const {
   S3_PUBLIC_READ = "false",
 } = process.env;
 
-console.log("process env during init-bucket", process.env, {
-  S3_ENDPOINT_INTERNAL,
-  S3_REGION,
-  S3_BUCKET,
-  S3_ACCESS_KEY_ID,
-  S3_SECRET_ACCESS_KEY,
-  S3_PUBLIC_READ,
-});
-
 if (
   !S3_ENDPOINT_INTERNAL ||
   !S3_BUCKET ||

@@ -116,3 +116,9 @@ This file documents the key UI and code patterns established in this repo. It sh
 - If adding repeated action patterns, create a shared `TooltipButton`.
 - If adding new layouts, consider shared `PageHeaderCard` and `CardGrid` components.
 - Use `dirtyInputClass` (recipe detail edit utility) for consistent dirty-field border/shadow styling.
+
+## Logging & Diagnostics
+
+- **Structural flow logging (dev-only)**: When debugging, add logs at key structural boundaries (route entry, service/mutation start/end, external API call, and error branches) so end-to-end flow is traceable.
+- **No env dumps**: Never log full `process.env` or secrets/tokens/credentials. If config visibility is needed, log only minimal non-sensitive derived values.
+- **Cleanup expectation**: Remove temporary debug logs once development/verification is complete; keep only intentional operational logs that provide ongoing production value.

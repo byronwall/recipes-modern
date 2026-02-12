@@ -6,11 +6,7 @@ import { doOAuth } from "~/server/kroger";
 // http://recipes.byroni.us/auth?code=ipE_clTAYZqpwBrrBfZMGTT5CFTeORfw3rd_Sdqb
 
 export async function GET(req: NextRequest) {
-  console.log(new Date(), "kroger auth", req.nextUrl.searchParams);
-
   const session = await getServerAuthSession();
-
-  console.log(new Date(), "kroger auth", session);
 
   const protocol = req.nextUrl.protocol;
   const host = req.nextUrl.host;
@@ -26,11 +22,7 @@ export async function GET(req: NextRequest) {
     return new Response("error occurred during auth");
   }
 
-  console.log(new Date(), "kroger auth", code);
-
   const didAuth = await doOAuth(false, session.user.id, code);
-
-  console.log(new Date(), "kroger auth", didAuth);
 
   if (didAuth) {
     redirect(`${protocol}://${host}/list`);

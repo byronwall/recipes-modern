@@ -17,8 +17,6 @@ export const krogerRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const { query } = input;
 
-      console.log("do search", query);
-
       try {
         const results = await doKrogerSearch(
           {
@@ -27,8 +25,6 @@ export const krogerRouter = createTRPCRouter({
           ctx.session.user.id,
           true,
         );
-
-        console.log("results", results);
 
         return results;
       } catch (err: unknown) {

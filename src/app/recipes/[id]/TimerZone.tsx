@@ -17,7 +17,6 @@ export function TimerZone() {
     if (!cookingMode) return;
 
     const timeout = setInterval(() => {
-      console.log("tick");
       setDummy((prev) => prev + 1);
     }, 1000);
 

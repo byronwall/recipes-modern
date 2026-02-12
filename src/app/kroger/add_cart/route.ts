@@ -1,9 +1,7 @@
 import { type NextRequest, type NextResponse } from "next/server";
 import { type API_KrogerAddCart } from "../model";
 
-export async function POST(req: NextRequest, res: NextResponse) {
-  console.log(new Date(), "kroger add to cart", req.body);
-
+export async function POST(req: NextRequest, _res: NextResponse) {
   const postData = (await req.json()) as API_KrogerAddCart;
   const url = `https://api.kroger.com/v1/cart/add`;
 

@@ -27,8 +27,6 @@ export async function doOAuth(
     `${config.client.id}:${config.client.secret}`,
   ).toString("base64");
 
-  console.log("doOAuth", { isRefresh, accessCode, userId, code });
-
   const dataObj: any = {
     scope: "product.compact cart.basic:write",
     grant_type: isRefresh ? "refresh_token" : "authorization_code",
@@ -61,22 +59,9 @@ export async function doOAuth(
     },
   };
 
-  // TODO: I think this is working, but I need to change the redirect URL to test
-
-  console.log("postConfig", postConfig);
-
   try {
     const response = await fetch(config.auth.tokenHost, postConfig);
     const postRes = await response.json();
-
-    console.log(
-      "made req, got res",
-      postRes,
-      "****",
-      response.ok,
-      "****",
-      response.status,
-    );
 
     if (response.ok && userId) {
       await db.userExtras.upsert({
@@ -93,8 +78,6 @@ export async function doOAuth(
           krogerUserRefreshToken: postRes.refresh_token,
         },
       });
-
-      console.log("data", postRes);
 
       return true;
     }
@@ -118,12 +101,6 @@ export async function doKrogerSearch(
   const accessToken = await getKrogerAccessToken(userId);
 
   try {
-    console.log(
-      "****** attempting search, url",
-      url,
-      "accessToken",
-      accessToken,
-    );
     // Dev flag: simulate a 500 to verify client-side error handling
     if (process.env.KROGER_SIMULATE_SEARCH_500 === "true") {
       throw new Error(
@@ -139,15 +116,11 @@ export async function doKrogerSearch(
 
     const search = (await response.json()) as API_KrogerProdRes;
 
-    console.log("search", { response, search });
-
     if (response.ok) {
-      console.log("data", search);
       return search.data;
     }
 
     if (response.status === 401 && shouldRetry) {
-      console.log("401 error");
       const isAuth = await doOAuth(true, userId, undefined);
 
       if (isAuth) {

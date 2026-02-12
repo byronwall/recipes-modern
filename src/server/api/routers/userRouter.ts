@@ -14,7 +14,6 @@ export const userRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       // hash the password
-      console.log("trying to create user", input);
 
       // server-side guard: only allow registration if no users exist
       const userCount = await db.user.count();

@@ -38,7 +38,7 @@ declare module "next-auth" {
  */
 export const authOptions: NextAuthOptions = {
   callbacks: {
-    session: ({ session, user, token }) => ({
+    session: ({ session, token }) => ({
       ...session,
       user: {
         ...session.user,
@@ -81,8 +81,7 @@ export const authOptions: NextAuthOptions = {
         },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials, req) {
-        console.log("attempting to login with credentials", credentials);
+      async authorize(credentials, _req) {
         if (!credentials?.email || !credentials.password) {
           return null;
         }
@@ -104,7 +103,6 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (passwordsMatch) {
-          console.log("good login", user);
           return user;
         }
 
