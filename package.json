@@ -10,6 +10,7 @@
     "dev": "next dev",
     "postinstall": "prisma generate",
     "lint": "next lint",
+    "type-check": "tsc --noEmit && echo \"All good\"",
     "start": "next start",
     "start-prod": "npm run init-bucket && npx prisma migrate deploy && NODE_ENV=production next start",
     "init-bucket": "NODE_OPTIONS=--enable-source-maps node ./scripts/init-bucket.js",

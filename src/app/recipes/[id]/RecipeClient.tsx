@@ -97,10 +97,11 @@ export function RecipeClient(props: { id: number }) {
   if (!recipe) {
     return <div>Recipe not found</div>;
   }
+  const recipeData = recipe;
 
   function beginEditing(target: "ingredients" | "instructions") {
-    setIngredientGroupsDraft(recipe.ingredientGroups);
-    setStepGroupsDraft(recipe.stepGroups);
+    setIngredientGroupsDraft(recipeData.ingredientGroups);
+    setStepGroupsDraft(recipeData.stepGroups);
     setPendingScrollTarget(target);
     setIsEditing(true);
   }
@@ -122,15 +123,15 @@ export function RecipeClient(props: { id: number }) {
 
     await Promise.all([
       updateIngredientGroups.mutateAsync({
-        recipeId: recipe.id,
+        recipeId: recipeData.id,
         ingredientGroups: ingredientGroupsDraft,
       }),
       updateStepGroups.mutateAsync({
-        recipeId: recipe.id,
+        recipeId: recipeData.id,
         stepGroups: stepGroupsDraft,
       }),
     ]);
-    await utils.recipe.getRecipe.invalidate({ id: recipe.id });
+    await utils.recipe.getRecipe.invalidate({ id: recipeData.id });
 
     setIsEditing(false);
   }
@@ -213,13 +214,13 @@ export function RecipeClient(props: { id: number }) {
           <CardGrid className="lg:grid-cols-[2fr_3fr]">
             <section className="rounded-xl border bg-card/70 p-6 shadow-sm">
               <IngredientList
-                recipe={recipe}
+                recipe={recipeData}
                 onStartEditing={() => beginEditing("ingredients")}
               />
             </section>
             <section className="rounded-xl border bg-card/70 p-6 shadow-sm">
               <StepList
-                recipe={recipe}
+                recipe={recipeData}
                 onStartEditing={() => beginEditing("instructions")}
               />
             </section>
@@ -227,9 +228,9 @@ export function RecipeClient(props: { id: number }) {
         </>
       )}
 
-      <CookingModeOverlay recipe={recipe} />
+      <CookingModeOverlay recipe={recipeData} />
 
-      <RecipeImagesSection recipe={recipe} />
+      <RecipeImagesSection recipe={recipeData} />
     </div>
   );
 }

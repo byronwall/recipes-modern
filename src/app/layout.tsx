@@ -8,6 +8,7 @@ import { TRPCReactProvider } from "~/trpc/react";
 import { MainPageWithNav } from "../components/MainPageWithNav";
 import { TailwindIndicator } from "./TailwindIndicator";
 import { GlobalAddTagDialog } from "~/components/GlobalAddTagDialog";
+import { RuntimeErrorOverlay } from "~/components/RuntimeErrorOverlay";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -40,6 +41,7 @@ export default async function RootLayout({
             <MainPageWithNav>{children}</MainPageWithNav>
           </HydrationBoundary>
           <GlobalAddTagDialog />
+          <RuntimeErrorOverlay />
         </TRPCReactProvider>
 
         <TailwindIndicator />

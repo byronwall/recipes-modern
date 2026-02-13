@@ -178,7 +178,9 @@ export function PlanPageClient() {
   );
   const calendarEnd = endOfDay(addDays(calendarStart, 20));
 
-  const { data } = api.recipe.getMealPlans.useQuery();
+  const { data, error, isError, isFetching, refetch } =
+    api.recipe.getMealPlans.useQuery();
+  const mealPlans = useMemo(() => (Array.isArray(data) ? data : []), [data]);
 
   const { handleDelete } = useMealPlanActions();
   const { handleAddToMealPlan, addMealPlanToList } = useRecipeActions();
@@ -190,8 +192,9 @@ export function PlanPageClient() {
   );
 
   const visiblePlans = useMemo(() => {
-    return (data ?? [])
+    return mealPlans
       .filter((plan) => {
+        if (!plan?.Recipe) return false;
         const planDate = toPlanDate(plan.date);
         if (!planDate) return false;
         return planDate >= calendarStart && planDate <= calendarEnd;
@@ -203,7 +206,7 @@ export function PlanPageClient() {
         if (!aDate || !bDate) return 0;
         return aDate.getTime() - bDate.getTime();
       });
-  }, [calendarEnd, calendarStart, data, shouldHideCompleted]);
+  }, [calendarEnd, calendarStart, mealPlans, shouldHideCompleted]);
 
   const popularDishes = useMemo(() => {
     const counts = new Map<
@@ -211,8 +214,8 @@ export function PlanPageClient() {
       { recipeId: number; name: string; type: string; madeCount: number }
     >();
 
-    for (const plan of data ?? []) {
-      if (!plan.isMade) continue;
+    for (const plan of mealPlans) {
+      if (!plan?.Recipe || !plan.isMade) continue;
       const existing = counts.get(plan.Recipe.id);
       if (existing) {
         existing.madeCount += 1;
@@ -229,11 +232,11 @@ export function PlanPageClient() {
     return Array.from(counts.values())
       .sort((a, b) => b.madeCount - a.madeCount || a.name.localeCompare(b.name))
       .slice(0, 10);
-  }, [data]);
+  }, [mealPlans]);
 
   const recentlyMade = useMemo(() => {
-    return (data ?? [])
-      .filter((plan) => plan.isMade)
+    return mealPlans
+      .filter((plan) => plan?.Recipe && plan.isMade)
       .sort((a, b) => {
         const aDate = toPlanDate(a.date);
         const bDate = toPlanDate(b.date);
@@ -241,7 +244,7 @@ export function PlanPageClient() {
         return bDate.getTime() - aDate.getTime();
       })
       .slice(0, 5);
-  }, [data]);
+  }, [mealPlans]);
 
   const plansByDay = useMemo(() => {
     const map = new Map<string, PlannedMealWithRecipe[]>();
@@ -263,6 +266,30 @@ export function PlanPageClient() {
 
   return (
     <div className="flex flex-col gap-5">
+      {isError && (
+        <section className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-destructive">
+                Failed to load meal plans
+              </h2>
+              <p className="mt-1 text-xs text-destructive/80">{error.message}</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                void refetch();
+              }}
+              disabled={isFetching}
+            >
+              Retry
+            </Button>
+          </div>
+        </section>
+      )}
+
       <PageHeaderCard className="border-0 bg-transparent p-0 shadow-none">
         <div className="flex flex-col gap-3">
           <H1 className="leading-tight">Planned Meals</H1>

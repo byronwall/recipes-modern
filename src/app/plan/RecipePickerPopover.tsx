@@ -21,7 +21,8 @@ export function RecipePickerPopover(props: {
   onRecipeSelected: (recipeId: number) => void;
   iconOnly?: boolean;
 }) {
-  const { data: recipes = [] } = api.recipe.getRecipes.useQuery();
+  const { data, isError, error } = api.recipe.getRecipes.useQuery();
+  const recipes = Array.isArray(data) ? data : [];
 
   const [search, setSearch] = useState("");
 
@@ -61,8 +62,13 @@ export function RecipePickerPopover(props: {
                   <span className="text-xs text-muted-foreground">Add</span>
                 </ListPanelItem>
               ))}
-              {filteredRecipes.length === 0 && (
+              {!isError && filteredRecipes.length === 0 && (
                 <ListPanelEmpty>No recipes match that search.</ListPanelEmpty>
+              )}
+              {isError && (
+                <ListPanelEmpty>
+                  Couldn&apos;t load recipes: {error.message}
+                </ListPanelEmpty>
               )}
             </ListPanel>
           </div>

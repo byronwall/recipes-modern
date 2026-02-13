@@ -76,9 +76,7 @@ export const recipeRouter = createTRPCRouter({
       const recipe = await db.recipe.findUnique({
         where: { id: input.id, userId: ctx.session.user.id },
         include: {
-          stepGroups: {
-            include: { Recipe: true },
-          },
+          stepGroups: true,
           ingredientGroups: {
             include: { ingredients: true },
           },
