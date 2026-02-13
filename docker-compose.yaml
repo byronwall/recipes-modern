@@ -13,6 +13,7 @@ x-common-env: &common-env
   KROGER_CLIENT_SECRET: ${KROGER_CLIENT_SECRET}
   OPENAI_API_KEY: ${OPENAI_API_KEY}
   NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+  NEXTAUTH_URL: ${NEXTAUTH_URL}
   HOST: 0.0.0.0
 
   # TODO: need to figure out how to get Coolify past "in progress" - reduce scope of compose until matches the old one?
