@@ -22,6 +22,20 @@ import { type RouterOutputs } from "~/trpc/react";
 
 type PurchaseListItem = RouterOutputs["purchases"]["list"][number];
 
+function getKrogerProductHref(purchase: PurchaseListItem) {
+  const upc = (purchase.krogerSku ?? "").trim();
+  if (upc.length > 0) {
+    return `https://www.kroger.com/p/x/${upc}`;
+  }
+
+  const productId = (purchase.krogerProductId ?? "").trim();
+  if (productId.length > 0) {
+    return `https://www.kroger.com/search?query=${encodeURIComponent(productId)}`;
+  }
+
+  return null;
+}
+
 function getItemIdentifier(purchase: PurchaseListItem) {
   const sku = (purchase.krogerSku ?? "").trim();
   if (sku.length > 0) return sku;
@@ -56,6 +70,7 @@ function PurchaseStatusIcon(props: { wasAddedToCart: boolean }) {
 function PurchaseTableRow(props: { purchase: PurchaseListItem }) {
   const { purchase } = props;
   const linkedRecipe = purchase.linkedRecipe;
+  const krogerProductHref = getKrogerProductHref(purchase);
   const identifier = getItemIdentifier(purchase);
   const itemMeta = [purchase.krogerBrand, identifier].filter(Boolean).join(" • ");
 
@@ -69,7 +84,18 @@ function PurchaseTableRow(props: { purchase: PurchaseListItem }) {
             className="h-12 w-12 rounded-md object-cover"
           />
           <div>
-            <div className="font-semibold">{purchase.krogerName}</div>
+            {krogerProductHref ? (
+              <a
+                href={krogerProductHref}
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold underline-offset-2 hover:underline"
+              >
+                {purchase.krogerName}
+              </a>
+            ) : (
+              <div className="font-semibold">{purchase.krogerName}</div>
+            )}
             <div className="text-xs text-muted-foreground">{itemMeta}</div>
             {purchase.ingredientName && (
               <div className="text-xs text-muted-foreground">
@@ -103,8 +129,10 @@ function PurchaseTableRow(props: { purchase: PurchaseListItem }) {
           </span>
         </div>
       </TableCell>
-      <TableCell className="py-3 text-right text-sm">
-        <div className="font-semibold">{formatMoney(purchase.price)} / ea</div>
+      <TableCell className="w-[10rem] py-3 text-right text-sm">
+        <div className="whitespace-nowrap font-semibold">
+          {formatMoney(purchase.price)} / ea
+        </div>
         <div className="text-xs text-muted-foreground">
           Total {formatMoney(purchase.price * purchase.quantity)}
         </div>
@@ -117,7 +145,7 @@ function PurchaseTableRow(props: { purchase: PurchaseListItem }) {
       <TableCell className="py-3 text-center text-xs text-muted-foreground">
         {purchase.krogerCategories?.[0] ?? "—"}
       </TableCell>
-      <TableCell className="py-3 text-right text-xs text-muted-foreground">
+      <TableCell className="w-[8.5rem] py-3 text-right text-[11px] leading-tight text-muted-foreground">
         {formatDistanceToNowStrict(new Date(purchase.createdAt), {
           addSuffix: true,
         })}
@@ -158,20 +186,20 @@ export function PurchasesTable(props: {
             <TableHead className="sticky top-0 z-10 w-[44%] bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
               Item
             </TableHead>
-            <TableHead className="sticky top-0 z-10 bg-card/95 text-center backdrop-blur supports-[backdrop-filter]:bg-card/80">
+            <TableHead className="sticky top-0 z-10 w-[10rem] bg-card/95 text-center backdrop-blur supports-[backdrop-filter]:bg-card/80">
               Qty / Size
             </TableHead>
-            <TableHead className="sticky top-0 z-10 bg-card/95 text-right backdrop-blur supports-[backdrop-filter]:bg-card/80">
+            <TableHead className="sticky top-0 z-10 w-[10rem] bg-card/95 text-right backdrop-blur supports-[backdrop-filter]:bg-card/80">
               Price
             </TableHead>
-            <TableHead className="sticky top-0 z-10 bg-card/95 text-center backdrop-blur supports-[backdrop-filter]:bg-card/80">
+            <TableHead className="sticky top-0 z-10 w-[6rem] bg-card/95 text-center backdrop-blur supports-[backdrop-filter]:bg-card/80">
               Status
             </TableHead>
-            <TableHead className="sticky top-0 z-10 bg-card/95 text-center backdrop-blur supports-[backdrop-filter]:bg-card/80">
+            <TableHead className="sticky top-0 z-10 w-[11rem] bg-card/95 text-center backdrop-blur supports-[backdrop-filter]:bg-card/80">
               Category
             </TableHead>
-            <TableHead className="sticky top-0 z-10 bg-card/95 text-right backdrop-blur supports-[backdrop-filter]:bg-card/80">
-              Date
+            <TableHead className="sticky top-0 z-10 w-[8.5rem] bg-card/95 text-right text-[11px] backdrop-blur supports-[backdrop-filter]:bg-card/80">
+              Time
             </TableHead>
           </TableRow>
         </TableHeader>

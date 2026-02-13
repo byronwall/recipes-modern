@@ -2,6 +2,12 @@
 
 This file documents the key UI and code patterns established in this repo. It should be used by agents making future changes to keep work consistent.
 
+## Product Scope
+
+- **Kroger-focused app**: This site is dedicated to Kroger API workflows for purchase history, product search, and add-to-cart operations.
+- **Search flow**: Prefer the built-in Kroger search modal for product discovery inside the app.
+- **Product links**: Product names in Kroger-backed UIs should link out to the Kroger product page.
+
 ## UI Layout Patterns
 
 - **Card surfaces**: Use rounded cards (`rounded-2xl`) with subtle borders and `bg-card/70` or `bg-background/80`.

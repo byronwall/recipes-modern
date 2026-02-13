@@ -4,6 +4,15 @@ import { type Prisma } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 
+const LONG_PURCHASE_NAMES = [
+  "Simple Truth Organic Fire Roasted Diced Tomatoes with Green Chilies Family Size",
+  "Private Selection Hickory Smoked Uncured Applewood Bacon Thick Sliced Value Pack",
+  "Kroger Deluxe Stir Fry Vegetable Medley with Broccoli Carrots and Water Chestnuts",
+  "Simple Truth Natural Cage Free Large Brown Eggs Omega 3 Enriched Grade A Dozen",
+  "Private Selection Four Cheese Italian Blend Shredded Mozzarella Asiago Romano Parmesan",
+  "Kroger Classic Creamy Peanut Butter No Stir Extra Smooth Family Pantry Jar",
+];
+
 const purchaseInclude = {
   Recipe: {
     select: {
@@ -283,13 +292,16 @@ export const purchasesRouter = createTRPCRouter({
           faker.datatype.boolean() && regularPrice > 0
             ? Number(faker.commerce.price({ min: 0.5, max: regularPrice }))
             : null;
+        const useLongName = faker.datatype.boolean({ probability: 0.45 });
         return {
           userId,
           ingredientId: ingredient.id,
           recipeId: ingredient.group.recipeId,
           krogerSku: faker.string.numeric({ length: 12 }),
           krogerProductId: faker.string.numeric({ length: 8 }),
-          krogerName: faker.commerce.productName(),
+          krogerName: useLongName
+            ? faker.helpers.arrayElement(LONG_PURCHASE_NAMES)
+            : faker.commerce.productName(),
           krogerBrand: faker.company.name(),
           krogerCategories: faker.helpers.arrayElements(
             ["Produce", "Dairy", "Pantry", "Meat", "Frozen", "Snacks"],

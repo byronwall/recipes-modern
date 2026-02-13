@@ -1,6 +1,8 @@
-import { Search } from "lucide-react";
+import { type ReactNode } from "react";
+import { CheckCircle2, CircleDashed, ListFilter, Search } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { TooltipButton } from "~/components/ui/tooltip-button";
 import {
   Select,
   SelectContent,
@@ -8,9 +10,36 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import { Button } from "~/components/ui/button";
 
 export type PurchaseStatusFilter = "all" | "added" | "attempted";
+
+function StatusIconButton(props: {
+  value: PurchaseStatusFilter;
+  activeValue: PurchaseStatusFilter;
+  onChange: (value: PurchaseStatusFilter) => void;
+  label: string;
+  icon: ReactNode;
+}) {
+  const { value, activeValue, onChange, label, icon } = props;
+  const isActive = value === activeValue;
+
+  return (
+    <TooltipButton content={label}>
+      <Button
+        type="button"
+        size="icon"
+        variant={isActive ? "secondary" : "outline"}
+        className={isActive ? "bg-secondary" : ""}
+        aria-label={label}
+        aria-pressed={isActive}
+        onClick={() => onChange(value)}
+      >
+        {icon}
+      </Button>
+    </TooltipButton>
+  );
+}
 
 export function PurchasesFiltersPanel(props: {
   search: string;
@@ -32,8 +61,8 @@ export function PurchasesFiltersPanel(props: {
   } = props;
 
   return (
-    <div className="rounded-2xl border bg-card/70 p-4 shadow-sm">
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+    <div className="py-1">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,14rem)_auto] lg:items-end">
         <div className="flex flex-col gap-2">
           <Label className="text-xs uppercase text-muted-foreground">Search</Label>
           <div className="relative w-full">
@@ -47,41 +76,47 @@ export function PurchasesFiltersPanel(props: {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-2">
-            <Label className="text-xs uppercase text-muted-foreground">Status</Label>
-            <ToggleGroup
-              type="single"
-              value={statusFilter}
-              onValueChange={(value) => {
-                if (value === "all" || value === "added" || value === "attempted") {
-                  onStatusFilterChange(value);
-                }
-              }}
-              variant="outline"
-              size="sm"
-              className="flex flex-wrap justify-start gap-2"
-            >
-              <ToggleGroupItem value="all">All</ToggleGroupItem>
-              <ToggleGroupItem value="added">Added</ToggleGroupItem>
-              <ToggleGroupItem value="attempted">Attempted</ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label className="text-xs uppercase text-muted-foreground">Category</Label>
-            <Select value={categoryFilter} onValueChange={onCategoryFilterChange}>
-              <SelectTrigger className="h-9 w-full text-sm">
-                <SelectValue placeholder="All categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
-                {categoryOptions.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="flex flex-col gap-2">
+          <Label className="text-xs uppercase text-muted-foreground">Category</Label>
+          <Select value={categoryFilter} onValueChange={onCategoryFilterChange}>
+            <SelectTrigger className="h-9 w-full text-sm">
+              <SelectValue placeholder="All categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All categories</SelectItem>
+              {categoryOptions.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label className="text-xs uppercase text-muted-foreground">Status</Label>
+          <div className="flex items-center gap-2">
+            <StatusIconButton
+              value="all"
+              activeValue={statusFilter}
+              onChange={onStatusFilterChange}
+              label="All statuses"
+              icon={<ListFilter className="h-4 w-4 shrink-0" />}
+            />
+            <StatusIconButton
+              value="added"
+              activeValue={statusFilter}
+              onChange={onStatusFilterChange}
+              label="Added to cart"
+              icon={<CheckCircle2 className="h-4 w-4 shrink-0" />}
+            />
+            <StatusIconButton
+              value="attempted"
+              activeValue={statusFilter}
+              onChange={onStatusFilterChange}
+              label="Attempted add"
+              icon={<CircleDashed className="h-4 w-4 shrink-0" />}
+            />
           </div>
         </div>
       </div>
