@@ -31,6 +31,7 @@ import { Switch } from "~/components/ui/switch";
 import { TooltipButton } from "~/components/ui/tooltip-button";
 import { H1 } from "~/components/ui/typography";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import { useIsMobile } from "~/hooks/use-mobile";
 import { cn } from "~/lib/utils";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { AddToMealPlanPopover } from "../AddToMealPlanPopover";
@@ -54,11 +55,107 @@ function MealPlanRow(props: {
   onAddToList: (id: number) => Promise<unknown>;
   onReschedule: (plan: PlannedMealWithRecipe, date: Date) => Promise<unknown>;
   isMutating: boolean;
+  forceInlineActions?: boolean;
 }) {
   const { plan, onDelete, onToggleMade, onAddToList, onReschedule, isMutating } =
     props;
   const [isHoverOpen, setIsHoverOpen] = useState(false);
   const [isMovePopoverOpen, setIsMovePopoverOpen] = useState(false);
+  const isInlineActions = Boolean(props.forceInlineActions);
+
+  const actions = (
+    <div
+      className="flex items-center justify-between"
+    >
+      <div className="flex items-center gap-2">
+        <TooltipButton content="Delete meal">
+          <Button
+            onClick={() => onDelete(plan.id)}
+            variant={isInlineActions ? "destructive-outline" : "ghost"}
+            size="icon"
+            aria-label="Delete meal"
+            className={cn(
+              !isInlineActions &&
+                "text-destructive/80 hover:bg-destructive/10 hover:text-destructive",
+            )}
+          >
+            <Trash className="h-4 w-4 shrink-0" />
+          </Button>
+        </TooltipButton>
+
+        <TooltipButton
+          content={plan.isOnShoppingList ? "Already on list" : "Add to list"}
+        >
+          <Button
+            onClick={() => {
+              void onAddToList(plan.id);
+            }}
+            disabled={isMutating || plan.isOnShoppingList}
+            size="icon"
+            variant={isInlineActions ? "outline" : "ghost"}
+            aria-label="Add to list"
+          >
+            <ShoppingBasket className="h-4 w-4 shrink-0" />
+          </Button>
+        </TooltipButton>
+
+        <Popover open={isMovePopoverOpen} onOpenChange={setIsMovePopoverOpen}>
+          <PopoverTrigger asChild>
+            <span className="inline-flex">
+              <TooltipButton content="Move to another day">
+                <Button
+                  disabled={isMutating}
+                  size="icon"
+                  variant={isInlineActions ? "outline" : "ghost"}
+                  aria-label="Move meal to another day"
+                >
+                  <CalendarDays className="h-4 w-4 shrink-0" />
+                </Button>
+              </TooltipButton>
+            </span>
+          </PopoverTrigger>
+          <PopoverContent side="right" align="start" className="w-auto p-2">
+            <Calendar
+              mode="single"
+              selected={toPlanDate(plan.date) ?? undefined}
+              onSelect={async (date) => {
+                if (!date) return;
+                await onReschedule(plan, startOfDay(date));
+                setIsMovePopoverOpen(false);
+              }}
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      <Button
+        onClick={() => onToggleMade(plan)}
+        disabled={isMutating}
+        size="sm"
+        className="h-8"
+      >
+        {plan.isMade ? "Not made" : "Made"}
+      </Button>
+    </div>
+  );
+
+  if (props.forceInlineActions) {
+    return (
+      <div className="px-0.5 py-1.5">
+        <Link
+          href={`/recipes/${plan.Recipe.id}`}
+          className={cn(
+            "block w-full text-left text-base font-semibold leading-snug transition-colors hover:text-foreground/80",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+            plan.isMade && "text-muted-foreground",
+          )}
+        >
+          {plan.Recipe.name}
+        </Link>
+        <div className="mt-1.5">{actions}</div>
+      </div>
+    );
+  }
 
   return (
     <HoverCard
@@ -82,89 +179,24 @@ function MealPlanRow(props: {
       <HoverCardContent
         align="start"
         side="right"
-        className="w-72 overflow-visible p-0"
+        className="w-72 overflow-hidden p-0"
       >
-        <div className="space-y-3 p-4">
+        <div className="space-y-3 p-3">
           <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="rounded-full border px-2 py-0.5">{plan.Recipe.type}</span>
+              {plan.isMade && <span className="rounded-full bg-muted px-2 py-0.5">made</span>}
+            </div>
             <Link
               href={`/recipes/${plan.Recipe.id}`}
               className="line-clamp-2 text-base font-semibold leading-tight hover:underline"
             >
               {plan.Recipe.name}
             </Link>
-            <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="rounded-full border px-2 py-0.5">{plan.Recipe.type}</span>
-              {plan.isMade && <span className="rounded-full bg-muted px-2 py-0.5">made</span>}
-            </div>
           </div>
-
-          <div className="flex items-center justify-between border-t pt-3">
-            <div className="flex items-center gap-2">
-              <TooltipButton content="Delete meal">
-                <Button
-                  onClick={() => onDelete(plan.id)}
-                  variant="destructive-outline"
-                  size="icon"
-                  aria-label="Delete meal"
-                >
-                  <Trash className="h-4 w-4 shrink-0" />
-                </Button>
-              </TooltipButton>
-
-              <TooltipButton
-                content={plan.isOnShoppingList ? "Already on list" : "Add to list"}
-              >
-                <Button
-                  onClick={() => {
-                    void onAddToList(plan.id);
-                  }}
-                  disabled={isMutating || plan.isOnShoppingList}
-                  size="icon"
-                  variant="outline"
-                  aria-label="Add to list"
-                >
-                  <ShoppingBasket className="h-4 w-4 shrink-0" />
-                </Button>
-              </TooltipButton>
-
-              <Popover open={isMovePopoverOpen} onOpenChange={setIsMovePopoverOpen}>
-                <PopoverTrigger asChild>
-                  <span className="inline-flex">
-                    <TooltipButton content="Move to another day">
-                      <Button
-                        disabled={isMutating}
-                        size="icon"
-                        variant="outline"
-                        aria-label="Move meal to another day"
-                      >
-                        <CalendarDays className="h-4 w-4 shrink-0" />
-                      </Button>
-                    </TooltipButton>
-                  </span>
-                </PopoverTrigger>
-                <PopoverContent side="right" align="start" className="w-auto p-2">
-                  <Calendar
-                    mode="single"
-                    selected={toPlanDate(plan.date) ?? undefined}
-                    onSelect={async (date) => {
-                      if (!date) return;
-                      await onReschedule(plan, startOfDay(date));
-                      setIsMovePopoverOpen(false);
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <Button
-              onClick={() => onToggleMade(plan)}
-              disabled={isMutating}
-              size="sm"
-              className="h-8"
-            >
-              {plan.isMade ? "Not made" : "Made"}
-            </Button>
-          </div>
+        </div>
+        <div className="border-t bg-muted/30 p-2">
+          {actions}
         </div>
       </HoverCardContent>
     </HoverCard>
@@ -172,6 +204,7 @@ function MealPlanRow(props: {
 }
 
 export function PlanPageClient() {
+  const isMobile = useIsMobile();
   const [shouldHideCompleted, setShouldHideCompleted] = useState(true);
   const [calendarStart, setCalendarStart] = useState(() =>
     startOfWeek(startOfDay(new Date()), { weekStartsOn: 0 }),
@@ -264,6 +297,14 @@ export function PlanPageClient() {
     return map;
   }, [visiblePlans]);
 
+  const calendarDaysToRender = useMemo(() => {
+    if (!isMobile) return calendarDays;
+    return calendarDays.filter((day) => {
+      const key = format(day, "yyyy-MM-dd");
+      return (plansByDay.get(key)?.length ?? 0) > 0;
+    });
+  }, [calendarDays, isMobile, plansByDay]);
+
   return (
     <div className="flex flex-col gap-5">
       {isError && (
@@ -354,8 +395,8 @@ export function PlanPageClient() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-7">
-        {calendarDays.map((day) => {
+      <div className={cn("grid gap-2", isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-7")}>
+        {calendarDaysToRender.map((day) => {
           const dayKey = format(day, "yyyy-MM-dd");
           const dayPlans = plansByDay.get(dayKey) ?? [];
           const isCurrentDay = isToday(day);
@@ -364,60 +405,83 @@ export function PlanPageClient() {
             <div
               key={dayKey}
               className={cn(
-                "flex min-h-[170px] flex-col gap-2 rounded-2xl border bg-card/70 p-3 shadow-sm",
+                "flex min-h-[170px] flex-col overflow-hidden rounded-2xl border bg-card/70 shadow-sm",
+                isMobile && "min-h-0",
                 isCurrentDay && "border-primary/70 bg-primary/5",
               )}
             >
-              <div className="flex items-center justify-between">
+              <div
+                className={cn(
+                  "flex items-center justify-between border-b bg-muted/25 px-3 pb-2 pt-2",
+                  isMobile && "px-4 pb-2 pt-1.5",
+                  isCurrentDay && "bg-primary/10",
+                )}
+              >
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold leading-none">
+                  <span className={cn("text-lg font-semibold leading-none", isMobile && "text-2xl")}>
                     {format(day, "d")}
                   </span>
-                  <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                  <span
+                    className={cn(
+                      "text-xs uppercase tracking-wide text-muted-foreground",
+                      isMobile && "text-sm",
+                    )}
+                  >
                     {format(day, "MMM")}
                   </span>
                   <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground md:hidden">
                     {format(day, "EEE")}
                   </span>
                 </div>
-              </div>
-
-              <div className="flex flex-1 flex-col gap-1">
-                {dayPlans.map((plan) => (
-                  <MealPlanRow
-                    key={plan.id}
-                    plan={plan}
-                    onDelete={handleDelete}
-                    onToggleMade={(selectedPlan) => {
-                      updatePlan.mutate({
-                        id: selectedPlan.id,
-                        isMade: !selectedPlan.isMade,
-                      });
-                    }}
-                    onAddToList={(id) => addMealPlanToList.mutateAsync({ id })}
-                    onReschedule={(selectedPlan, date) =>
-                      updatePlan.mutateAsync({
-                        id: selectedPlan.id,
-                        date,
-                      })
-                    }
-                    isMutating={updatePlan.isPending || addMealPlanToList.isPending}
-                  />
-                ))}
-              </div>
-
-              <div className="mt-auto flex justify-center pt-1">
                 <RecipePickerPopover
+                  day={day}
                   iconOnly
                   onRecipeSelected={async (recipeId) => {
                     await handleAddToMealPlan(recipeId, startOfDay(day));
                   }}
                 />
               </div>
+
+              <div className={cn("flex flex-1 flex-col gap-1 p-3", isMobile && "gap-0 p-4 pt-3")}>
+                {dayPlans.map((plan, index) => (
+                  <div key={plan.id}>
+                    <MealPlanRow
+                      plan={plan}
+                      forceInlineActions={isMobile}
+                      onDelete={handleDelete}
+                      onToggleMade={(selectedPlan) => {
+                        updatePlan.mutate({
+                          id: selectedPlan.id,
+                          isMade: !selectedPlan.isMade,
+                        });
+                      }}
+                      onAddToList={(id) => addMealPlanToList.mutateAsync({ id })}
+                      onReschedule={(selectedPlan, date) =>
+                        updatePlan.mutateAsync({
+                          id: selectedPlan.id,
+                          date,
+                        })
+                      }
+                      isMutating={updatePlan.isPending || addMealPlanToList.isPending}
+                    />
+                    {isMobile && index < dayPlans.length - 1 && (
+                      <hr className="my-2 border-border/70" />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           );
         })}
       </div>
+
+      {isMobile && calendarDaysToRender.length === 0 && (
+        <section className="rounded-2xl border bg-card/70 p-4 shadow-sm">
+          <p className="text-base text-muted-foreground">
+            No meals planned in this range.
+          </p>
+        </section>
+      )}
 
       <section className="rounded-2xl border bg-card/70 p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-2">
