@@ -8,6 +8,10 @@ import { ShoppingRecipeItem } from "./ShoppingRecipeItem";
 import { useMemo, useState } from "react";
 import { Label } from "~/components/ui/label";
 import { useRadioList } from "./useRadioList";
+import { IconTextButton } from "~/components/ui/icon-text-button";
+import { Check, ClipboardCopy } from "lucide-react";
+import { getIngredientLabel } from "./getIngredientLabel";
+import { normalizeAisleName } from "~/lib/titleCase";
 
 export const groupModes = ["recipe", "aisle"] as const;
 
@@ -67,7 +71,7 @@ export function ShoppingList(props: { actions?: ReactNode }) {
         acc[key]!.push(item);
       } else if (groupMode === "aisle") {
         const aisleRaw = item.ingredient?.aisle;
-        const key = aisleRaw ? aisleRaw.toLowerCase() : "Unknown Aisle";
+        const key = normalizeAisleName(aisleRaw) ?? "Unknown Aisle";
         if (acc[key] === undefined) {
           acc[key] = [];
         }
@@ -79,6 +83,7 @@ export function ShoppingList(props: { actions?: ReactNode }) {
   );
 
   const [hiddenKeys, setHiddenKeys] = useState<string[]>([]);
+  const [copiedAppleNotesList, setCopiedAppleNotesList] = useState(false);
 
   const groupedKeys = Object.keys(groupedShoppingList);
   groupedKeys.sort();
@@ -97,6 +102,23 @@ export function ShoppingList(props: { actions?: ReactNode }) {
 
     return aMax - bMax;
   });
+
+  const appleNotesListText = useMemo(() => {
+    const sortedItems = shoppingList
+      .filter((item) => !item.isBought)
+      .sort((a, b) => {
+        const aAisle = a.ingredient?.aisle?.trim().toLowerCase();
+        const bAisle = b.ingredient?.aisle?.trim().toLowerCase();
+        const aAisleSort = aAisle ? aAisle : "zzzz";
+        const bAisleSort = bAisle ? bAisle : "zzzz";
+        const aisleCompare = aAisleSort.localeCompare(bAisleSort);
+        if (aisleCompare !== 0) return aisleCompare;
+
+        return getIngredientLabel(a).localeCompare(getIngredientLabel(b));
+      });
+
+    return sortedItems.map((item) => getIngredientLabel(item)).join("\n");
+  }, [shoppingList]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -130,6 +152,24 @@ export function ShoppingList(props: { actions?: ReactNode }) {
             </Label>
             <div className="flex flex-wrap items-center gap-2">
               {actions}
+              <IconTextButton
+                type="button"
+                variant="outline"
+                disabled={!appleNotesListText}
+                onClick={async () => {
+                  await navigator.clipboard.writeText(appleNotesListText);
+                  setCopiedAppleNotesList(true);
+                  window.setTimeout(() => setCopiedAppleNotesList(false), 1800);
+                }}
+                icon={
+                  copiedAppleNotesList ? (
+                    <Check className="h-4 w-4 shrink-0" />
+                  ) : (
+                    <ClipboardCopy className="h-4 w-4 shrink-0" />
+                  )
+                }
+                label={copiedAppleNotesList ? "Copied" : "Copy for Notes"}
+              />
             </div>
           </div>
           <div className="space-y-2">
@@ -144,9 +184,7 @@ export function ShoppingList(props: { actions?: ReactNode }) {
       <section className="rounded-2xl bg-card/70 p-3 shadow-sm">
         <div className="flex flex-col gap-3">
           {groupedKeys.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No items added yet.
-            </p>
+            <p className="text-sm text-muted-foreground">No items added yet.</p>
           ) : (
             groupedKeys.map((key) => {
               const items = groupedShoppingList[key]!;

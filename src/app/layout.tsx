@@ -9,6 +9,7 @@ import { MainPageWithNav } from "../components/MainPageWithNav";
 import { TailwindIndicator } from "./TailwindIndicator";
 import { GlobalAddTagDialog } from "~/components/GlobalAddTagDialog";
 import { RuntimeErrorOverlay } from "~/components/RuntimeErrorOverlay";
+import { Toaster } from "~/components/ui/sonner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -42,6 +43,7 @@ export default async function RootLayout({
           </HydrationBoundary>
           <GlobalAddTagDialog />
           <RuntimeErrorOverlay />
+          <Toaster />
         </TRPCReactProvider>
 
         <TailwindIndicator />

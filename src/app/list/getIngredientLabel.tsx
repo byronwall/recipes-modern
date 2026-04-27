@@ -8,5 +8,5 @@ export function getIngredientLabel(item: ShoppingListItem) {
     return [amount, unit, ingredient, modifier].filter(Boolean).join(" ");
   }
 
-  return item.looseItem;
+  return item.looseItem ?? "";
 }

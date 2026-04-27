@@ -4,6 +4,7 @@ import { RecipeType } from "@prisma/client";
 import { faker } from "@faker-js/faker";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { normalizeAisleName } from "~/lib/titleCase";
 import { db } from "~/server/db";
 import { type Ingredient2, type Root } from "./old_types";
 
@@ -624,7 +625,7 @@ export const recipeRouter = createTRPCRouter({
               ingredient: oldIngredient.name,
               plu: oldIngredient.plu,
               isGoodName: oldIngredient.isGoodName,
-              aisle: oldIngredient.aisle,
+              aisle: normalizeAisleName(oldIngredient.aisle),
               comments: oldIngredient.comments,
               amount: String(ingredient.amount),
               modifier: ingredient.modifier,
@@ -661,7 +662,7 @@ export const recipeRouter = createTRPCRouter({
       const ingredient = await db.ingredient.update({
         where: { id: input.id },
         data: {
-          aisle: input.aisle,
+          aisle: normalizeAisleName(input.aisle),
         },
       });
 
@@ -681,10 +682,13 @@ export const recipeRouter = createTRPCRouter({
       select: { aisle: true },
     });
 
-    const aisles = rows
-      .map((r) => r.aisle)
-      .filter((v): v is string => Boolean(v))
-      .sort((a, b) => a.localeCompare(b));
+    const aisles = Array.from(
+      new Set(
+        rows
+          .map((r) => normalizeAisleName(r.aisle))
+          .filter((aisle): aisle is string => Boolean(aisle)),
+      ),
+    ).sort((a, b) => a.localeCompare(b));
 
     return aisles;
   }),
