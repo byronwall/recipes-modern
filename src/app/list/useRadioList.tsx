@@ -3,15 +3,22 @@
 import { useState } from "react";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 
-export function useRadioList(items: readonly string[], defaultValue: string) {
-  const [groupMode, setGroupMode] = useState(defaultValue);
+export function useRadioList<T extends string>(
+  items: readonly T[],
+  defaultValue: T,
+  controlledValue?: T,
+  onControlledValueChange?: (value: T) => void,
+) {
+  const [internalGroupMode, setInternalGroupMode] = useState(defaultValue);
+  const groupMode = controlledValue ?? internalGroupMode;
+  const setGroupMode = onControlledValueChange ?? setInternalGroupMode;
 
   const radioGroupComp = (
     <ToggleGroup
       type="single"
       value={groupMode}
       onValueChange={(value) => {
-        if (value) setGroupMode(value);
+        if (value) setGroupMode(value as T);
       }}
       variant="outline"
       size="sm"

@@ -12,8 +12,10 @@ import { IconTextButton } from "~/components/ui/icon-text-button";
 import { Check, ClipboardCopy } from "lucide-react";
 import { getIngredientLabel } from "./getIngredientLabel";
 import { normalizeAisleName } from "~/lib/titleCase";
+import { urlStateCodecs, useUrlState } from "~/hooks/use-url-state";
 
 export const groupModes = ["recipe", "aisle"] as const;
+const groupModeCodec = urlStateCodecs.enum(groupModes, "recipe");
 
 export function ShoppingList(props: { actions?: ReactNode }) {
   const { actions } = props;
@@ -57,7 +59,13 @@ export function ShoppingList(props: { actions?: ReactNode }) {
     }
   }
 
-  const { groupMode, radioGroupComp } = useRadioList(groupModes, "recipe");
+  const [groupMode, setGroupMode] = useUrlState("group", groupModeCodec);
+  const { radioGroupComp } = useRadioList(
+    groupModes,
+    "recipe",
+    groupMode,
+    setGroupMode,
+  );
 
   const groupedShoppingList = shoppingList.reduce(
     (acc, item) => {

@@ -24,8 +24,16 @@ import { buildLightboxImages, getImageUrl } from "~/lib/media";
 import { NewRecipeDialog } from "./recipes/new/NewRecipeDialog";
 import { CardGrid } from "~/components/layout/CardGrid";
 import { PageHeaderCard } from "~/components/layout/PageHeaderCard";
+import {
+  urlStateCodecs,
+  useReplaceUrlParams,
+  useUrlState,
+} from "~/hooks/use-url-state";
 
 const defaultRecipes: Recipe[] = [];
+const recipeSearchCodec = urlStateCodecs.string();
+const recipeTypeCodec = urlStateCodecs.optionalEnum(Object.values(RecipeType));
+const recipeTagsCodec = urlStateCodecs.csv();
 
 type RecipeWithTags = Recipe & {
   tags?: { tag: { id: string; name: string; slug: string } }[];
@@ -43,14 +51,15 @@ type RecipeWithTags = Recipe & {
 };
 
 export function RecipeList() {
-  const [search, setSearch] = useState("");
-  const [type, setType] = useState<RecipeType | undefined>(undefined);
-  const [tags, setTags] = useState<{ slug: string; name: string }[]>([]);
+  const [search, setSearch] = useUrlState("q", recipeSearchCodec);
+  const [type, setType] = useUrlState("type", recipeTypeCodec);
+  const [tagSlugs, setTagSlugs] = useUrlState("tags", recipeTagsCodec);
+  const replaceUrlParams = useReplaceUrlParams();
   // global add tag dialog handles creation
 
   const { data: _recipes } = api.recipe.list.useQuery({
     type,
-    includeTags: tags.map((t) => t.slug),
+    includeTags: tagSlugs,
   });
 
   // popular and all tags for picker UI
@@ -91,8 +100,22 @@ export function RecipeList() {
     [recipes, deferredSearch],
   );
 
+  const selectedTags = useMemo(() => {
+    const tagsBySlug = new Map(
+      [...(popularData ?? []), ...(allTagsData ?? [])].map((tag) => [
+        tag.slug,
+        tag.name,
+      ]),
+    );
+
+    return tagSlugs.map((slug) => ({
+      slug,
+      name: tagsBySlug.get(slug) ?? slug,
+    }));
+  }, [allTagsData, popularData, tagSlugs]);
+
   const hasFilters =
-    search.trim().length > 0 || Boolean(type) || tags.length > 0;
+    search.trim().length > 0 || Boolean(type) || tagSlugs.length > 0;
   const showDevActions = process.env.NODE_ENV === "development";
 
   return (
@@ -121,7 +144,7 @@ export function RecipeList() {
               </Label>
               <div className="flex flex-wrap items-center gap-2">
                 {(popularData ?? []).map((t) => {
-                  const selected = tags.some((x) => x.slug === t.slug);
+                  const selected = tagSlugs.includes(t.slug);
                   return (
                     <Button
                       key={t.slug}
@@ -129,9 +152,11 @@ export function RecipeList() {
                       variant={selected ? "default" : "outline"}
                       onClick={() => {
                         if (selected) {
-                          setTags(tags.filter((x) => x.slug !== t.slug));
+                          setTagSlugs(
+                            tagSlugs.filter((slug) => slug !== t.slug),
+                          );
                         } else {
-                          setTags([...tags, { slug: t.slug, name: t.name }]);
+                          setTagSlugs([...tagSlugs, t.slug]);
                         }
                       }}
                     >
@@ -143,16 +168,12 @@ export function RecipeList() {
 
               <Select
                 onValueChange={(slug) => {
-                  const exists = tags.some((t) => t.slug === slug);
+                  const exists = tagSlugs.includes(slug);
                   if (exists) return;
                   const picked = (allTagsData ?? []).find(
                     (t) => t.slug === slug,
                   );
-                  if (picked)
-                    setTags([
-                      ...tags,
-                      { slug: picked.slug, name: picked.name },
-                    ]);
+                  if (picked) setTagSlugs([...tagSlugs, picked.slug]);
                 }}
               >
                 <SelectTrigger className="w-[200px]">
@@ -164,7 +185,7 @@ export function RecipeList() {
                       (t) =>
                         !(popularData ?? []).some((p) => p.slug === t.slug),
                     )
-                    .filter((t) => !tags.some((x) => x.slug === t.slug))
+                    .filter((t) => !tagSlugs.includes(t.slug))
                     .map((t) => (
                       <SelectItem key={t.slug} value={t.slug}>
                         {t.name}
@@ -178,9 +199,7 @@ export function RecipeList() {
                   size="sm"
                   variant="ghost"
                   onClick={() => {
-                    setTags([]);
-                    setType(undefined);
-                    setSearch("");
+                    replaceUrlParams({ q: null, type: null, tags: null });
                   }}
                   className="text-muted-foreground"
                 >
@@ -232,7 +251,7 @@ export function RecipeList() {
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t pt-3">
           <div className="flex flex-wrap gap-2">
-            {tags.map((t) => (
+            {selectedTags.map((t) => (
               <span
                 key={t.slug}
                 className="rounded-full bg-muted px-3 py-1 text-xs"
@@ -240,7 +259,9 @@ export function RecipeList() {
                 {t.name}
                 <button
                   className="ml-1"
-                  onClick={() => setTags(tags.filter((x) => x.slug !== t.slug))}
+                  onClick={() =>
+                    setTagSlugs(tagSlugs.filter((slug) => slug !== t.slug))
+                  }
                 >
                   ×
                 </button>

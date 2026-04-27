@@ -1,18 +1,35 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { api } from "~/trpc/react";
 import { PurchasesFiltersPanel } from "./PurchasesFiltersPanel";
 import { type PurchaseStatusFilter } from "./PurchasesFiltersPanel";
 import { PurchasesTable } from "./PurchasesTable";
+import {
+  urlStateCodecs,
+  useReplaceUrlParams,
+  useUrlState,
+} from "~/hooks/use-url-state";
+
+const purchaseStatusCodec = urlStateCodecs.enum<PurchaseStatusFilter>(
+  ["all", "added", "attempted"],
+  "all",
+);
+const purchaseSearchCodec = urlStateCodecs.string();
+const purchaseCategoryCodec = urlStateCodecs.string("all");
+const purchasePageCodec = urlStateCodecs.number(1);
+const purchasePageSizeCodec = urlStateCodecs.number(25, {
+  allowedValues: [10, 25, 50, 100],
+});
 
 export function PurchasesList() {
   const { data, isLoading, error } = api.purchases.list.useQuery();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<PurchaseStatusFilter>("all");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const replaceUrlParams = useReplaceUrlParams();
+  const [search] = useUrlState("q", purchaseSearchCodec);
+  const [statusFilter] = useUrlState("status", purchaseStatusCodec);
+  const [categoryFilter] = useUrlState("category", purchaseCategoryCodec);
+  const [page, setPage] = useUrlState("page", purchasePageCodec);
+  const [pageSize] = useUrlState("pageSize", purchasePageSizeCodec);
   const purchases = useMemo(() => data ?? [], [data]);
 
   const categoryOptions = useMemo(() => {
@@ -56,7 +73,10 @@ export function PurchasesList() {
     });
   }, [purchases, search, statusFilter, categoryFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredPurchases.length / pageSize));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredPurchases.length / pageSize),
+  );
   const safePage = Math.min(page, totalPages);
   const pagedPurchases = filteredPurchases.slice(
     (safePage - 1) * pageSize,
@@ -72,11 +92,21 @@ export function PurchasesList() {
     <div className="flex flex-col gap-4">
       <PurchasesFiltersPanel
         search={search}
-        onSearchChange={setSearch}
+        onSearchChange={(value) => replaceUrlParams({ q: value, page: null })}
         statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
+        onStatusFilterChange={(value) =>
+          replaceUrlParams({
+            status: value === "all" ? null : value,
+            page: null,
+          })
+        }
         categoryFilter={categoryFilter}
-        onCategoryFilterChange={setCategoryFilter}
+        onCategoryFilterChange={(value) =>
+          replaceUrlParams({
+            category: value === "all" ? null : value,
+            page: null,
+          })
+        }
         categoryOptions={categoryOptions}
       />
 
@@ -87,11 +117,16 @@ export function PurchasesList() {
         pageSize={pageSize}
         totalPages={totalPages}
         onPageSizeChange={(value) => {
-          setPageSize(value);
-          setPage(1);
+          replaceUrlParams({
+            pageSize:
+              value === purchasePageSizeCodec.defaultValue
+                ? null
+                : String(value),
+            page: null,
+          });
         }}
-        onPreviousPage={() => setPage((p) => Math.max(1, p - 1))}
-        onNextPage={() => setPage((p) => Math.min(totalPages, p + 1))}
+        onPreviousPage={() => setPage(Math.max(1, safePage - 1))}
+        onNextPage={() => setPage(Math.min(totalPages, safePage + 1))}
       />
     </div>
   );

@@ -30,7 +30,11 @@ import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { TooltipButton } from "~/components/ui/tooltip-button";
 import { H1 } from "~/components/ui/typography";
-import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 import { useIsMobile } from "~/hooks/use-mobile";
 import { cn } from "~/lib/utils";
 import { api, type RouterOutputs } from "~/trpc/react";
@@ -38,14 +42,25 @@ import { AddToMealPlanPopover } from "../AddToMealPlanPopover";
 import { useMealPlanActions } from "../useMealPlanActions";
 import { useRecipeActions } from "../useRecipeActions";
 import { RecipePickerPopover } from "./RecipePickerPopover";
+import { urlStateCodecs, useUrlState } from "~/hooks/use-url-state";
 
 type PlannedMealWithRecipe = RouterOutputs["recipe"]["getMealPlans"][0];
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const hideMadeCodec = urlStateCodecs.boolean(true);
 
 function toPlanDate(value: Date | string): Date | null {
   const parsed = value instanceof Date ? value : new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function toCalendarDateKey(value: Date) {
+  return format(startOfDay(value), "yyyy-MM-dd");
+}
+
+function fromCalendarDateKey(value: string) {
+  const parsed = new Date(`${value}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? null : startOfDay(parsed);
 }
 
 function MealPlanRow(props: {
@@ -57,16 +72,20 @@ function MealPlanRow(props: {
   isMutating: boolean;
   forceInlineActions?: boolean;
 }) {
-  const { plan, onDelete, onToggleMade, onAddToList, onReschedule, isMutating } =
-    props;
+  const {
+    plan,
+    onDelete,
+    onToggleMade,
+    onAddToList,
+    onReschedule,
+    isMutating,
+  } = props;
   const [isHoverOpen, setIsHoverOpen] = useState(false);
   const [isMovePopoverOpen, setIsMovePopoverOpen] = useState(false);
   const isInlineActions = Boolean(props.forceInlineActions);
 
   const actions = (
-    <div
-      className="flex items-center justify-between"
-    >
+    <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
         <TooltipButton content="Delete meal">
           <Button
@@ -184,8 +203,12 @@ function MealPlanRow(props: {
         <div className="space-y-3 p-3">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="rounded-full border px-2 py-0.5">{plan.Recipe.type}</span>
-              {plan.isMade && <span className="rounded-full bg-muted px-2 py-0.5">made</span>}
+              <span className="rounded-full border px-2 py-0.5">
+                {plan.Recipe.type}
+              </span>
+              {plan.isMade && (
+                <span className="rounded-full bg-muted px-2 py-0.5">made</span>
+              )}
             </div>
             <Link
               href={`/recipes/${plan.Recipe.id}`}
@@ -195,9 +218,7 @@ function MealPlanRow(props: {
             </Link>
           </div>
         </div>
-        <div className="border-t bg-muted/30 p-2">
-          {actions}
-        </div>
+        <div className="border-t bg-muted/30 p-2">{actions}</div>
       </HoverCardContent>
     </HoverCard>
   );
@@ -205,10 +226,24 @@ function MealPlanRow(props: {
 
 export function PlanPageClient() {
   const isMobile = useIsMobile();
-  const [shouldHideCompleted, setShouldHideCompleted] = useState(true);
-  const [calendarStart, setCalendarStart] = useState(() =>
+  const defaultCalendarStart = toCalendarDateKey(
     startOfWeek(startOfDay(new Date()), { weekStartsOn: 0 }),
   );
+  const calendarStartCodec = useMemo(
+    () => urlStateCodecs.string(defaultCalendarStart),
+    [defaultCalendarStart],
+  );
+  const [shouldHideCompleted, setShouldHideCompleted] = useUrlState(
+    "hideMade",
+    hideMadeCodec,
+  );
+  const [calendarStartKey, setCalendarStartKey] = useUrlState(
+    "start",
+    calendarStartCodec,
+  );
+  const calendarStart =
+    fromCalendarDateKey(calendarStartKey) ??
+    startOfWeek(startOfDay(new Date()), { weekStartsOn: 0 });
   const calendarEnd = endOfDay(addDays(calendarStart, 20));
 
   const { data, error, isError, isFetching, refetch } =
@@ -220,7 +255,8 @@ export function PlanPageClient() {
   const updatePlan = api.mealPlan.updateMealPlan.useMutation();
 
   const calendarDays = useMemo(
-    () => Array.from({ length: 21 }, (_, index) => addDays(calendarStart, index)),
+    () =>
+      Array.from({ length: 21 }, (_, index) => addDays(calendarStart, index)),
     [calendarStart],
   );
 
@@ -314,7 +350,9 @@ export function PlanPageClient() {
               <h2 className="text-sm font-semibold text-destructive">
                 Failed to load meal plans
               </h2>
-              <p className="mt-1 text-xs text-destructive/80">{error.message}</p>
+              <p className="mt-1 text-xs text-destructive/80">
+                {error.message}
+              </p>
             </div>
             <Button
               type="button"
@@ -342,7 +380,10 @@ export function PlanPageClient() {
                 onCheckedChange={setShouldHideCompleted}
                 id="hide-completed"
               />
-              <Label htmlFor="hide-completed" className="cursor-pointer text-sm">
+              <Label
+                htmlFor="hide-completed"
+                className="cursor-pointer text-sm"
+              >
                 Hide made meals
               </Label>
             </div>
@@ -353,7 +394,11 @@ export function PlanPageClient() {
                   variant="outline"
                   size="icon"
                   aria-label="Previous week"
-                  onClick={() => setCalendarStart((current) => addDays(current, -7))}
+                  onClick={() =>
+                    setCalendarStartKey(
+                      toCalendarDateKey(addDays(calendarStart, -7)),
+                    )
+                  }
                 >
                   <ChevronLeft className="h-4 w-4 shrink-0" />
                 </Button>
@@ -362,9 +407,7 @@ export function PlanPageClient() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  setCalendarStart(startOfWeek(startOfDay(new Date()), { weekStartsOn: 0 }))
-                }
+                onClick={() => setCalendarStartKey(defaultCalendarStart)}
               >
                 Today
               </Button>
@@ -374,7 +417,11 @@ export function PlanPageClient() {
                   variant="outline"
                   size="icon"
                   aria-label="Next week"
-                  onClick={() => setCalendarStart((current) => addDays(current, 7))}
+                  onClick={() =>
+                    setCalendarStartKey(
+                      toCalendarDateKey(addDays(calendarStart, 7)),
+                    )
+                  }
                 >
                   <ChevronRight className="h-4 w-4 shrink-0" />
                 </Button>
@@ -395,7 +442,12 @@ export function PlanPageClient() {
         ))}
       </div>
 
-      <div className={cn("grid gap-2", isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-7")}>
+      <div
+        className={cn(
+          "grid gap-2",
+          isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-7",
+        )}
+      >
         {calendarDaysToRender.map((day) => {
           const dayKey = format(day, "yyyy-MM-dd");
           const dayPlans = plansByDay.get(dayKey) ?? [];
@@ -418,7 +470,12 @@ export function PlanPageClient() {
                 )}
               >
                 <div className="flex items-center gap-2">
-                  <span className={cn("text-lg font-semibold leading-none", isMobile && "text-2xl")}>
+                  <span
+                    className={cn(
+                      "text-lg font-semibold leading-none",
+                      isMobile && "text-2xl",
+                    )}
+                  >
                     {format(day, "d")}
                   </span>
                   <span
@@ -442,7 +499,12 @@ export function PlanPageClient() {
                 />
               </div>
 
-              <div className={cn("flex flex-1 flex-col gap-1 p-3", isMobile && "gap-0 p-4 pt-3")}>
+              <div
+                className={cn(
+                  "flex flex-1 flex-col gap-1 p-3",
+                  isMobile && "gap-0 p-4 pt-3",
+                )}
+              >
                 {dayPlans.map((plan, index) => (
                   <div key={plan.id}>
                     <MealPlanRow
@@ -455,14 +517,18 @@ export function PlanPageClient() {
                           isMade: !selectedPlan.isMade,
                         });
                       }}
-                      onAddToList={(id) => addMealPlanToList.mutateAsync({ id })}
+                      onAddToList={(id) =>
+                        addMealPlanToList.mutateAsync({ id })
+                      }
                       onReschedule={(selectedPlan, date) =>
                         updatePlan.mutateAsync({
                           id: selectedPlan.id,
                           date,
                         })
                       }
-                      isMutating={updatePlan.isPending || addMealPlanToList.isPending}
+                      isMutating={
+                        updatePlan.isPending || addMealPlanToList.isPending
+                      }
                     />
                     {isMobile && index < dayPlans.length - 1 && (
                       <hr className="my-2 border-border/70" />
@@ -485,8 +551,12 @@ export function PlanPageClient() {
 
       <section className="rounded-2xl border bg-card/70 p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold tracking-tight">Popular Dishes</h2>
-          <span className="text-xs text-muted-foreground">Top 10 by times made</span>
+          <h2 className="text-lg font-semibold tracking-tight">
+            Popular Dishes
+          </h2>
+          <span className="text-xs text-muted-foreground">
+            Top 10 by times made
+          </span>
         </div>
         {popularDishes.length === 0 ? (
           <p className="text-sm text-muted-foreground">No made meals yet.</p>
@@ -513,7 +583,10 @@ export function PlanPageClient() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <AddToMealPlanPopover recipeId={dish.recipeId} display="icon" />
+                  <AddToMealPlanPopover
+                    recipeId={dish.recipeId}
+                    display="icon"
+                  />
                 </div>
               </div>
             ))}
@@ -523,33 +596,41 @@ export function PlanPageClient() {
 
       <section className="rounded-2xl border bg-card/70 p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold tracking-tight">Recently Made</h2>
-          <span className="text-xs text-muted-foreground">Last 5 made meals</span>
+          <h2 className="text-lg font-semibold tracking-tight">
+            Recently Made
+          </h2>
+          <span className="text-xs text-muted-foreground">
+            Last 5 made meals
+          </span>
         </div>
         {recentlyMade.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing marked made yet.</p>
+          <p className="text-sm text-muted-foreground">
+            Nothing marked made yet.
+          </p>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {recentlyMade.map((plan) => {
               const planDate = toPlanDate(plan.date);
               return (
-                  <Link
-                    key={plan.id}
-                    href={`/recipes/${plan.Recipe.id}`}
-                    className="flex min-h-[120px] flex-col gap-2 rounded-xl border bg-background/80 p-3 transition-colors hover:bg-background"
-                  >
-                    <div className="line-clamp-2 text-sm font-semibold leading-tight">
-                      {plan.Recipe.name}
-                    </div>
-                    <div className="mt-auto flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                      <span>{plan.Recipe.type}</span>
-                      <span>
-                        {planDate ? format(planDate, "MMM d, yyyy") : "Unknown date"}
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })}
+                <Link
+                  key={plan.id}
+                  href={`/recipes/${plan.Recipe.id}`}
+                  className="flex min-h-[120px] flex-col gap-2 rounded-xl border bg-background/80 p-3 transition-colors hover:bg-background"
+                >
+                  <div className="line-clamp-2 text-sm font-semibold leading-tight">
+                    {plan.Recipe.name}
+                  </div>
+                  <div className="mt-auto flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <span>{plan.Recipe.type}</span>
+                    <span>
+                      {planDate
+                        ? format(planDate, "MMM d, yyyy")
+                        : "Unknown date"}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>

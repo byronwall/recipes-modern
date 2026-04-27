@@ -27,20 +27,43 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "~/components/ui/hover-card";
-import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 import { api } from "~/trpc/react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "~/lib/utils";
+import {
+  urlStateCodecs,
+  useReplaceUrlParams,
+  useUrlState,
+} from "~/hooks/use-url-state";
+
+const ingredientSearchCodec = urlStateCodecs.string();
+const ingredientRecipeCodec = urlStateCodecs.string("all");
+const ingredientAisleCodec = urlStateCodecs.string("all");
+const ingredientPurchaseCodec = urlStateCodecs.enum(
+  ["all", "with", "without"] as const,
+  "all",
+);
+const ingredientPageCodec = urlStateCodecs.number(1);
+const ingredientPageSizeCodec = urlStateCodecs.number(24, {
+  allowedValues: [12, 24, 36, 60],
+});
 
 export function IngredientsClient() {
-  const { data, isLoading, error } = api.purchases.ingredientsCatalog.useQuery();
-  const [search, setSearch] = useState("");
-  const [recipeFilter, setRecipeFilter] = useState("all");
+  const { data, isLoading, error } =
+    api.purchases.ingredientsCatalog.useQuery();
+  const replaceUrlParams = useReplaceUrlParams();
+  const [search] = useUrlState("q", ingredientSearchCodec);
+  const [recipeFilter] = useUrlState("recipe", ingredientRecipeCodec);
   const [recipeFilterOpen, setRecipeFilterOpen] = useState(false);
-  const [aisleFilter, setAisleFilter] = useState("all");
-  const [purchaseFilter, setPurchaseFilter] = useState("all");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(24);
+  const [aisleFilter] = useUrlState("aisle", ingredientAisleCodec);
+  const [purchaseFilter] = useUrlState("purchases", ingredientPurchaseCodec);
+  const [page, setPage] = useUrlState("page", ingredientPageCodec);
+  const [pageSize] = useUrlState("pageSize", ingredientPageSizeCodec);
 
   const ingredients = useMemo(() => data ?? [], [data]);
 
@@ -105,7 +128,10 @@ export function IngredientsClient() {
       );
     });
   }, [ingredients, search, recipeFilter, aisleFilter, purchaseFilter]);
-  const totalPages = Math.max(1, Math.ceil(filteredIngredients.length / pageSize));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredIngredients.length / pageSize),
+  );
   const safePage = Math.min(page, totalPages);
   const recipeFilterLabel =
     recipeFilter === "all"
@@ -131,7 +157,9 @@ export function IngredientsClient() {
             </Label>
             <Input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) =>
+                replaceUrlParams({ q: event.target.value, page: null })
+              }
               placeholder="Filter ingredients, recipes, or aisles"
             />
           </div>
@@ -160,7 +188,7 @@ export function IngredientsClient() {
                       value="All recipes"
                       className="bg-accent/40 font-medium hover:bg-accent/60 data-[selected=true]:bg-accent/70"
                       onSelect={() => {
-                        setRecipeFilter("all");
+                        replaceUrlParams({ recipe: null, page: null });
                         setRecipeFilterOpen(false);
                       }}
                     >
@@ -177,7 +205,10 @@ export function IngredientsClient() {
                         key={id}
                         value={name}
                         onSelect={() => {
-                          setRecipeFilter(String(id));
+                          replaceUrlParams({
+                            recipe: String(id),
+                            page: null,
+                          });
                           setRecipeFilterOpen(false);
                         }}
                       >
@@ -201,7 +232,15 @@ export function IngredientsClient() {
             <Label className="text-xs uppercase text-muted-foreground">
               Aisle
             </Label>
-            <Select value={aisleFilter} onValueChange={setAisleFilter}>
+            <Select
+              value={aisleFilter}
+              onValueChange={(value) =>
+                replaceUrlParams({
+                  aisle: value === "all" ? null : value,
+                  page: null,
+                })
+              }
+            >
               <SelectTrigger className="h-9">
                 <SelectValue placeholder="All aisles" />
               </SelectTrigger>
@@ -222,7 +261,12 @@ export function IngredientsClient() {
             type="single"
             value={purchaseFilter}
             onValueChange={(value) => {
-              if (value) setPurchaseFilter(value);
+              if (value) {
+                replaceUrlParams({
+                  purchases: value === "all" ? null : value,
+                  page: null,
+                });
+              }
             }}
             variant="outline"
             size="sm"
@@ -323,8 +367,13 @@ export function IngredientsClient() {
             <Select
               value={String(pageSize)}
               onValueChange={(value) => {
-                setPageSize(Number(value));
-                setPage(1);
+                replaceUrlParams({
+                  pageSize:
+                    Number(value) === ingredientPageSizeCodec.defaultValue
+                      ? null
+                      : value,
+                  page: null,
+                });
               }}
             >
               <SelectTrigger className="h-8 w-[110px] text-xs">
@@ -341,7 +390,7 @@ export function IngredientsClient() {
             <button
               className="rounded-md border px-2 py-1 text-xs disabled:opacity-50"
               disabled={safePage === 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => setPage(Math.max(1, safePage - 1))}
             >
               Prev
             </button>
@@ -351,7 +400,7 @@ export function IngredientsClient() {
             <button
               className="rounded-md border px-2 py-1 text-xs disabled:opacity-50"
               disabled={safePage === totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              onClick={() => setPage(Math.min(totalPages, safePage + 1))}
             >
               Next
             </button>
