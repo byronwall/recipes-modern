@@ -12,7 +12,15 @@ export const shoppingListRouter = createTRPCRouter({
     const shoppingList = db.shoppingList.findMany({
       where: { userId },
       include: {
-        ingredient: true,
+        ingredient: {
+          include: {
+            group: {
+              select: {
+                title: true,
+              },
+            },
+          },
+        },
         Recipe: {
           select: {
             name: true,

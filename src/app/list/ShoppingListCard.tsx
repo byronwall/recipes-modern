@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { Button } from "~/components/ui/button";
 import { type RouterOutputs } from "~/trpc/react";
 import { useShoppingListActions } from "../useShoppingListActions";
@@ -33,6 +35,12 @@ export function ShoppingListCard(props: {
   // if display mode is aisle, show the recipe; flip if display mode is recipe
   const extraLabel =
     props.displayMode === "aisle" ? item.Recipe?.name : item.ingredient?.aisle;
+  const linkedRecipe = props.displayMode === "aisle" ? item.Recipe : null;
+  const ingredientGroupTitle = item.ingredient?.group.title.trim();
+  const ingredientGroupLabel =
+    ingredientGroupTitle && ingredientGroupTitle.toLowerCase() !== "ingredients"
+      ? ` [${ingredientGroupTitle}]`
+      : "";
 
   return (
     <div className="rounded-2xl bg-background/60 px-2 py-1.5 transition-colors hover:bg-accent/30">
@@ -58,7 +66,17 @@ export function ShoppingListCard(props: {
             >
               {ingredientLabel}
             </Label>
-            {extraLabel && !isBought ? (
+            {linkedRecipe && !isBought ? (
+              <p className="mt-1 truncate text-xs text-muted-foreground">
+                <Link
+                  href={`/recipes/${linkedRecipe.id}`}
+                  className="hover:text-foreground hover:underline"
+                >
+                  {linkedRecipe.name}
+                  {ingredientGroupLabel}
+                </Link>
+              </p>
+            ) : extraLabel && !isBought ? (
               <p className="mt-1 truncate text-xs text-muted-foreground">
                 {extraLabel}
               </p>
