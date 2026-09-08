@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { type API_KrogerAddCart } from "~/app/kroger/model";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
-import { doKrogerSearch } from "~/server/kroger";
+import { doKrogerSearch, doOAuth } from "~/server/kroger";
 import { getKrogerAccessToken } from "./getKrogerAccessToken";
 import { env } from "~/env";
 
@@ -153,27 +153,37 @@ export const krogerRouter = createTRPCRouter({
       }
 
       try {
-        const accessToken = await getKrogerAccessToken(ctx.session.user.id);
-        const addResponse = await fetch(url, {
-          method: "PUT",
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify(postData),
-        });
+        const userId = ctx.session.user.id;
+        const addItems = async (shouldRetry: boolean): Promise<Response> => {
+          const accessToken = await getKrogerAccessToken(userId);
+          const response = await fetch(url, {
+            method: "PUT",
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(postData),
+          });
+
+          if (
+            response.status === 401 &&
+            shouldRetry &&
+            (await doOAuth(true, userId))
+          ) {
+            return addItems(false);
+          }
+
+          return response;
+        };
+
+        const addResponse = await addItems(true);
 
         if (!addResponse.ok) {
           const errorText = await addResponse.text().catch(() => "");
-          if (createdPurchaseId) {
-            await db.krogerPurchase.update({
-              where: { id: createdPurchaseId },
-              data: {
-                note: `HTTP ${addResponse.status}: ${errorText || "Request failed"}`,
-              },
-            });
-          }
-          throw new Error("Request failed");
+          throw new Error(
+            `Kroger cart request failed: HTTP ${addResponse.status}${errorText ? `: ${errorText}` : ""}`,
+          );
         }
 
         // if things went well and we have an item id, mark it as bought
@@ -209,7 +219,10 @@ export const krogerRouter = createTRPCRouter({
             },
           });
         }
-        return { result: false };
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Kroger could not add this item to the cart.",
+        });
       }
     }),
 });
