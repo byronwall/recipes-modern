@@ -35,16 +35,17 @@ export function LoginForm({
     try {
       setErrorMessage(null);
       const result = await signIn("credentials", {
-        email,
+        email: email.trim(),
         password,
         callbackUrl: "/",
-        redirect: true,
+        redirect: false,
       });
-      // When redirect: true, NextAuth will navigate; result may be undefined
-      // In case redirect is blocked, ensure we land on home
-      if (result?.ok) {
-        router.push("/");
+      if (!result?.ok) {
+        setErrorMessage("Invalid email or password");
+        return;
       }
+      router.push("/");
+      router.refresh();
     } catch (err) {
       // no-op, surface minimal error UI below
       setErrorMessage("Invalid email or password");
@@ -57,20 +58,25 @@ export function LoginForm({
     setIsSubmitting(true);
     try {
       setErrorMessage(null);
-      await createUser.mutateAsync({ email, password });
+      await createUser.mutateAsync({ email: email.trim(), password });
       // Auto-login after successful registration
       const result = await signIn("credentials", {
-        email,
+        email: email.trim(),
         password,
         callbackUrl: "/",
-        redirect: true,
+        redirect: false,
       });
-      if (result?.ok) {
-        router.push("/");
+      if (!result?.ok) {
+        setErrorMessage("Account created. Please reload and sign in.");
+        return;
       }
+      router.push("/");
+      router.refresh();
     } catch (err) {
       setErrorMessage(
-        createUser.error?.message || "Unable to register. Please try again.",
+        err instanceof Error
+          ? err.message
+          : "Unable to register. Please try again.",
       );
     } finally {
       setIsSubmitting(false);
@@ -90,11 +96,18 @@ export function LoginForm({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4">
+        <form
+          className="grid gap-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void (allowRegistration ? handleRegister() : handleSubmit());
+          }}
+        >
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
+              autoComplete="email"
               type="email"
               placeholder="m@example.com"
               required
@@ -106,6 +119,9 @@ export function LoginForm({
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
+              autoComplete={
+                allowRegistration ? "new-password" : "current-password"
+              }
               type="password"
               required
               value={password}
@@ -113,14 +129,11 @@ export function LoginForm({
             />
           </div>
           {errorMessage ? (
-            <div className="text-sm text-red-600">{errorMessage}</div>
+            <div role="alert" className="text-sm text-destructive">
+              {errorMessage}
+            </div>
           ) : null}
-          <Button
-            type="button"
-            className="w-full"
-            onClick={allowRegistration ? handleRegister : handleSubmit}
-            disabled={isSubmitting}
-          >
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting
               ? allowRegistration
                 ? "Creating account..."
@@ -129,7 +142,7 @@ export function LoginForm({
                 ? "Create account"
                 : "Login"}
           </Button>
-        </div>
+        </form>
       </CardContent>
     </Card>
   );

@@ -6,7 +6,7 @@ import { cn } from "~/lib/utils";
 export function UserKrogerStatus() {
   const { data: userStatus } = api.kroger.getKrogerStatus.useQuery();
 
-  const isAuthed = Boolean(userStatus?.krogerUserAccessToken);
+  const isAuthed = Boolean(userStatus?.connected);
 
   return (
     <span
@@ -16,7 +16,6 @@ export function UserKrogerStatus() {
           ? "bg-green-100 text-green-800 ring-1 ring-green-200"
           : "bg-red-100 text-red-800 ring-1 ring-red-200",
       )}
-      title={isAuthed ? "Connected to Kroger" : "Not connected to Kroger"}
     >
       <span
         className={cn(

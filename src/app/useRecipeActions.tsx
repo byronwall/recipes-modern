@@ -29,10 +29,7 @@ export function useRecipeActions() {
     await deleteFromMealPlan.mutateAsync({ id });
   };
 
-  const updateIngredientGroups =
-    api.recipe.updateIngredientGroups.useMutation();
-
-  const updateStepGroups = api.recipe.updateStepGroups.useMutation();
+  const updateRecipeContent = api.recipe.updateRecipeContent.useMutation();
 
   const addMealPlanToList = api.recipe.addMealPlanToShoppingList.useMutation();
 
@@ -40,8 +37,7 @@ export function useRecipeActions() {
     handleDelete,
     handleAddToMealPlan,
     handleDeleteFromMealPlan,
-    updateIngredientGroups,
-    updateStepGroups,
+    updateRecipeContent,
     addMealPlanToList,
   };
 }

@@ -173,6 +173,7 @@ export function KrogerSearchPopup({
                   <div className="relative w-full">
                     <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                     <Input
+                      aria-label="Search Kroger"
                       value={searchIngredient}
                       onChange={(e) => setSearchIngredient(e.target.value)}
                       placeholder="Search Kroger for..."
@@ -180,7 +181,7 @@ export function KrogerSearchPopup({
                     />
                   </div>
                   <IconTextButton
-                    onClick={() => void searchKroger()}
+                    type="submit"
                     disabled={searchMutation.isPending}
                     variant="secondary"
                     icon={<Search className="h-5 w-5 shrink-0" />}

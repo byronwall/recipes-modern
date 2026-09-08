@@ -8,8 +8,8 @@ export const userRouter = createTRPCRouter({
   createUser: publicProcedure
     .input(
       z.object({
-        email: z.string(),
-        password: z.string(),
+        email: z.string().trim().email(),
+        password: z.string().min(1),
       }),
     )
     .mutation(async ({ input }) => {
@@ -31,6 +31,7 @@ export const userRouter = createTRPCRouter({
           email: input.email,
           password: hashedPassword,
         },
+        select: { id: true },
       });
 
       return user;

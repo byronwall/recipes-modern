@@ -102,7 +102,9 @@ export function ShoppingListCard(props: {
           ) : null}
           <KrogerSearchPopup
             originalListItemId={item.id}
-            ingredient={item.ingredient?.ingredient}
+            ingredient={
+              item.ingredient?.ingredient ?? item.looseItem ?? undefined
+            }
           />
           {item.ingredient && (
             <AislePickerDialog

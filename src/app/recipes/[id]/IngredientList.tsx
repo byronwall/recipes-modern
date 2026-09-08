@@ -16,13 +16,20 @@ export interface IngredientListProps {
   recipe: Recipe;
   onStartEditing: () => void;
 }
-export function IngredientList({ recipe, onStartEditing }: IngredientListProps) {
-  const { data: ingredientsCatalog } = api.purchases.ingredientsCatalog.useQuery();
+export function IngredientList({
+  recipe,
+  onStartEditing,
+}: IngredientListProps) {
+  const { data: ingredientsCatalog } =
+    api.purchases.ingredientsCatalog.useQuery();
 
   const purchasesByIngredientName = useMemo(() => {
     const m = new Map<string, RecentPurchase[]>();
     for (const ingredient of ingredientsCatalog ?? []) {
-      m.set(ingredient.ingredient.trim().toLowerCase(), ingredient.recentPurchases);
+      m.set(
+        ingredient.ingredient.trim().toLowerCase(),
+        ingredient.recentPurchases,
+      );
     }
     return m;
   }, [ingredientsCatalog]);
@@ -34,8 +41,9 @@ export function IngredientList({ recipe, onStartEditing }: IngredientListProps) 
           <H4>{ingredient.title}</H4>
           {ingredient.ingredients.map((i) => {
             const purchaseHistory =
-              purchasesByIngredientName.get(i.ingredient.trim().toLowerCase()) ??
-              [];
+              purchasesByIngredientName.get(
+                i.ingredient.trim().toLowerCase(),
+              ) ?? [];
 
             return (
               <div
@@ -69,9 +77,12 @@ export function IngredientList({ recipe, onStartEditing }: IngredientListProps) 
   return (
     <>
       <div className="flex items-center justify-between gap-2">
-        <H3 className="text-xl font-medium text-muted-foreground">ingredients</H3>
+        <H3 className="text-xl font-medium text-muted-foreground">
+          ingredients
+        </H3>
         <TooltipButton content="Edit recipe content">
           <Button
+            aria-label="Edit recipe content"
             onClick={onStartEditing}
             variant="ghost"
             size="icon"

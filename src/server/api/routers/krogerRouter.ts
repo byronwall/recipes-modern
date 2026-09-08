@@ -46,21 +46,20 @@ export const krogerRouter = createTRPCRouter({
       },
     });
 
-    if (!user) {
-      throw new Error("User not found");
-    }
-    return user;
+    return { connected: Boolean(user?.krogerUserAccessToken) };
   }),
 
   addToCart: protectedProcedure
     .input(
       z.object({
-        items: z.array(
-          z.object({
-            upc: z.string(),
-            quantity: z.number(),
-          }),
-        ),
+        items: z
+          .array(
+            z.object({
+              upc: z.string(),
+              quantity: z.number().int().positive(),
+            }),
+          )
+          .min(1),
         listItemId: z.number().optional(),
         ingredientId: z.number().optional(),
         recipeId: z.number().optional(),
@@ -76,7 +75,7 @@ export const krogerRouter = createTRPCRouter({
             priceRegular: z.number().optional(),
             pricePromo: z.number().optional(),
             price: z.number().default(0),
-            quantity: z.number(),
+            quantity: z.number().int().positive(),
             size: z.string(),
             imageUrl: z.string().default(""),
           })
@@ -84,6 +83,22 @@ export const krogerRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      const userId = ctx.session.user.id;
+      const listItem =
+        input.listItemId === undefined
+          ? null
+          : await db.shoppingList.findUniqueOrThrow({
+              where: { id: input.listItemId, userId },
+              select: { ingredientId: true, recipeId: true },
+            });
+      if (input.ingredientId !== undefined)
+        await db.ingredient.findUniqueOrThrow({
+          where: { id: input.ingredientId, group: { Recipe: { userId } } },
+        });
+      if (input.recipeId !== undefined)
+        await db.recipe.findUniqueOrThrow({
+          where: { id: input.recipeId, userId },
+        });
       const postData = { items: input.items } as API_KrogerAddCart;
       const url = `https://api.kroger.com/v1/cart/add`;
 
@@ -95,10 +110,6 @@ export const krogerRouter = createTRPCRouter({
         let ingredientId: number | null = input.ingredientId ?? null;
         let recipeId: number | null = input.recipeId ?? null;
         if (input.listItemId) {
-          const listItem = await db.shoppingList.findUnique({
-            where: { id: input.listItemId },
-            select: { ingredientId: true, recipeId: true },
-          });
           ingredientId = listItem?.ingredientId ?? null;
           recipeId = listItem?.recipeId ?? null;
         }
@@ -191,6 +202,7 @@ export const krogerRouter = createTRPCRouter({
           await db.shoppingList.update({
             where: {
               id: input.listItemId,
+              userId,
             },
             data: {
               isBought: true,

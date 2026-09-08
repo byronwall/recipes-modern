@@ -291,6 +291,7 @@ export function IngredientListEditMode(props: {
               />
               <TooltipButton content="Delete ingredient group">
                 <Button
+                  aria-label="Delete ingredient group"
                   onClick={() => handleDeleteGroup(gIdx)}
                   variant="ghost"
                   size="icon"
@@ -446,6 +447,7 @@ export function IngredientListEditMode(props: {
                         <td className="py-2 align-top">
                           <TooltipButton content="Delete ingredient">
                             <Button
+                              aria-label="Delete ingredient"
                               onClick={() => handleDeleteIngredient(gIdx, iIdx)}
                               variant="ghost"
                               size="icon"

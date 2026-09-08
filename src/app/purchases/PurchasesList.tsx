@@ -77,7 +77,7 @@ export function PurchasesList() {
     1,
     Math.ceil(filteredPurchases.length / pageSize),
   );
-  const safePage = Math.min(page, totalPages);
+  const safePage = Math.max(1, Math.min(Math.trunc(page), totalPages));
   const pagedPurchases = filteredPurchases.slice(
     (safePage - 1) * pageSize,
     safePage * pageSize,

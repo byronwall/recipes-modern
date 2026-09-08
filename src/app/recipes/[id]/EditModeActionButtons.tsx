@@ -17,7 +17,12 @@ export function EditModeActionButtons(props: {
         <Check className="shrink-0" />
         Save
       </Button>
-      <Button onClick={onCancel} variant="outline" className="rounded-md">
+      <Button
+        disabled={isSaving}
+        onClick={onCancel}
+        variant="outline"
+        className="rounded-md"
+      >
         <X className="shrink-0" />
         Cancel
       </Button>

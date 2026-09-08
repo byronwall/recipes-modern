@@ -11,7 +11,12 @@ import { Input } from "~/components/ui/input";
 import { Plus } from "lucide-react";
 import { H3 } from "~/components/ui/typography";
 import { TooltipButton } from "~/components/ui/tooltip-button";
-import { Dialog, DialogContent, DialogTrigger } from "~/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
 import {
   ListPanel,
   ListPanelEmpty,
@@ -95,7 +100,9 @@ export function RecipePickerPopover(props: {
           <ListPanelEmpty>No recipes match that search.</ListPanelEmpty>
         )}
         {isError && (
-          <ListPanelEmpty>Couldn&apos;t load recipes: {error.message}</ListPanelEmpty>
+          <ListPanelEmpty>
+            Couldn&apos;t load recipes: {error.message}
+          </ListPanelEmpty>
         )}
       </ListPanel>
     </div>
@@ -105,7 +112,13 @@ export function RecipePickerPopover(props: {
     return (
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>{trigger}</DialogTrigger>
-        <DialogContent className="left-0 top-0 h-[100dvh] w-full max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-none p-4 sm:rounded-none">
+        <DialogContent
+          aria-describedby={undefined}
+          className="left-0 top-0 h-[100dvh] w-full max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-none p-4 sm:rounded-none"
+        >
+          <DialogTitle className="sr-only">
+            Add recipe for {targetDateLabel}
+          </DialogTitle>
           {pickerContent}
         </DialogContent>
       </Dialog>

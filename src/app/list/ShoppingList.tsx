@@ -9,6 +9,7 @@ import { useMemo, useState } from "react";
 import { Label } from "~/components/ui/label";
 import { useRadioList } from "./useRadioList";
 import { IconTextButton } from "~/components/ui/icon-text-button";
+import { toast } from "sonner";
 import { Check, ClipboardCopy } from "lucide-react";
 import { getIngredientLabel } from "./getIngredientLabel";
 import { normalizeAisleName } from "~/lib/titleCase";
@@ -19,7 +20,11 @@ const groupModeCodec = urlStateCodecs.enum(groupModes, "recipe");
 
 export function ShoppingList(props: { actions?: ReactNode }) {
   const { actions } = props;
-  const { data: _shoppingList } = api.shoppingList.getShoppingList.useQuery();
+  const {
+    data: _shoppingList,
+    isLoading,
+    error,
+  } = api.shoppingList.getShoppingList.useQuery();
   const shoppingList = useMemo(() => _shoppingList ?? [], [_shoppingList]);
   const ingredientIds = useMemo(
     () =>
@@ -87,7 +92,7 @@ export function ShoppingList(props: { actions?: ReactNode }) {
       }
       return acc;
     },
-    {} as Record<string, typeof shoppingList>,
+    Object.create(null) as Record<string, typeof shoppingList>,
   );
 
   const [hiddenKeys, setHiddenKeys] = useState<string[]>([]);
@@ -128,6 +133,10 @@ export function ShoppingList(props: { actions?: ReactNode }) {
     return sortedItems.map((item) => getIngredientLabel(item)).join("\n");
   }, [shoppingList]);
 
+  if (isLoading) return <p>Loading shopping list...</p>;
+  if (error)
+    return <p role="alert">Could not load shopping list: {error.message}</p>;
+
   return (
     <div className="flex flex-col gap-6">
       <section className="rounded-2xl border bg-card/70 p-4 shadow-sm">
@@ -165,7 +174,14 @@ export function ShoppingList(props: { actions?: ReactNode }) {
                 variant="outline"
                 disabled={!appleNotesListText}
                 onClick={async () => {
-                  await navigator.clipboard.writeText(appleNotesListText);
+                  try {
+                    await navigator.clipboard.writeText(appleNotesListText);
+                  } catch {
+                    toast.error(
+                      "Could not copy the list. Check clipboard access and try again.",
+                    );
+                    return;
+                  }
                   setCopiedAppleNotesList(true);
                   window.setTimeout(() => setCopiedAppleNotesList(false), 1800);
                 }}
@@ -205,6 +221,7 @@ export function ShoppingList(props: { actions?: ReactNode }) {
                 >
                   <button
                     type="button"
+                    aria-expanded={isVisible}
                     onClick={() =>
                       setHiddenKeys((keys) => {
                         if (keys.includes(key)) {

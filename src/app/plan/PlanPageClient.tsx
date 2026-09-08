@@ -371,7 +371,20 @@ export function PlanPageClient() {
 
       <PageHeaderCard className="border-0 bg-transparent p-0 shadow-none">
         <div className="flex flex-col gap-3">
-          <H1 className="leading-tight">Planned Meals</H1>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <H1 className="leading-tight">Planned Meals</H1>
+            {isMobile && (
+              <RecipePickerPopover
+                day={calendarDays.find(isToday) ?? calendarStart}
+                onRecipeSelected={(recipeId) =>
+                  handleAddToMealPlan(
+                    recipeId,
+                    calendarDays.find(isToday) ?? calendarStart,
+                  )
+                }
+              />
+            )}
+          </div>
 
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">

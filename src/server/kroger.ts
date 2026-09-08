@@ -94,9 +94,11 @@ export async function doKrogerSearch(
   shouldRetry: boolean,
 ): Promise<KrogerProduct[]> {
   const normalizedFilterTerm = normalizeKrogerSearchTerm(postData.filterTerm);
-  const url = encodeURI(
-    `https://api.kroger.com/v1/products?filter.term=${normalizedFilterTerm}&filter.locationId=02100086&filter.fulfillment=ais`,
-  );
+  const url = `https://api.kroger.com/v1/products?${new URLSearchParams({
+    "filter.term": normalizedFilterTerm,
+    "filter.locationId": "02100086",
+    "filter.fulfillment": "ais",
+  }).toString()}`;
 
   const accessToken = await getKrogerAccessToken(userId);
 

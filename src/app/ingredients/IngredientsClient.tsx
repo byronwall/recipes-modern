@@ -132,7 +132,7 @@ export function IngredientsClient() {
     1,
     Math.ceil(filteredIngredients.length / pageSize),
   );
-  const safePage = Math.min(page, totalPages);
+  const safePage = Math.max(1, Math.min(Math.trunc(page), totalPages));
   const recipeFilterLabel =
     recipeFilter === "all"
       ? "All recipes"

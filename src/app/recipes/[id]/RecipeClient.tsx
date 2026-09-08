@@ -28,14 +28,18 @@ export function RecipeClient(props: { id: number }) {
   const [stepGroupsDraft, setStepGroupsDraft] = useState<Recipe["stepGroups"]>(
     [],
   );
-  const { updateIngredientGroups, updateStepGroups } = useRecipeActions();
+  const { updateRecipeContent } = useRecipeActions();
   const utils = api.useUtils();
   const [ingredientsSectionEl, setIngredientsSectionEl] =
     useState<HTMLDivElement | null>(null);
   const [instructionsSectionEl, setInstructionsSectionEl] =
     useState<HTMLDivElement | null>(null);
 
-  const { data: recipe } = api.recipe.getRecipe.useQuery({
+  const {
+    data: recipe,
+    isLoading,
+    error,
+  } = api.recipe.getRecipe.useQuery({
     id,
   });
 
@@ -54,7 +58,7 @@ export function RecipeClient(props: { id: number }) {
     }
 
     function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") {
+      if (event.key === "Escape" && !updateRecipeContent.isPending) {
         event.preventDefault();
 
         if (isCancelConfirmOpen) {
@@ -72,7 +76,13 @@ export function RecipeClient(props: { id: number }) {
 
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [hasAnyChanges, isCancelConfirmOpen, isEditing, recipe]);
+  }, [
+    hasAnyChanges,
+    isCancelConfirmOpen,
+    isEditing,
+    recipe,
+    updateRecipeContent.isPending,
+  ]);
 
   useEffect(() => {
     if (!isEditing || !pendingScrollTarget) {
@@ -92,8 +102,15 @@ export function RecipeClient(props: { id: number }) {
       targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
       setPendingScrollTarget(null);
     });
-  }, [ingredientsSectionEl, instructionsSectionEl, isEditing, pendingScrollTarget]);
+  }, [
+    ingredientsSectionEl,
+    instructionsSectionEl,
+    isEditing,
+    pendingScrollTarget,
+  ]);
 
+  if (isLoading) return <p>Loading recipe...</p>;
+  if (error) return <p role="alert">Could not load recipe: {error.message}</p>;
   if (!recipe) {
     return <div>Recipe not found</div>;
   }
@@ -121,16 +138,15 @@ export function RecipeClient(props: { id: number }) {
       return;
     }
 
-    await Promise.all([
-      updateIngredientGroups.mutateAsync({
+    try {
+      await updateRecipeContent.mutateAsync({
         recipeId: recipeData.id,
         ingredientGroups: ingredientGroupsDraft,
-      }),
-      updateStepGroups.mutateAsync({
-        recipeId: recipeData.id,
         stepGroups: stepGroupsDraft,
-      }),
-    ]);
+      });
+    } catch {
+      return; // Keep the draft open; the mutation error appears in a toast.
+    }
     await utils.recipe.getRecipe.invalidate({ id: recipeData.id });
 
     setIsEditing(false);
@@ -156,9 +172,7 @@ export function RecipeClient(props: { id: number }) {
             <EditModeActionButtons
               onSave={handleSaveAll}
               onCancel={handleCancelRequest}
-              isSaving={
-                updateIngredientGroups.isPending || updateStepGroups.isPending
-              }
+              isSaving={updateRecipeContent.isPending}
               className="flex items-center gap-3"
             />
           </div>
@@ -194,9 +208,7 @@ export function RecipeClient(props: { id: number }) {
           <EditModeActionButtons
             onSave={handleSaveAll}
             onCancel={handleCancelRequest}
-            isSaving={
-              updateIngredientGroups.isPending || updateStepGroups.isPending
-            }
+            isSaving={updateRecipeContent.isPending}
             className="flex justify-end gap-3 pt-2"
           />
 

@@ -40,41 +40,40 @@ export function KrogerItemDisplay({
 
   const addToCartMutation = api.kroger.addToCart.useMutation();
 
-  const handleAddToCart = async (upc: string) => {
-    await addToCartMutation.mutateAsync({
-      items: [
-        {
-          upc,
+  const handleAddToCart = (upc: string) => {
+    addToCartMutation.mutate(
+      {
+        items: [
+          {
+            upc,
+            quantity,
+          },
+        ],
+        listItemId: originalListItemId,
+        purchaseDetails: {
+          sku: result.upc,
+          productId: result.productId,
+          name: result.description,
+          brand: result.brand,
+          categories: result.categories,
+          itemId: result.items[0]?.itemId,
+          soldBy: result.items[0]?.soldBy,
+          priceRegular: regularPrice,
+          pricePromo: promoPrice,
+          price: displayPrice ?? 0,
           quantity,
+          size: result.items[0]?.size ?? "",
+          imageUrl: imageUrl ?? "",
         },
-      ],
-      listItemId: originalListItemId,
-      purchaseDetails: {
-        sku: result.upc,
-        productId: result.productId,
-        name: result.description,
-        brand: result.brand,
-        categories: result.categories,
-        itemId: result.items[0]?.itemId,
-        soldBy: result.items[0]?.soldBy,
-        priceRegular: regularPrice,
-        pricePromo: promoPrice,
-        price: displayPrice ?? 0,
-        quantity,
-        size: result.items[0]?.size ?? "",
-        imageUrl: imageUrl ?? "",
       },
-    });
-
-    if (onCloseModal) {
-      onCloseModal();
-    }
+      { onSuccess: () => onCloseModal?.() },
+    );
   };
 
   return (
     <div
       key={result.productId}
-      className="flex w-64 flex-col gap-2 rounded-2xl border bg-card/70 p-3 shadow-sm transition-shadow hover:shadow-md"
+      className="flex w-full min-w-0 flex-col gap-2 rounded-2xl border bg-card/70 p-3 shadow-sm transition-shadow hover:shadow-md"
     >
       <div className="flex gap-3">
         <Link
@@ -115,15 +114,21 @@ export function KrogerItemDisplay({
       <div className="flex w-full items-center gap-2 rounded-xl bg-background/80 p-2">
         <Input
           type="number"
-          value={quantity}
+          value={Number.isNaN(quantity) ? "" : quantity}
           min={1}
-          onChange={(e) => setQuantity(parseInt(e.target.value))}
+          step={1}
+          aria-label="Quantity"
+          onChange={(e) => setQuantity(e.target.valueAsNumber)}
           className="h-9 w-14"
         />
 
         <IconTextButton
           onClick={() => handleAddToCart(result.upc)}
-          disabled={addToCartMutation.isPending}
+          disabled={
+            addToCartMutation.isPending ||
+            !Number.isInteger(quantity) ||
+            quantity < 1
+          }
           variant="secondary"
           size="sm"
           icon={<ShoppingCart className="h-4 w-4 shrink-0" />}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 type UrlParamValue = string | readonly string[] | null | undefined;
 type UrlParamPatch = Record<string, UrlParamValue>;
@@ -13,13 +13,11 @@ export type UrlStateCodec<T> = {
 };
 
 export function useReplaceUrlParams() {
-  const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   return useCallback(
     (patch: UrlParamPatch) => {
-      const nextParams = new URLSearchParams(searchParams.toString());
+      const nextParams = new URLSearchParams(window.location.search);
 
       for (const [key, value] of Object.entries(patch)) {
         nextParams.delete(key);
@@ -37,11 +35,13 @@ export function useReplaceUrlParams() {
       }
 
       const query = nextParams.toString();
-      router.replace(query ? `${pathname}?${query}` : pathname, {
-        scroll: false,
-      });
+      window.history.replaceState(
+        null,
+        "",
+        (query ? `${pathname}?${query}` : pathname) + window.location.hash,
+      );
     },
-    [pathname, router, searchParams],
+    [pathname],
   );
 }
 
@@ -85,6 +85,7 @@ export const urlStateCodecs = {
     return {
       defaultValue,
       parse: (value) => {
+        if (value === null || value.trim() === "") return defaultValue;
         const parsed = Number(value);
         if (!Number.isFinite(parsed)) return defaultValue;
         if (options?.allowedValues && !options.allowedValues.includes(parsed)) {

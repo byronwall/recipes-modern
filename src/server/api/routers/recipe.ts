@@ -77,9 +77,10 @@ export const recipeRouter = createTRPCRouter({
       const recipe = await db.recipe.findUnique({
         where: { id: input.id, userId: ctx.session.user.id },
         include: {
-          stepGroups: true,
+          stepGroups: { orderBy: [{ order: "asc" }, { id: "asc" }] },
           ingredientGroups: {
-            include: { ingredients: true },
+            orderBy: [{ order: "asc" }, { id: "asc" }],
+            include: { ingredients: { orderBy: { id: "asc" } } },
           },
           tags: { include: { tag: true } },
           images: { include: { image: true } },
@@ -158,7 +159,7 @@ export const recipeRouter = createTRPCRouter({
       return updated;
     }),
 
-  updateIngredientGroups: protectedProcedure
+  updateRecipeContent: protectedProcedure
     .input(
       z.object({
         recipeId: z.coerce.number(),
@@ -177,116 +178,6 @@ export const recipeRouter = createTRPCRouter({
             ),
           }),
         ),
-      }),
-    )
-    .mutation(async ({ input }) => {
-      const recipe = await db.recipe.findUnique({
-        where: { id: input.recipeId },
-      });
-
-      if (!recipe) {
-        throw new Error("Recipe not found");
-      }
-
-      const groupsToDelete = input.ingredientGroups.filter((group) => group.id < 0);
-
-      for (const group of groupsToDelete) {
-        await db.ingredientGroup.delete({
-          where: { id: -group.id },
-        });
-      }
-
-      const activeGroups = input.ingredientGroups.filter((group) => group.id >= 0);
-
-      const newGroups = activeGroups.filter((group) => group.id === 0);
-      for (const [order, group] of newGroups.entries()) {
-        const sourceIndex = activeGroups.findIndex((g) => g === group);
-        await db.ingredientGroup.create({
-          data: {
-            title: group.title,
-            order: sourceIndex >= 0 ? sourceIndex : order,
-            recipeId: recipe.id,
-            ingredients: {
-              create: group.ingredients
-                .filter((ingredient) => ingredient.id >= 0)
-                .map((ingredient) => ({
-                  ingredient: ingredient.ingredient,
-                  amount: ingredient.amount,
-                  modifier: ingredient.modifier,
-                  unit: ingredient.unit,
-                })),
-            },
-          },
-        });
-      }
-
-      const updatedGroups = activeGroups.filter((group) => group.id > 0);
-
-      // update the ingredient groups
-      for (const group of updatedGroups) {
-        const order = activeGroups.findIndex((g) => g.id === group.id);
-        await db.ingredientGroup.update({
-          where: { id: group.id },
-          data: {
-            title: group.title,
-            order: order >= 0 ? order : 0,
-          },
-        });
-
-        // add new ingredients with id 0
-        const newIngredients = group.ingredients.filter(
-          (ingredient) => ingredient.id === 0,
-        );
-
-        for (const ingredient of newIngredients) {
-          await db.ingredient.create({
-            data: {
-              ingredient: ingredient.ingredient,
-              amount: ingredient.amount,
-              modifier: ingredient.modifier,
-              unit: ingredient.unit,
-              groupId: group.id,
-            },
-          });
-        }
-
-        const deletedIngredients = group.ingredients.filter(
-          (ingredient) => ingredient.id < 0,
-        );
-
-        // delete ingredients with negative id
-        for (const ingredient of deletedIngredients) {
-          await db.ingredient.delete({
-            where: { id: -ingredient.id },
-          });
-        }
-
-        // update the ingredients
-        const updatedIngredients = group.ingredients.filter(
-          (ingredient) => ingredient.id > 0,
-        );
-        for (const ingredient of updatedIngredients) {
-          // skip new ingredients
-
-          await db.ingredient.update({
-            where: { id: ingredient.id },
-            data: {
-              ingredient: ingredient.ingredient,
-              amount: ingredient.amount,
-              modifier: ingredient.modifier,
-              unit: ingredient.unit,
-            },
-          });
-        }
-      }
-
-      return recipe;
-    }),
-
-  updateStepGroups: protectedProcedure
-    .input(
-      z.object({
-        recipeId: z.coerce.number(),
         stepGroups: z.array(
           z.object({
             id: z.coerce.number(),
@@ -297,51 +188,111 @@ export const recipeRouter = createTRPCRouter({
         ),
       }),
     )
-    .mutation(async ({ input }) => {
-      const recipe = await db.recipe.findUnique({
-        where: { id: input.recipeId },
-      });
-
-      if (!recipe) {
-        throw new Error("Recipe not found");
-      }
-
-      const groupsToDelete = input.stepGroups.filter((group) => group.id < 0);
-
-      // delete groups with negative id
-      for (const group of groupsToDelete) {
-        await db.stepGroup.delete({
-          where: { id: -group.id },
+    .mutation(async ({ input, ctx }) =>
+      db.$transaction(async (tx) => {
+        const recipe = await tx.recipe.findUnique({
+          where: { id: input.recipeId, userId: ctx.session.user.id },
         });
-      }
 
-      // add new groups with id 0
-      const newGroups = input.stepGroups.filter((group) => group.id === 0);
-      for (const group of newGroups) {
-        await db.stepGroup.create({
-          data: {
+        if (!recipe) {
+          throw new Error("Recipe not found");
+        }
+
+        let order = 0;
+        for (const group of input.ingredientGroups) {
+          if (group.id < 0) {
+            await tx.shoppingList.deleteMany({
+              where: {
+                ingredient: {
+                  groupId: -group.id,
+                  group: { recipeId: recipe.id },
+                },
+              },
+            });
+            await tx.ingredientGroup.delete({
+              where: { id: -group.id, recipeId: recipe.id },
+            });
+            continue;
+          }
+          const data = { title: group.title, order: order++ };
+          const values = ({
+            id: _id,
+            ...ingredient
+          }: (typeof group.ingredients)[number]) => ingredient;
+          if (group.id === 0) {
+            await tx.ingredientGroup.create({
+              data: {
+                ...data,
+                recipeId: recipe.id,
+                ingredients: {
+                  create: group.ingredients
+                    .filter((i) => i.id >= 0)
+                    .map(values),
+                },
+              },
+            });
+            continue;
+          }
+          const deletedIds = group.ingredients
+            .filter((i) => i.id < 0)
+            .map((i) => -i.id);
+          await tx.shoppingList.deleteMany({
+            where: {
+              ingredient: {
+                id: { in: deletedIds },
+                groupId: group.id,
+                group: { recipeId: recipe.id },
+              },
+            },
+          });
+          await tx.ingredientGroup.update({
+            where: { id: group.id, recipeId: recipe.id },
+            data: {
+              ...data,
+              ingredients: {
+                create: group.ingredients.filter((i) => i.id === 0).map(values),
+                update: group.ingredients
+                  .filter((i) => i.id > 0)
+                  .map((i) => ({ where: { id: i.id }, data: values(i) })),
+                deleteMany: { id: { in: deletedIds } },
+              },
+            },
+          });
+        }
+        for (const group of input.stepGroups) {
+          if (group.id < 0) {
+            await tx.stepGroup.delete({
+              where: { id: -group.id, recipeId: recipe.id },
+            });
+            continue;
+          }
+          const data = {
             title: group.title,
             steps: group.steps,
             order: group.order,
+          };
+          if (group.id === 0) {
+            await tx.stepGroup.create({
+              data: { ...data, recipeId: recipe.id },
+            });
+          } else {
+            await tx.stepGroup.update({
+              where: { id: group.id, recipeId: recipe.id },
+              data,
+            });
+          }
+        }
+        await tx.plannedMeal.updateMany({
+          where: {
             recipeId: recipe.id,
+            isMade: false,
+            Recipe: { ShoppingList: { none: {} } },
           },
+          data: { isOnShoppingList: false },
         });
-      }
-
-      // update the step groups
-      const updatedGroups = input.stepGroups.filter((group) => group.id > 0);
-      for (const group of updatedGroups) {
-        await db.stepGroup.update({
-          where: { id: group.id },
-          data: {
-            title: group.title,
-            steps: group.steps,
-          },
-        });
-      }
-
-      return recipe;
-    }),
+        return recipe;
+      }),
+    ),
 
   replaceGroups: protectedProcedure
     .input(
@@ -378,6 +329,13 @@ export const recipeRouter = createTRPCRouter({
 
       // Replace all groups in a transaction
       await db.$transaction(async (tx) => {
+        await tx.shoppingList.deleteMany({
+          where: { recipeId: input.recipeId, userId },
+        });
+        await tx.plannedMeal.updateMany({
+          where: { recipeId: input.recipeId, userId, isMade: false },
+          data: { isOnShoppingList: false },
+        });
         // Delete existing groups (cascade deletes ingredients and step images)
         await tx.ingredientGroup.deleteMany({
           where: { recipeId: input.recipeId },
@@ -525,9 +483,9 @@ export const recipeRouter = createTRPCRouter({
 
   deleteRecipe: protectedProcedure
     .input(z.object({ id: z.coerce.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const recipe = await db.recipe.delete({
-        where: { id: input.id },
+        where: { id: input.id, userId: ctx.session.user.id },
       });
 
       return recipe;
@@ -538,9 +496,9 @@ export const recipeRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const userId = ctx.session.user.id;
 
-      // this check is not really needed, call below will fail anyways
+      // Check ownership before linking the recipe.
       const recipe = await db.recipe.findUnique({
-        where: { id: input.recipeId },
+        where: { id: input.recipeId, userId },
       });
 
       if (!recipe) {
@@ -658,9 +616,12 @@ export const recipeRouter = createTRPCRouter({
 
   updateIngredientAisle: protectedProcedure
     .input(z.object({ id: z.coerce.number(), aisle: z.string() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const ingredient = await db.ingredient.update({
-        where: { id: input.id },
+        where: {
+          id: input.id,
+          group: { Recipe: { userId: ctx.session.user.id } },
+        },
         data: {
           aisle: normalizeAisleName(input.aisle),
         },
@@ -698,35 +659,27 @@ export const recipeRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const userId = ctx.session.user.id;
 
-      const plannedMeal = await db.plannedMeal.update({
-        where: { id: input.id },
-        data: {
-          isOnShoppingList: true,
-        },
-      });
+      return db.$transaction(async (tx) => {
+        const plannedMeal = await tx.plannedMeal.findUniqueOrThrow({
+          where: { id: input.id, userId },
+        });
+        if (plannedMeal.isOnShoppingList) return;
 
-      const recipeId = plannedMeal.recipeId;
-
-      // get ingredient groups for that recipe
-      const ingredientGroups = await db.ingredientGroup.findMany({
-        where: { recipeId },
-      });
-
-      // get all ingredients in those groups
-      const ingredients = await db.ingredient.findMany({
-        where: { groupId: { in: ingredientGroups.map((group) => group.id) } },
-      });
-
-      // add all ingredients to the shopping list
-      for (const ingredient of ingredients) {
-        await db.shoppingList.create({
-          data: {
+        const ingredients = await tx.ingredient.findMany({
+          where: { group: { recipeId: plannedMeal.recipeId } },
+        });
+        await tx.shoppingList.createMany({
+          data: ingredients.map((ingredient) => ({
             ingredientId: ingredient.id,
             userId,
-            recipeId,
-          },
+            recipeId: plannedMeal.recipeId,
+          })),
         });
-      }
+        await tx.plannedMeal.update({
+          where: { id: input.id, userId },
+          data: { isOnShoppingList: true },
+        });
+      });
     }),
 
   seedDevRecipes: protectedProcedure

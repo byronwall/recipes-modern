@@ -47,7 +47,7 @@ export async function MainPageWithNav(props: { children: React.ReactNode }) {
         {session && (
           <Link
             href="/api/auth/signout"
-            className="rounded-full px-3 py-1 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             sign out
           </Link>

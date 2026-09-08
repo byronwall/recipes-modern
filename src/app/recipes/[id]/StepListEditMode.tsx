@@ -220,6 +220,7 @@ export function StepListEditMode(props: {
                       />
                       <TooltipButton content="Delete step">
                         <Button
+                          aria-label="Delete step"
                           onClick={() => handleDeleteStep(groupIdx, stepIdx)}
                           variant="ghost"
                           size="icon"
@@ -231,6 +232,7 @@ export function StepListEditMode(props: {
                       {stepIdx < group.steps.length - 1 ? (
                         <TooltipButton content="Insert step below">
                           <Button
+                            aria-label="Insert step below"
                             onClick={() => handleInsertStep(groupIdx, stepIdx)}
                             variant="ghost"
                             size="icon"

@@ -24,6 +24,9 @@ export const imagesRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const uid = ctx.session.user.id;
+      await db.recipe.findUniqueOrThrow({
+        where: { id: input.recipeId, userId: uid },
+      });
       const key = `u_${uid}/r_${input.recipeId}/orig/${crypto.randomUUID()}${
         input.ext ?? ""
       }`;
@@ -61,6 +64,20 @@ export const imagesRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await db.recipe.findUniqueOrThrow({
+        where: { id: input.recipeId, userId: ctx.session.user.id },
+      });
+      if (
+        !input.key.startsWith(
+          `u_${ctx.session.user.id}/r_${input.recipeId}/orig/`,
+        )
+      ) {
+        throw new Error("Upload does not belong to this recipe");
+      }
+      if (input.stepGroupId !== undefined)
+        await db.stepGroup.findUniqueOrThrow({
+          where: { id: input.stepGroupId, recipeId: input.recipeId },
+        });
       const meta = await headObject(input.key);
       const bucket = process.env.S3_BUCKET!;
       const mime = String(meta.ContentType ?? "image/jpeg");

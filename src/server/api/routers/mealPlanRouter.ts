@@ -11,9 +11,9 @@ export const mealPlanRouter = createTRPCRouter({
         date: z.date().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const plannedMeal = await db.plannedMeal.update({
-        where: { id: input.id },
+        where: { id: input.id, userId: ctx.session.user.id },
         data: {
           isMade: input.isMade,
           date: input.date,
@@ -25,9 +25,9 @@ export const mealPlanRouter = createTRPCRouter({
 
   deleteMealPlan: protectedProcedure
     .input(z.object({ id: z.coerce.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const plannedMeal = await db.plannedMeal.delete({
-        where: { id: input.id },
+        where: { id: input.id, userId: ctx.session.user.id },
       });
 
       return plannedMeal;
