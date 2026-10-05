@@ -36,6 +36,7 @@ model UserExtras {
     // kroger API
     krogerUserAccessToken  String
     krogerUserRefreshToken String
+    krogerTokenExpiresAt DateTime?
 }
 
 model Recipe {

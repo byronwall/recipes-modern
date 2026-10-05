@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { type NextRequest } from "next/server";
 import { getServerAuthSession } from "~/server/auth";
-import { doOAuth } from "~/server/kroger";
+import { doOAuth } from "~/server/krogerAuth";
 
 // http://recipes.byroni.us/auth?code=ipE_clTAYZqpwBrrBfZMGTT5CFTeORfw3rd_Sdqb
 
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     return new Response("error occurred during auth");
   }
 
-  const didAuth = await doOAuth(false, session.user.id, code);
+  const didAuth = await doOAuth(session.user.id, code);
 
   if (didAuth) {
     redirect(`${protocol}://${host}/list`);

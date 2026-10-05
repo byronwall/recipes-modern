@@ -3,6 +3,7 @@ import { faker } from "@faker-js/faker";
 import { type Prisma } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
+import { krogerPurchaseNote } from "~/lib/krogerPurchaseNote";
 
 const LONG_PURCHASE_NAMES = [
   "Simple Truth Organic Fire Roasted Diced Tomatoes with Green Chilies Family Size",
@@ -44,6 +45,7 @@ function toDisplayPurchase(purchase: PurchaseWithRelations) {
   const linkedRecipe = purchase.ingredient?.group?.Recipe ?? purchase.Recipe;
   return {
     ...purchase,
+    note: krogerPurchaseNote(purchase.note),
     ingredientName: purchase.ingredient?.ingredient ?? null,
     linkedRecipe: linkedRecipe
       ? { id: linkedRecipe.id, name: linkedRecipe.name }
