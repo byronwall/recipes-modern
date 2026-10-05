@@ -3,8 +3,8 @@ import { TRPCError } from "@trpc/server";
 import { type API_KrogerAddCart } from "~/app/kroger/model";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
-import { doKrogerSearch, doOAuth } from "~/server/kroger";
-import { getKrogerAccessToken } from "./getKrogerAccessToken";
+import { doKrogerSearch } from "~/server/kroger";
+import { krogerRequest, logKroger } from "~/server/krogerAuth";
 import { env } from "~/env";
 
 export const krogerRouter = createTRPCRouter({
@@ -23,12 +23,14 @@ export const krogerRouter = createTRPCRouter({
             filterTerm: query,
           },
           ctx.session.user.id,
-          true,
         );
 
         return results;
       } catch (err: unknown) {
-        console.error("Kroger search failed", err);
+        if (err instanceof TRPCError) throw err;
+        logKroger("error", "Kroger search failed", {
+          userId: ctx.session.user.id,
+        });
         const message =
           err instanceof Error
             ? err.message
@@ -163,39 +165,40 @@ export const krogerRouter = createTRPCRouter({
         return { result: true };
       }
 
+      const requestId = crypto.randomUUID();
+      logKroger("info", "Kroger cart attempt started", {
+        requestId,
+        userId,
+        purchaseId: createdPurchaseId,
+        listItemId: input.listItemId,
+        itemCount: input.items.length,
+      });
       try {
-        const userId = ctx.session.user.id;
-        const addItems = async (shouldRetry: boolean): Promise<Response> => {
-          const accessToken = await getKrogerAccessToken(userId);
-          const response = await fetch(url, {
+        const addResponse = await krogerRequest(
+          userId,
+          url,
+          {
             method: "PUT",
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(postData),
-          });
-
-          if (
-            response.status === 401 &&
-            shouldRetry &&
-            (await doOAuth(true, userId))
-          ) {
-            return addItems(false);
-          }
-
-          return response;
-        };
-
-        const addResponse = await addItems(true);
+          },
+          requestId,
+        );
 
         if (!addResponse.ok) {
-          const errorText = await addResponse.text().catch(() => "");
-          throw new Error(
-            `Kroger cart request failed: HTTP ${addResponse.status}${errorText ? `: ${errorText}` : ""}`,
-          );
+          logKroger("error", "Kroger cart rejected", {
+            requestId,
+            userId,
+            status: addResponse.status,
+          });
+          throw new Error("Kroger could not add this item. Please try again.");
         }
+
+        logKroger("info", "Kroger cart accepted", {
+          requestId,
+          userId,
+          purchaseId: createdPurchaseId,
+        });
 
         // if things went well and we have an item id, mark it as bought
         if (input.listItemId) {
@@ -218,11 +221,27 @@ export const krogerRouter = createTRPCRouter({
           });
         }
 
+        logKroger("info", "Kroger cart attempt completed", {
+          requestId,
+          userId,
+          purchaseId: createdPurchaseId,
+          listItemId: input.listItemId,
+        });
         return { result: true };
       } catch (error: unknown) {
+        logKroger("error", "Kroger cart attempt failed", {
+          requestId,
+          userId,
+          purchaseId: createdPurchaseId,
+          listItemId: input.listItemId,
+          code:
+            error instanceof TRPCError ? error.code : "INTERNAL_SERVER_ERROR",
+        });
         if (createdPurchaseId) {
           const message =
-            error instanceof Error ? error.message : "Unknown error";
+            error instanceof TRPCError
+              ? error.message
+              : "Kroger could not add this item to the cart. Please try again.";
           // Append or set note on error
           await db.krogerPurchase.update({
             where: { id: createdPurchaseId },
@@ -231,9 +250,11 @@ export const krogerRouter = createTRPCRouter({
             },
           });
         }
+        if (error instanceof TRPCError) throw error;
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Kroger could not add this item to the cart.",
+          message:
+            "Kroger could not add this item to the cart. Please try again.",
         });
       }
     }),
