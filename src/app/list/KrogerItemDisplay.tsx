@@ -136,6 +136,16 @@ export function KrogerItemDisplay({
           className="w-full justify-center"
         />
       </div>
+      {addToCartMutation.error && (
+        <p role="alert" className="text-xs text-destructive">
+          {addToCartMutation.error.message}{" "}
+          {addToCartMutation.error.data?.code === "PRECONDITION_FAILED" && (
+            <Link href="/kroger" className="underline">
+              Reconnect Kroger
+            </Link>
+          )}
+        </p>
+      )}
     </div>
   );
 }
