@@ -1,8 +1,5 @@
-import { type ReactNode } from "react";
-import { CheckCircle2, CircleDashed, ListFilter, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { TooltipButton } from "~/components/ui/tooltip-button";
 import {
   Select,
   SelectContent,
@@ -10,36 +7,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Button } from "~/components/ui/button";
+import { cn } from "~/lib/utils";
 
 export type PurchaseStatusFilter = "all" | "added" | "attempted";
 
-function StatusIconButton(props: {
-  value: PurchaseStatusFilter;
-  activeValue: PurchaseStatusFilter;
-  onChange: (value: PurchaseStatusFilter) => void;
-  label: string;
-  icon: ReactNode;
-}) {
-  const { value, activeValue, onChange, label, icon } = props;
-  const isActive = value === activeValue;
-
-  return (
-    <TooltipButton content={label}>
-      <Button
-        type="button"
-        size="icon"
-        variant={isActive ? "secondary" : "outline"}
-        className={isActive ? "bg-secondary" : ""}
-        aria-label={label}
-        aria-pressed={isActive}
-        onClick={() => onChange(value)}
-      >
-        {icon}
-      </Button>
-    </TooltipButton>
-  );
-}
+const STATUS_OPTIONS: { value: PurchaseStatusFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "added", label: "In cart" },
+  { value: "attempted", label: "Not in cart" },
+];
 
 export function PurchasesFiltersPanel(props: {
   search: string;
@@ -61,25 +37,25 @@ export function PurchasesFiltersPanel(props: {
   } = props;
 
   return (
-    <div className="py-1">
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,14rem)_auto] lg:items-end">
-        <div className="flex flex-col gap-2">
-          <Label className="text-xs uppercase text-muted-foreground">Search</Label>
-          <div className="relative w-full">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search name, SKU, or product ID"
-              className="pl-9"
-            />
-          </div>
-        </div>
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="relative min-w-0 flex-1">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 shrink-0 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Search name, brand, or UPC"
+          aria-label="Search purchases"
+          className="pl-9"
+        />
+      </div>
 
-        <div className="flex flex-col gap-2">
-          <Label className="text-xs uppercase text-muted-foreground">Category</Label>
+      <div className="flex items-center gap-2">
+        {categoryOptions.length > 1 && (
           <Select value={categoryFilter} onValueChange={onCategoryFilterChange}>
-            <SelectTrigger className="h-9 w-full text-sm">
+            <SelectTrigger
+              aria-label="Category"
+              className="h-9 w-full text-sm sm:w-44"
+            >
               <SelectValue placeholder="All categories" />
             </SelectTrigger>
             <SelectContent>
@@ -91,33 +67,32 @@ export function PurchasesFiltersPanel(props: {
               ))}
             </SelectContent>
           </Select>
-        </div>
+        )}
 
-        <div className="flex flex-col gap-2">
-          <Label className="text-xs uppercase text-muted-foreground">Status</Label>
-          <div className="flex items-center gap-2">
-            <StatusIconButton
-              value="all"
-              activeValue={statusFilter}
-              onChange={onStatusFilterChange}
-              label="All statuses"
-              icon={<ListFilter className="h-4 w-4 shrink-0" />}
-            />
-            <StatusIconButton
-              value="added"
-              activeValue={statusFilter}
-              onChange={onStatusFilterChange}
-              label="Added to cart"
-              icon={<CheckCircle2 className="h-4 w-4 shrink-0" />}
-            />
-            <StatusIconButton
-              value="attempted"
-              activeValue={statusFilter}
-              onChange={onStatusFilterChange}
-              label="Attempted add"
-              icon={<CircleDashed className="h-4 w-4 shrink-0" />}
-            />
-          </div>
+        <div
+          role="group"
+          aria-label="Cart status"
+          className="flex shrink-0 gap-0.5 rounded-full bg-muted p-0.5"
+        >
+          {STATUS_OPTIONS.map((option) => {
+            const isActive = option.value === statusFilter;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => onStatusFilterChange(option.value)}
+                className={cn(
+                  "h-8 whitespace-nowrap rounded-full px-3 text-xs font-medium transition-colors",
+                  isActive
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {option.label}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

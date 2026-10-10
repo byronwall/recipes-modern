@@ -12,11 +12,12 @@ export function PurchasesDevActions() {
   return (
     <Button
       size="sm"
-      variant="secondary"
+      variant="ghost"
+      className="text-muted-foreground"
       isLoading={seedPurchases.isPending}
       onClick={() => seedPurchases.mutate({ count: 12 })}
     >
-      Seed purchases
+      Seed purchases (dev)
     </Button>
   );
 }

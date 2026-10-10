@@ -6,11 +6,8 @@ export function RecipeActionsPanel(props: { recipeId: number }) {
   const { recipeId } = props;
 
   return (
-    <div className="w-full max-w-xs border-l border-muted/60 pl-6 lg:ml-auto lg:self-start">
-      <div className="text-xs uppercase text-muted-foreground">Actions</div>
-      <div className="mt-3">
-        <RecipeActions recipeId={recipeId} variant="full" />
-      </div>
+    <div className="w-full border-t border-muted pt-4 lg:w-72 lg:shrink-0 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+      <RecipeActions recipeId={recipeId} variant="full" />
     </div>
   );
 }

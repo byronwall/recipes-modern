@@ -1,5 +1,7 @@
 "use client";
 
+import { Loader2, Sparkles } from "lucide-react";
+import { PageHeader } from "~/components/layout/PageHeader";
 import { useMemo, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
@@ -119,71 +121,103 @@ export default function AiRecipePage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 p-4">
-      <h1 className="text-2xl font-semibold">AI Recipe Generator</h1>
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Prompt</label>
-        <Textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="e.g., Cozy fall soup with pumpkin and sage, 30 mins, 4 servings, vegetarian"
-          rows={5}
-        />
-      </div>
-      <div className="grid grid-cols-3 gap-3">
+    <div className="flex w-full flex-col gap-5">
+      <PageHeader
+        title="Generate recipes"
+        description="Describe what you're in the mood for and get a few drafts to save."
+      />
+      <section className="space-y-4 rounded-2xl border bg-card/70 p-4 shadow-sm sm:p-5">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Servings (optional)</label>
-          <Input
-            type="number"
-            value={servings ?? ""}
-            onChange={(e) => {
-              const v = e.target.value;
-              setServings(v === "" ? undefined : Number(v));
-            }}
-            min={1}
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Time limit minutes (optional)
+          <label htmlFor="ai-prompt" className="text-sm font-medium">
+            What should we make?
           </label>
-          <Input
-            type="number"
-            value={timeLimitMinutes ?? ""}
-            onChange={(e) => {
-              const v = e.target.value;
-              setTimeLimitMinutes(v === "" ? undefined : Number(v));
-            }}
-            min={1}
+          <Textarea
+            id="ai-prompt"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="e.g., Cozy fall soup with pumpkin and sage, 30 mins, 4 servings, vegetarian"
+            rows={5}
           />
         </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">How many?</label>
-          <Input
-            type="number"
-            value={count}
-            onChange={(e) => {
-              const v = e.target.value;
-              setCount(v === "" ? 3 : Number(v));
-            }}
-            min={1}
-            max={8}
-          />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="space-y-2">
+            <label htmlFor="ai-servings" className="text-sm font-medium">
+              Servings{" "}
+              <span className="font-normal text-muted-foreground">
+                (optional)
+              </span>
+            </label>
+            <Input
+              id="ai-servings"
+              type="number"
+              value={servings ?? ""}
+              onChange={(e) => {
+                const v = e.target.value;
+                setServings(v === "" ? undefined : Number(v));
+              }}
+              min={1}
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="ai-time" className="text-sm font-medium">
+              Max minutes{" "}
+              <span className="font-normal text-muted-foreground">
+                (optional)
+              </span>
+            </label>
+            <Input
+              id="ai-time"
+              type="number"
+              value={timeLimitMinutes ?? ""}
+              onChange={(e) => {
+                const v = e.target.value;
+                setTimeLimitMinutes(v === "" ? undefined : Number(v));
+              }}
+              min={1}
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="ai-count" className="text-sm font-medium">
+              Number of ideas
+            </label>
+            <Input
+              id="ai-count"
+              type="number"
+              value={count}
+              onChange={(e) => {
+                const v = e.target.value;
+                setCount(v === "" ? 3 : Number(v));
+              }}
+              min={1}
+              max={8}
+            />
+          </div>
         </div>
-      </div>
-      <div className="flex items-center gap-3">
-        <Button
-          disabled={generateManyMutation.isPending || !prompt.trim()}
-          onClick={onGenerate}
-        >
-          {generateManyMutation.isPending ? "Generating..." : "Generate"}
-        </Button>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-      </div>
+        <div className="flex items-center gap-3">
+          <Button
+            disabled={generateManyMutation.isPending || !prompt.trim()}
+            onClick={onGenerate}
+          >
+            {generateManyMutation.isPending ? (
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4 shrink-0" />
+            )}
+            <span className="ml-1">
+              {generateManyMutation.isPending ? "Generating…" : "Generate"}
+            </span>
+          </Button>
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
+        </div>
+      </section>
 
       {results.length > 0 && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="text-sm text-muted-foreground">
               Generated {results.length} recipe{results.length === 1 ? "" : "s"}
             </div>
@@ -213,10 +247,13 @@ export default function AiRecipePage() {
 
           <div className="space-y-6">
             {results.map(({ recipe, warnings }, idx) => (
-              <div key={idx} className="rounded-md border p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h2 className="text-xl font-semibold">{recipe.name}</h2>
+              <div
+                key={idx}
+                className="rounded-2xl border bg-card/70 p-4 shadow-sm sm:p-5"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <h2 className="text-lg font-semibold">{recipe.name}</h2>
                     {recipe.cookMinutes != null && (
                       <p className="text-sm text-muted-foreground">
                         Cook time: {recipe.cookMinutes} min

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import { env } from "~/env";
 import { Button } from "~/components/ui/button";
 import {
@@ -8,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { H1, Muted } from "~/components/ui/typography";
+import { PageHeader } from "~/components/layout/PageHeader";
 import { useEnforceAuth } from "../useEnforceAuth";
 import { UserKrogerStatus } from "./UserKrogerStatus";
 
@@ -31,46 +32,51 @@ export default async function KrogerPage() {
       : value ?? "";
 
   return (
-    <div className="flex w-full flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <H1 className="mb-2">Kroger</H1>
-        <UserKrogerStatus />
-      </div>
+    <div className="flex w-full flex-col gap-6">
+      <PageHeader
+        title="Kroger"
+        description="Product search and add-to-cart for your shopping list."
+        actions={<UserKrogerStatus />}
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle>Connect your account</CardTitle>
+          <CardTitle className="text-lg">Connect your account</CardTitle>
           <CardDescription>
-            Sign in to enable product search and add-to-cart from your shopping
-            list.
+            Sign in with Kroger to search products and send shopping list items
+            straight to your cart. You can reconnect at any time if your session
+            expires.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3">
-          <Link href={krogerUrl}>Sign in to Kroger</Link>
-
-          <Muted>Requires a Kroger account</Muted>
+          <Button asChild>
+            <Link href={krogerUrl} className="hover:no-underline">
+              Sign in to Kroger
+              <ExternalLink className="ml-1 h-4 w-4 shrink-0" />
+            </Link>
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Requires a Kroger account
+          </span>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Developer details</CardTitle>
-          <CardDescription>Values loaded from environment</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 items-baseline gap-2 sm:grid-cols-3">
-            <div className="text-sm text-muted-foreground">Client ID</div>
-            <div className="break-all font-mono text-sm sm:col-span-2">
-              {elide(clientId)}
-            </div>
-
-            <div className="text-sm text-muted-foreground">Redirect URI</div>
-            <div className="break-all font-mono text-sm sm:col-span-2">
-              {redirectUri}
-            </div>
+      <details className="group rounded-2xl border bg-card/70 px-6 py-4 text-sm">
+        <summary className="cursor-pointer select-none font-medium text-muted-foreground group-open:mb-3">
+          Developer details
+        </summary>
+        <div className="grid grid-cols-1 items-baseline gap-2 sm:grid-cols-3">
+          <div className="text-muted-foreground">Client ID</div>
+          <div className="break-all font-mono sm:col-span-2">
+            {elide(clientId)}
           </div>
-        </CardContent>
-      </Card>
+
+          <div className="text-muted-foreground">Redirect URI</div>
+          <div className="break-all font-mono sm:col-span-2">
+            {redirectUri}
+          </div>
+        </div>
+      </details>
     </div>
   );
 }

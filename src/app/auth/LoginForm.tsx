@@ -84,15 +84,15 @@ export function LoginForm({
   }
 
   return (
-    <Card className="shadow-lg">
+    <Card className="rounded-2xl shadow-sm">
       <CardHeader>
         <CardTitle className="text-2xl">
-          {allowRegistration ? "Create account" : "Login"}
+          {allowRegistration ? "Create account" : "Sign in"}
         </CardTitle>
         <CardDescription>
           {allowRegistration
             ? "No users found. Create the first account to get started."
-            : "Enter your email and password to continue"}
+            : "Welcome back. Sign in to your recipes."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -109,7 +109,7 @@ export function LoginForm({
               id="email"
               autoComplete="email"
               type="email"
-              placeholder="m@example.com"
+              placeholder="you@example.com"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -137,10 +137,10 @@ export function LoginForm({
             {isSubmitting
               ? allowRegistration
                 ? "Creating account..."
-                : "Logging in..."
+                : "Signing in…"
               : allowRegistration
                 ? "Create account"
-                : "Login"}
+                : "Sign in"}
           </Button>
         </form>
       </CardContent>

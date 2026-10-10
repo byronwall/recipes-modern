@@ -1,16 +1,16 @@
 "use client";
 
-import type { ReactNode } from "react";
-
 import { ShoppingListCard } from "./ShoppingListCard";
 import { api } from "~/trpc/react";
 import { ShoppingRecipeItem } from "./ShoppingRecipeItem";
 import { useMemo, useState } from "react";
-import { Label } from "~/components/ui/label";
 import { useRadioList } from "./useRadioList";
 import { IconTextButton } from "~/components/ui/icon-text-button";
 import { toast } from "sonner";
-import { Check, ClipboardCopy } from "lucide-react";
+import { Check, ChevronDown, ClipboardCopy } from "lucide-react";
+import { PageHeader } from "~/components/layout/PageHeader";
+import { cn } from "~/lib/utils";
+import { ShoppingAddLooseForm, ShoppingListActions } from "./ShoppingAddLoose";
 import { getIngredientLabel } from "./getIngredientLabel";
 import { normalizeAisleName } from "~/lib/titleCase";
 import { urlStateCodecs, useUrlState } from "~/hooks/use-url-state";
@@ -18,8 +18,7 @@ import { urlStateCodecs, useUrlState } from "~/hooks/use-url-state";
 export const groupModes = ["recipe", "aisle"] as const;
 const groupModeCodec = urlStateCodecs.enum(groupModes, "recipe");
 
-export function ShoppingList(props: { actions?: ReactNode }) {
-  const { actions } = props;
+export function ShoppingList() {
   const {
     data: _shoppingList,
     isLoading,
@@ -77,7 +76,7 @@ export function ShoppingList(props: { actions?: ReactNode }) {
       if (groupMode === "recipe") {
         const key = item.Recipe
           ? recipeNameById[item.Recipe.id]!
-          : "Loose Items";
+          : "Other items";
         if (acc[key] === undefined) {
           acc[key] = [];
         }
@@ -133,135 +132,171 @@ export function ShoppingList(props: { actions?: ReactNode }) {
     return sortedItems.map((item) => getIngredientLabel(item)).join("\n");
   }, [shoppingList]);
 
-  if (isLoading) return <p>Loading shopping list...</p>;
+  const totalCount = shoppingList.length;
+  const boughtCount = shoppingList.filter((item) => item.isBought).length;
+  const remainingCount = totalCount - boughtCount;
+
+  const copyButton = (
+    <IconTextButton
+      type="button"
+      variant="outline"
+      size="sm"
+      disabled={!appleNotesListText}
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(appleNotesListText);
+        } catch {
+          toast.error(
+            "Could not copy the list. Check clipboard access and try again.",
+          );
+          return;
+        }
+        setCopiedAppleNotesList(true);
+        window.setTimeout(() => setCopiedAppleNotesList(false), 1800);
+      }}
+      icon={
+        copiedAppleNotesList ? (
+          <Check className="h-4 w-4 shrink-0" />
+        ) : (
+          <ClipboardCopy className="h-4 w-4 shrink-0" />
+        )
+      }
+      label={copiedAppleNotesList ? "Copied" : "Copy list"}
+    />
+  );
+
+  if (isLoading)
+    return (
+      <p className="text-sm text-muted-foreground">Loading shopping list…</p>
+    );
   if (error)
-    return <p role="alert">Could not load shopping list: {error.message}</p>;
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        Could not load shopping list: {error.message}
+      </p>
+    );
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="rounded-2xl border bg-card/70 p-4 shadow-sm">
-        <div className="flex items-center justify-between gap-2">
-          <Label className="text-xs uppercase text-muted-foreground">
-            Recipes included
-          </Label>
-          <span className="text-xs text-muted-foreground">
-            {recipeNames.length} recipes
-          </span>
-        </div>
-        <div className="mt-3 flex flex-col gap-2">
-          {recipeNames.length > 0 ? (
-            recipeNames.map(([id, name]) => (
-              <ShoppingRecipeItem key={id} id={id} name={name} />
-            ))
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No recipes added yet.
-            </p>
-          )}
-        </div>
-      </section>
+    <div className="flex flex-col gap-4">
+      <PageHeader
+        title="Shopping list"
+        description={
+          totalCount === 0
+            ? "Nothing on the list."
+            : `${remainingCount} to buy${
+                boughtCount ? ` · ${boughtCount} in cart` : ""
+              }`
+        }
+        actions={
+          <>
+            {copyButton}
+            {totalCount > 0 && (
+              <ShoppingListActions hasBought={boughtCount > 0} />
+            )}
+          </>
+        }
+      />
 
-      <section className="rounded-2xl border bg-card/70 p-4 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
-            <Label className="text-xs uppercase text-muted-foreground">
-              Actions
-            </Label>
-            <div className="flex flex-wrap items-center gap-2">
-              {actions}
-              <IconTextButton
-                type="button"
-                variant="outline"
-                disabled={!appleNotesListText}
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(appleNotesListText);
-                  } catch {
-                    toast.error(
-                      "Could not copy the list. Check clipboard access and try again.",
-                    );
-                    return;
-                  }
-                  setCopiedAppleNotesList(true);
-                  window.setTimeout(() => setCopiedAppleNotesList(false), 1800);
-                }}
-                icon={
-                  copiedAppleNotesList ? (
-                    <Check className="h-4 w-4 shrink-0" />
-                  ) : (
-                    <ClipboardCopy className="h-4 w-4 shrink-0" />
-                  )
-                }
-                label={copiedAppleNotesList ? "Copied" : "Copy for Notes"}
-              />
+      <section className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-3 shadow-sm sm:p-4">
+        <ShoppingAddLooseForm />
+        {recipeNames.length > 0 || totalCount > 0 ? (
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t pt-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                From recipes
+              </span>
+              {recipeNames.length > 0 ? (
+                recipeNames.map(([id, name]) => (
+                  <ShoppingRecipeItem key={id} id={id} name={name} />
+                ))
+              ) : (
+                <span className="text-xs text-muted-foreground">None</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Group by
+              </span>
+              {radioGroupComp}
             </div>
           </div>
-          <div className="space-y-2">
-            <Label className="text-xs uppercase text-muted-foreground">
-              Group mode
-            </Label>
-            {radioGroupComp}
-          </div>
-        </div>
+        ) : null}
       </section>
 
-      <section className="rounded-2xl bg-card/70 p-3 shadow-sm">
+      {groupedKeys.length === 0 ? (
+        <div className="flex flex-col items-center gap-1 rounded-2xl border border-dashed px-6 py-12 text-center">
+          <p className="font-medium">Your list is empty</p>
+          <p className="text-sm text-muted-foreground">
+            Add items above, or use “Add to list” on any recipe.
+          </p>
+        </div>
+      ) : (
         <div className="flex flex-col gap-3">
-          {groupedKeys.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No items added yet.</p>
-          ) : (
-            groupedKeys.map((key) => {
-              const items = groupedShoppingList[key]!;
-              const isVisible = !hiddenKeys.includes(key);
+          {groupedKeys.map((key) => {
+            const items = [...groupedShoppingList[key]!].sort(
+              (a, b) =>
+                Number(a.isBought ?? false) - Number(b.isBought ?? false),
+            );
+            const groupBought = items.filter((item) => item.isBought).length;
+            const isVisible = !hiddenKeys.includes(key);
 
-              return (
-                <div
-                  key={key}
-                  className="rounded-2xl border bg-background/70 p-2 shadow-sm"
+            return (
+              <section
+                key={key}
+                className="rounded-2xl border bg-card/70 p-2 shadow-sm"
+              >
+                <button
+                  type="button"
+                  aria-expanded={isVisible}
+                  onClick={() =>
+                    setHiddenKeys((keys) => {
+                      if (keys.includes(key)) {
+                        return keys.filter((k) => k !== key);
+                      }
+                      return [...keys, key];
+                    })
+                  }
+                  className="flex w-full items-center justify-between gap-3 rounded-xl px-2 py-1.5 text-left hover:bg-accent/40"
                 >
-                  <button
-                    type="button"
-                    aria-expanded={isVisible}
-                    onClick={() =>
-                      setHiddenKeys((keys) => {
-                        if (keys.includes(key)) {
-                          return keys.filter((k) => k !== key);
-                        }
-                        return [...keys, key];
-                      })
-                    }
-                    className="-mx-1 flex w-full items-center justify-between gap-3 rounded-lg px-1 py-1 text-left hover:bg-accent/40"
-                  >
-                    <span className="text-base font-semibold">{key}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {items.length} items
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+                        !isVisible && "-rotate-90",
+                      )}
+                    />
+                    <span className="truncate text-sm font-semibold">
+                      {key}
                     </span>
-                  </button>
-                  {isVisible ? (
-                    <div className="mt-2 flex flex-col gap-1.5">
-                      {items.map((item) => (
-                        <ShoppingListCard
-                          key={item.id}
-                          item={item}
-                          displayMode={
-                            groupMode === "recipe" ? "recipe" : "aisle"
-                          }
-                          recentPurchases={
-                            item.ingredient?.id
-                              ? purchasesByIngredient.get(item.ingredient.id) ??
-                                []
-                              : []
-                          }
-                        />
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })
-          )}
+                  </span>
+                  <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                    {groupBought}/{items.length}
+                  </span>
+                </button>
+                {isVisible ? (
+                  <div className="mt-1 flex flex-col">
+                    {items.map((item) => (
+                      <ShoppingListCard
+                        key={item.id}
+                        item={item}
+                        displayMode={
+                          groupMode === "recipe" ? "recipe" : "aisle"
+                        }
+                        recentPurchases={
+                          item.ingredient?.id
+                            ? purchasesByIngredient.get(item.ingredient.id) ??
+                              []
+                            : []
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </section>
+            );
+          })}
         </div>
-      </section>
+      )}
     </div>
   );
 }

@@ -24,7 +24,7 @@ export function AddRecipeToShoppingList(props: {
         size="icon"
         aria-label="Add to list"
       >
-        <ShoppingBasket className="h-4 w-4" />
+        <ShoppingBasket className="h-4 w-4 shrink-0" />
       </Button>
     </TooltipButton>
   ) : (
@@ -35,8 +35,8 @@ export function AddRecipeToShoppingList(props: {
       isLoading={addRecipeMutation.isPending}
       variant="outline"
       className={className}
-      icon={<ShoppingBasket className="h-4 w-4" />}
-      label="List"
+      icon={<ShoppingBasket className="h-4 w-4 shrink-0" />}
+      label="Add to list"
     />
   );
 }

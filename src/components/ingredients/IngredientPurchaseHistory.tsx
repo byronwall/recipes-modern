@@ -13,6 +13,7 @@ import {
 } from "~/components/ui/hover-card";
 import { Search } from "lucide-react";
 import { IconTextButton } from "~/components/ui/icon-text-button";
+import { ProductImage } from "~/components/ProductImage";
 
 type RecentPurchase =
   RouterOutputs["purchases"]["recentByIngredientIds"]["ingredientPurchases"][number]["purchases"][number];
@@ -96,7 +97,7 @@ export function IngredientPurchaseHistory(props: Props) {
                     className="overflow-hidden rounded-md border border-border/60 bg-background/60 transition hover:border-border hover:shadow-sm"
                     aria-label={`View purchase details for ${purchase.krogerName}`}
                   >
-                    <img
+                    <ProductImage
                       src={purchase.imageUrl}
                       alt={purchase.krogerName}
                       className="h-8 w-8 object-cover"
@@ -108,7 +109,7 @@ export function IngredientPurchaseHistory(props: Props) {
                     className="w-72 rounded-2xl border bg-card p-3 shadow-xl"
                   >
                     <div className="flex items-start gap-3">
-                      <img
+                      <ProductImage
                         src={purchase.imageUrl}
                         alt={purchase.krogerName}
                         className="h-14 w-14 rounded-lg object-cover"
@@ -205,7 +206,7 @@ export function IngredientPurchaseHistory(props: Props) {
                   className="rounded-xl border bg-background/80 px-2.5 py-2"
                 >
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                    <img
+                    <ProductImage
                       src={purchase.imageUrl}
                       alt={purchase.krogerName}
                       className="h-9 w-9 rounded-md object-cover"

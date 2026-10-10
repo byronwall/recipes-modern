@@ -1,10 +1,8 @@
 "use client";
 
-import { Edit } from "lucide-react";
 import { useMemo } from "react";
-import { Button } from "~/components/ui/button";
-import { TooltipButton } from "~/components/ui/tooltip-button";
-import { H3, H4 } from "~/components/ui/typography";
+import { formatAmount } from "~/lib/formatAmount";
+import { EmptySectionState, SectionHeading } from "./SectionHeading";
 import { type Recipe } from "./recipe-types";
 import { IngredientPurchaseHistory } from "~/components/ingredients/IngredientPurchaseHistory";
 import { api, type RouterOutputs } from "~/trpc/react";
@@ -34,64 +32,79 @@ export function IngredientList({
     return m;
   }, [ingredientsCatalog]);
 
-  const mainComp = (
-    <ul>
-      {recipe.ingredientGroups.map((ingredient, idx) => (
-        <div key={ingredient.id ?? idx} className="space-y-1">
-          <H4>{ingredient.title}</H4>
-          {ingredient.ingredients.map((i) => {
-            const purchaseHistory =
-              purchasesByIngredientName.get(
-                i.ingredient.trim().toLowerCase(),
-              ) ?? [];
-
-            return (
-              <div
-                key={i.id ?? `${ingredient.id ?? idx}-${i.ingredient}`}
-                className="flex items-center justify-between gap-3"
-              >
-                <label
-                  className="flex min-w-0 flex-1 gap-1 break-words text-lg"
-                  htmlFor={`ingredient-${i.id}`}
-                >
-                  {[i.amount, i.unit, i.ingredient, i.modifier]
-                    .filter(Boolean)
-                    .join(" ")}
-                </label>
-                <IngredientPurchaseHistory
-                  purchases={purchaseHistory}
-                  compact
-                  hideEmpty
-                  currentRecipeId={recipe.id}
-                  ingredientId={i.id}
-                  className="shrink-0"
-                />
-              </div>
-            );
-          })}
-        </div>
-      ))}
-    </ul>
+  const ingredientCount = recipe.ingredientGroups.reduce(
+    (sum, group) => sum + group.ingredients.length,
+    0,
   );
+
+  const mainComp =
+    ingredientCount === 0 ? (
+      <EmptySectionState
+        message="No ingredients yet."
+        actionLabel="Add ingredients"
+        onAction={onStartEditing}
+      />
+    ) : (
+      <div className="space-y-4">
+        {recipe.ingredientGroups.map((group, idx) =>
+          group.ingredients.length === 0 ? null : (
+            <div key={group.id ?? idx}>
+              {group.title ? (
+                <h4 className="mb-1 text-sm font-semibold">{group.title}</h4>
+              ) : null}
+              <ul className="divide-y divide-border/60">
+                {group.ingredients.map((i) => {
+                  const purchaseHistory =
+                    purchasesByIngredientName.get(
+                      i.ingredient.trim().toLowerCase(),
+                    ) ?? [];
+                  const quantity = [formatAmount(i.amount), i.unit]
+                    .filter(Boolean)
+                    .join(" ");
+
+                  return (
+                    <li
+                      key={i.id ?? `${group.id ?? idx}-${i.ingredient}`}
+                      className="flex items-center justify-between gap-3 py-1.5"
+                    >
+                      <span className="min-w-0 flex-1 break-words leading-snug">
+                        {quantity ? (
+                          <span className="font-semibold tabular-nums">
+                            {quantity}{" "}
+                          </span>
+                        ) : null}
+                        {i.ingredient}
+                        {i.modifier ? (
+                          <span className="text-muted-foreground">
+                            , {i.modifier}
+                          </span>
+                        ) : null}
+                      </span>
+                      <IngredientPurchaseHistory
+                        purchases={purchaseHistory}
+                        compact
+                        hideEmpty
+                        currentRecipeId={recipe.id}
+                        ingredientId={i.id}
+                        className="shrink-0"
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ),
+        )}
+      </div>
+    );
 
   return (
     <>
-      <div className="flex items-center justify-between gap-2">
-        <H3 className="text-xl font-medium text-muted-foreground">
-          ingredients
-        </H3>
-        <TooltipButton content="Edit recipe content">
-          <Button
-            aria-label="Edit recipe content"
-            onClick={onStartEditing}
-            variant="ghost"
-            size="icon"
-            className="rounded-md text-primary/70 hover:bg-primary/10 hover:text-primary"
-          >
-            <Edit className="size-5 shrink-0" />
-          </Button>
-        </TooltipButton>
-      </div>
+      <SectionHeading
+        title="Ingredients"
+        count={ingredientCount}
+        onEdit={onStartEditing}
+      />
       {mainComp}
     </>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit, Plus } from "lucide-react";
+import { Edit, MapPin, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   Command,
@@ -19,6 +19,8 @@ import {
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 import { IconTextButton } from "~/components/ui/icon-text-button";
+import { Button } from "~/components/ui/button";
+import { TooltipButton } from "~/components/ui/tooltip-button";
 
 type Props = {
   ingredientId: number;
@@ -61,14 +63,20 @@ export function AislePickerDialog({ ingredientId, currentAisle }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <IconTextButton
-          variant="secondary"
-          size="sm"
-          icon={<Edit className="h-4 w-4 shrink-0" />}
-          label="Aisle"
-        />
-      </DialogTrigger>
+      <TooltipButton
+        content={currentAisle ? `Aisle: ${currentAisle}` : "Set aisle"}
+      >
+        <DialogTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={currentAisle ? "Change aisle" : "Set aisle"}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <MapPin className="h-4 w-4 shrink-0" />
+          </Button>
+        </DialogTrigger>
+      </TooltipButton>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

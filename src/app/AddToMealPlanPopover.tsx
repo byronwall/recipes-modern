@@ -119,12 +119,12 @@ export function AddToMealPlanPopover(props: {
               className={className}
               icon={
                 isAdding ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                 ) : (
-                  <CalendarPlus className="h-4 w-4" />
+                  <CalendarPlus className="h-4 w-4 shrink-0" />
                 )
               }
-              label="Plan"
+              label="Add to plan"
               disabled={isAdding}
             />
           </PopoverTrigger>

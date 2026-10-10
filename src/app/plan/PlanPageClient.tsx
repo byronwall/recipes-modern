@@ -12,13 +12,16 @@ import {
 } from "date-fns";
 import {
   CalendarDays,
+  Check,
+  Undo2,
   ChevronLeft,
   ChevronRight,
   ShoppingBasket,
   Trash,
 } from "lucide-react";
 
-import { PageHeaderCard } from "~/components/layout/PageHeaderCard";
+import { PageHeader } from "~/components/layout/PageHeader";
+import { formatRecipeType } from "~/lib/recipeType";
 import { Button } from "~/components/ui/button";
 import { Calendar } from "~/components/ui/calendar";
 import {
@@ -29,7 +32,6 @@ import {
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { TooltipButton } from "~/components/ui/tooltip-button";
-import { H1 } from "~/components/ui/typography";
 import {
   Popover,
   PopoverContent,
@@ -86,17 +88,13 @@ function MealPlanRow(props: {
 
   const actions = (
     <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         <TooltipButton content="Delete meal">
           <Button
             onClick={() => onDelete(plan.id)}
-            variant={isInlineActions ? "destructive-outline" : "ghost"}
+            variant="ghost-destructive"
             size="icon"
             aria-label="Delete meal"
-            className={cn(
-              !isInlineActions &&
-                "text-destructive/80 hover:bg-destructive/10 hover:text-destructive",
-            )}
           >
             <Trash className="h-4 w-4 shrink-0" />
           </Button>
@@ -151,9 +149,19 @@ function MealPlanRow(props: {
         onClick={() => onToggleMade(plan)}
         disabled={isMutating}
         size="sm"
-        className="h-8"
+        variant={plan.isMade ? "outline" : "default"}
       >
-        {plan.isMade ? "Not made" : "Made"}
+        {plan.isMade ? (
+          <>
+            <Undo2 className="h-4 w-4 shrink-0" />
+            <span className="ml-1">Not made</span>
+          </>
+        ) : (
+          <>
+            <Check className="h-4 w-4 shrink-0" />
+            <span className="ml-1">Mark made</span>
+          </>
+        )}
       </Button>
     </div>
   );
@@ -187,7 +195,7 @@ function MealPlanRow(props: {
         <Link
           href={`/recipes/${plan.Recipe.id}`}
           className={cn(
-            "block w-full truncate px-0 py-0.5 text-left text-sm font-medium transition-colors hover:text-foreground/80",
+            "line-clamp-2 w-full rounded-lg bg-background px-2 py-1 text-left text-xs font-medium leading-snug shadow-sm ring-1 ring-border/70 transition-colors hover:bg-primary/5 hover:text-primary hover:no-underline",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
             plan.isMade && "text-muted-foreground",
           )}
@@ -204,7 +212,7 @@ function MealPlanRow(props: {
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
               <span className="rounded-full border px-2 py-0.5">
-                {plan.Recipe.type}
+                {formatRecipeType(plan.Recipe.type)}
               </span>
               {plan.isMade && (
                 <span className="rounded-full bg-muted px-2 py-0.5">made</span>
@@ -369,10 +377,14 @@ export function PlanPageClient() {
         </section>
       )}
 
-      <PageHeaderCard className="border-0 bg-transparent p-0 shadow-none">
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <H1 className="leading-tight">Planned Meals</H1>
+      <PageHeader
+        title="Meal plan"
+        description={`${format(calendarStart, "MMM d")} – ${format(
+          addDays(calendarStart, 20),
+          "MMM d, yyyy",
+        )}`}
+        actions={
+          <>
             {isMobile && (
               <RecipePickerPopover
                 day={calendarDays.find(isToday) ?? calendarStart}
@@ -384,24 +396,7 @@ export function PlanPageClient() {
                 }
               />
             )}
-          </div>
-
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={shouldHideCompleted}
-                onCheckedChange={setShouldHideCompleted}
-                id="hide-completed"
-              />
-              <Label
-                htmlFor="hide-completed"
-                className="cursor-pointer text-sm"
-              >
-                Hide made meals
-              </Label>
-            </div>
-
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <TooltipButton content="Previous week">
                 <Button
                   variant="outline"
@@ -419,7 +414,6 @@ export function PlanPageClient() {
 
               <Button
                 variant="outline"
-                size="sm"
                 onClick={() => setCalendarStartKey(defaultCalendarStart)}
               >
                 Today
@@ -440,15 +434,29 @@ export function PlanPageClient() {
                 </Button>
               </TooltipButton>
             </div>
-          </div>
-        </div>
-      </PageHeaderCard>
+          </>
+        }
+      />
 
-      <div className="hidden gap-2 md:grid md:grid-cols-7">
+      <div className="-mt-2 flex items-center gap-2">
+        <Switch
+          checked={shouldHideCompleted}
+          onCheckedChange={setShouldHideCompleted}
+          id="hide-completed"
+        />
+        <Label
+          htmlFor="hide-completed"
+          className="cursor-pointer text-sm text-muted-foreground"
+        >
+          Hide made meals
+        </Label>
+      </div>
+
+      <div className="-mb-3 hidden gap-2 md:grid md:grid-cols-7">
         {WEEKDAY_LABELS.map((day) => (
           <div
             key={day}
-            className="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+            className="px-2 text-xs font-medium text-muted-foreground"
           >
             {day}
           </div>
@@ -465,42 +473,47 @@ export function PlanPageClient() {
           const dayKey = format(day, "yyyy-MM-dd");
           const dayPlans = plansByDay.get(dayKey) ?? [];
           const isCurrentDay = isToday(day);
+          const isPast = !isCurrentDay && day < startOfDay(new Date());
 
           return (
             <div
               key={dayKey}
               className={cn(
-                "flex min-h-[170px] flex-col overflow-hidden rounded-2xl border bg-card/70 shadow-sm",
-                isMobile && "min-h-0",
+                "group/day flex min-h-[128px] flex-col overflow-hidden rounded-xl border bg-card/70",
+                isMobile && "min-h-0 rounded-2xl shadow-sm",
+                isPast && !isMobile && "bg-muted/30",
                 isCurrentDay && "border-primary/70 bg-primary/5",
               )}
             >
               <div
                 className={cn(
-                  "flex items-center justify-between border-b bg-muted/25 px-3 pb-2 pt-2",
-                  isMobile && "px-4 pb-2 pt-1.5",
-                  isCurrentDay && "bg-primary/10",
+                  "flex items-center justify-between py-1 pl-2.5 pr-1",
+                  isMobile && "border-b bg-muted/25 px-4 py-1.5",
+                  isCurrentDay && isMobile && "bg-primary/10",
                 )}
               >
                 <div className="flex items-center gap-2">
                   <span
                     className={cn(
-                      "text-lg font-semibold leading-none",
-                      isMobile && "text-2xl",
+                      "text-sm font-semibold leading-none",
+                      isPast && !isMobile && "text-muted-foreground",
+                      isCurrentDay &&
+                        !isMobile &&
+                        "flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground",
+                      isMobile && "text-xl",
                     )}
                   >
                     {format(day, "d")}
                   </span>
-                  <span
-                    className={cn(
-                      "text-xs uppercase tracking-wide text-muted-foreground",
-                      isMobile && "text-sm",
-                    )}
-                  >
-                    {format(day, "MMM")}
-                  </span>
-                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground md:hidden">
-                    {format(day, "EEE")}
+                  {(isMobile ||
+                    day.getDate() === 1 ||
+                    dayKey === format(calendarStart, "yyyy-MM-dd")) && (
+                    <span className="text-xs text-muted-foreground">
+                      {format(day, "MMM")}
+                    </span>
+                  )}
+                  <span className="text-xs font-medium text-muted-foreground md:hidden">
+                    {format(day, "EEEE")}
                   </span>
                 </div>
                 <RecipePickerPopover
@@ -514,7 +527,7 @@ export function PlanPageClient() {
 
               <div
                 className={cn(
-                  "flex flex-1 flex-col gap-1 p-3",
+                  "flex flex-1 flex-col gap-1.5 px-1.5 pb-1.5",
                   isMobile && "gap-0 p-4 pt-3",
                 )}
               >
@@ -564,17 +577,13 @@ export function PlanPageClient() {
 
       <section className="rounded-2xl border bg-card/70 p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold tracking-tight">
-            Popular Dishes
-          </h2>
-          <span className="text-xs text-muted-foreground">
-            Top 10 by times made
-          </span>
+          <h2 className="text-base font-semibold tracking-tight">Most made</h2>
+          <span className="text-xs text-muted-foreground">Top 10</span>
         </div>
         {popularDishes.length === 0 ? (
           <p className="text-sm text-muted-foreground">No made meals yet.</p>
         ) : (
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {popularDishes.map((dish, index) => (
               <div
                 key={dish.recipeId}
@@ -583,15 +592,17 @@ export function PlanPageClient() {
                 <div className="min-w-0 flex-1">
                   <Link
                     href={`/recipes/${dish.recipeId}`}
-                    className="block truncate text-sm font-medium hover:underline"
+                    className="block truncate text-sm font-medium hover:text-primary hover:no-underline"
                   >
-                    {index + 1}. {dish.name}
+                    <span className="mr-1 text-muted-foreground">
+                      {index + 1}.
+                    </span>
+                    {dish.name}
                   </Link>
                   <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>{dish.type}</span>
-                    <span className="rounded-full bg-muted px-2 py-0.5 font-medium">
-                      {dish.madeCount}x
-                    </span>
+                    <span>{formatRecipeType(dish.type)}</span>
+                    <span aria-hidden>·</span>
+                    <span>Made {dish.madeCount}×</span>
                   </div>
                 </div>
 
@@ -609,32 +620,30 @@ export function PlanPageClient() {
 
       <section className="rounded-2xl border bg-card/70 p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold tracking-tight">
-            Recently Made
+          <h2 className="text-base font-semibold tracking-tight">
+            Recently made
           </h2>
-          <span className="text-xs text-muted-foreground">
-            Last 5 made meals
-          </span>
+          <span className="text-xs text-muted-foreground">Last 5</span>
         </div>
         {recentlyMade.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Nothing marked made yet.
           </p>
         ) : (
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {recentlyMade.map((plan) => {
               const planDate = toPlanDate(plan.date);
               return (
                 <Link
                   key={plan.id}
                   href={`/recipes/${plan.Recipe.id}`}
-                  className="flex min-h-[120px] flex-col gap-2 rounded-xl border bg-background/80 p-3 transition-colors hover:bg-background"
+                  className="flex flex-col gap-1 rounded-xl border bg-background/80 px-3 py-2 transition-colors hover:bg-background hover:no-underline"
                 >
-                  <div className="line-clamp-2 text-sm font-semibold leading-tight">
+                  <div className="truncate text-sm font-medium">
                     {plan.Recipe.name}
                   </div>
-                  <div className="mt-auto flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                    <span>{plan.Recipe.type}</span>
+                  <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <span>{formatRecipeType(plan.Recipe.type)}</span>
                     <span>
                       {planDate
                         ? format(planDate, "MMM d, yyyy")

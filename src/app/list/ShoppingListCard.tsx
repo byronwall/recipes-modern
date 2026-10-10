@@ -43,53 +43,53 @@ export function ShoppingListCard(props: {
       : "";
 
   return (
-    <div className="rounded-2xl bg-background/60 px-2 py-1.5 transition-colors hover:bg-accent/30">
-      <div className="flex w-full flex-col justify-between gap-2 sm:flex-row sm:items-center">
-        <div className="flex min-w-0 items-start gap-2">
-          <Checkbox
-            checked={isBought}
-            onCheckedChange={async () => {
-              await handleMarkAsBought(item.id);
-            }}
-            id={`checkbox-${item.id}`}
-            className="mt-0.5 h-5 w-5"
-          />
-          <div className="min-w-0">
-            <Label
-              htmlFor={`checkbox-${item.id}`}
-              className={cn(
-                "cursor-pointer break-words text-base font-semibold leading-snug hover:bg-accent/40",
-                {
-                  "text-muted-foreground line-through": isBought,
-                },
-              )}
-            >
-              {ingredientLabel}
-            </Label>
-            {linkedRecipe && !isBought ? (
-              <p className="mt-1 truncate text-xs text-muted-foreground">
-                <Link
-                  href={`/recipes/${linkedRecipe.id}`}
-                  className="hover:text-foreground hover:underline"
-                >
-                  {linkedRecipe.name}
-                  {ingredientGroupLabel}
-                </Link>
-              </p>
-            ) : extraLabel && !isBought ? (
-              <p className="mt-1 truncate text-xs text-muted-foreground">
-                {extraLabel}
-              </p>
-            ) : null}
-          </div>
+    <div
+      className={cn(
+        "flex w-full items-center justify-between gap-2 rounded-xl px-2 py-1.5 transition-colors hover:bg-accent/40",
+        isBought && "opacity-60",
+      )}
+    >
+      <div className="flex min-w-0 items-start gap-2.5">
+        <Checkbox
+          checked={isBought}
+          onCheckedChange={async () => {
+            await handleMarkAsBought(item.id);
+          }}
+          id={`checkbox-${item.id}`}
+          className="mt-0.5 h-5 w-5 rounded-full"
+        />
+        <div className="min-w-0">
+          <Label
+            htmlFor={`checkbox-${item.id}`}
+            className={cn(
+              "cursor-pointer break-words text-sm font-medium leading-snug",
+              {
+                "text-muted-foreground line-through": isBought,
+              },
+            )}
+          >
+            {ingredientLabel}
+          </Label>
+          {linkedRecipe && !isBought ? (
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+              <Link
+                href={`/recipes/${linkedRecipe.id}`}
+                className="hover:text-foreground hover:underline"
+              >
+                {linkedRecipe.name}
+                {ingredientGroupLabel}
+              </Link>
+            </p>
+          ) : extraLabel && !isBought ? (
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+              {extraLabel}
+            </p>
+          ) : null}
         </div>
+      </div>
 
-        <div
-          className={cn(
-            "flex flex-wrap items-center gap-2",
-            isBought && "invisible",
-          )}
-        >
+      {!isBought && (
+        <div className="flex shrink-0 items-center gap-0.5">
           {item.ingredient && recentPurchases.length > 0 ? (
             <IngredientPurchaseHistory
               purchases={recentPurchases}
@@ -98,6 +98,7 @@ export function ShoppingListCard(props: {
               listItemId={item.id}
               compact
               hideEmpty
+              className="mr-1"
             />
           ) : null}
           <KrogerSearchPopup
@@ -117,19 +118,18 @@ export function ShoppingListCard(props: {
               <SimpleAlertDialog
                 trigger={
                   <Button
-                    variant="ghost"
-                    size="icon"
+                    variant="ghost-destructive"
+                    size="icon-sm"
                     aria-label="Remove item"
-                    className="text-destructive hover:text-destructive"
                   >
                     <Trash className="h-4 w-4 shrink-0" aria-hidden="true" />
                   </Button>
                 }
-                title={"Are you sure you want to delete?"}
+                title={"Remove this item?"}
                 description={
                   "This will remove the item from your shopping list."
                 }
-                confirmText={"Delete"}
+                confirmText={"Remove"}
                 cancelText={"Cancel"}
                 onConfirm={async () => {
                   await handleDeleteItem(item.id);
@@ -138,7 +138,7 @@ export function ShoppingListCard(props: {
             </span>
           </TooltipButton>
         </div>
-      </div>
+      )}
     </div>
   );
 }

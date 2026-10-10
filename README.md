@@ -26,6 +26,25 @@ A modern Next.js 14 app for creating and managing recipes, planning meals, and m
 
 There are hard coded traefik labels in the docker-compose.yaml file. These are set to work with Coolify's Traefik setup. Specifically, the `endPoints` are `http` and `https` for the app.
 
+## Sandbox database (UI work and screenshots)
+
+For UI work, demos, or screenshots you can run the app against a throwaway Postgres container filled with realistic sample data, without touching your real dev database.
+
+```bash
+npm run sandbox
+```
+
+This starts a `recipes-sandbox-db` container on port `55432`, applies migrations, seeds it on first run, and starts `next dev` pointed at it. Sign in with `audit@example.test` / `audit-password`. Cart adds are always skipped in sandbox mode, and placeholder values cover any missing Kroger/OpenAI keys, so a fresh clone only needs Docker.
+
+| Command | What it does |
+| --- | --- |
+| `npm run sandbox` | Start the DB if needed, then run `next dev` against it (extra args go to `next dev`, e.g. `npm run sandbox -- -p 3100`) |
+| `npm run sandbox:up` | Start, migrate, and seed (only if empty) without starting the app |
+| `npm run sandbox:reset` | Wipe and reseed the sample data |
+| `npm run sandbox:down` | Delete the container |
+
+Set `SANDBOX_DB_PORT` to use a different port. The seeder (`scripts/seed-sandbox.mjs`) refuses to run unless `Z_DB_URL` points at the `recipes_sandbox` database.
+
 ## Setup (Images & Object Storage)
 
 This app supports recipe images using an S3-compatible bucket (MinIO in Docker by default).

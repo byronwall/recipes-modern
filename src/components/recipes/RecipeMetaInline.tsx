@@ -1,6 +1,9 @@
 "use client";
 
 import { RecipeType } from "@prisma/client";
+import { Clock } from "lucide-react";
+import { formatMinutes } from "~/lib/formatMinutes";
+import { formatRecipeType } from "~/lib/recipeType";
 import {
   Select,
   SelectContent,
@@ -35,8 +38,9 @@ export function RecipeMetaInline(props: { recipe: Recipe }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       {typeof recipe.cookMinutes === "number" && (
-        <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
-          {recipe.cookMinutes} min
+        <span className="inline-flex h-7 items-center gap-1 rounded-full bg-muted px-3 text-xs text-muted-foreground">
+          <Clock className="h-3.5 w-3.5 shrink-0" />
+          {formatMinutes(recipe.cookMinutes)}
         </span>
       )}
 
@@ -49,13 +53,16 @@ export function RecipeMetaInline(props: { recipe: Recipe }) {
           })
         }
       >
-        <SelectTrigger className="h-7 w-auto rounded-full border px-3 py-0 text-xs">
-          <SelectValue placeholder={recipe.type} />
+        <SelectTrigger
+          aria-label="Recipe type"
+          className="h-7 w-auto gap-1 rounded-full border px-3 py-0 text-xs"
+        >
+          <SelectValue>{formatRecipeType(recipe.type)}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           {Object.values(RecipeType).map((t) => (
             <SelectItem key={t} value={t}>
-              {t}
+              {formatRecipeType(t)}
             </SelectItem>
           ))}
         </SelectContent>

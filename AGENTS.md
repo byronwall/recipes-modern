@@ -105,7 +105,8 @@ This file documents the key UI and code patterns established in this repo. It sh
 - **`RecipeTagEditor`**: Shared add/remove tag UI with optional overflow and confirm remove; use for list + detail tags.
 - **`InlineTagEditor`**: Form-focused tag input used inside dialogs/edit modals.
 - **`ListPanel`**: Reusable popover list container with matching item + empty-state components.
-- **`PageHeaderCard`**: Standard header card surface for page-level titles/controls.
+- **`PageHeader`**: Standard page title row (title, description, actions).
+- **`PageHeaderCard`**: Card surface for page-level filter/toolbars.
 - **`CardGrid`**: Shared grid container for card layouts.
 - **`RecipeMetaInline`**: Inline metadata editor for cook time, type, and tags on recipe detail.
 
@@ -122,6 +123,20 @@ This file documents the key UI and code patterns established in this repo. It sh
 - If adding repeated action patterns, create a shared `TooltipButton`.
 - If adding new layouts, consider shared `PageHeaderCard` and `CardGrid` components.
 - Use `dirtyInputClass` (recipe detail edit utility) for consistent dirty-field border/shadow styling.
+
+## Page Structure
+
+- **Page titles**: Use `PageHeader` (title, optional description, right-aligned actions) on every top-level page. Don't use the `H1` typography primitive for page titles.
+- **Shell**: `MainPageWithNav` renders a sticky top bar with a horizontally scrollable nav on phones. Keep page content inside the `max-w-5xl` main column.
+- **Mobile grids**: Always set a base `grid-cols-1` on responsive grids. Without it the implicit track sizes to content and breaks `truncate`, causing horizontal page scroll on phones.
+- **Empty states**: Lists and sections show a dashed-border empty state with one line of guidance (and a clear-filters action when filters caused it).
+- **Destructive actions**: Prefer the quiet `ghost-destructive` button variant plus a confirm dialog. Avoid red-outlined buttons in repeated rows or cards.
+- **Product images**: Use `ProductImage` for Kroger thumbnails so missing or broken images fall back to an icon tile.
+- **Display helpers**: `formatRecipeType` (enum to `Breakfast`), `formatAmount` (`0.75` to `¾`), `formatMinutes` (`240` to `4 hr`).
+
+## Local Sandbox
+
+- `npm run sandbox` runs the app against a throwaway, seeded Postgres container (`scripts/sandbox-db.sh`). Use it for UI verification and PR screenshots instead of a real database.
 
 ## Logging & Diagnostics
 
