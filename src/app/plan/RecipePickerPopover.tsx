@@ -48,16 +48,16 @@ export function RecipePickerPopover(props: {
         {props.iconOnly ? (
           <Button
             variant="ghost"
-            size="icon"
-            aria-label="Add meal"
-            className="text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            size="icon-sm"
+            aria-label={`Add meal on ${targetDateLabel}`}
+            className="h-7 w-7 text-muted-foreground/70 hover:bg-primary/10 hover:text-primary"
           >
             <Plus className="h-4 w-4 shrink-0" />
           </Button>
         ) : (
-          <Button variant="outline" className="h-10 rounded-full">
+          <Button>
             <Plus className="h-4 w-4 shrink-0" />
-            Add meal
+            <span className="ml-1">Add meal</span>
           </Button>
         )}
       </TooltipButton>

@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "~/components/ui/button";
+import Link from "next/link";
+import { X } from "lucide-react";
 import { useShoppingListActions } from "../useShoppingListActions";
-import { Trash } from "lucide-react";
 import { SimpleAlertDialog } from "~/components/SimpleAlertDialog";
 import { TooltipButton } from "~/components/ui/tooltip-button";
 
@@ -12,25 +12,30 @@ export function ShoppingRecipeItem(props: { id: string; name: string }) {
   const { handleDeleteRecipe } = useShoppingListActions();
 
   return (
-    <div key={id} className="flex items-center gap-3">
-      <TooltipButton content="Remove recipe">
+    <span className="inline-flex max-w-full items-center gap-0.5 rounded-full bg-accent/60 py-0.5 pl-3 pr-1 text-xs font-medium">
+      <Link
+        href={`/recipes/${id}`}
+        className="truncate hover:text-primary hover:no-underline"
+      >
+        {name}
+      </Link>
+      <TooltipButton content="Remove recipe from list">
         <span className="inline-flex">
           <SimpleAlertDialog
             trigger={
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Remove recipe"
-                className="text-destructive hover:text-destructive"
+              <button
+                type="button"
+                aria-label={`Remove ${name} from list`}
+                className="rounded-full p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
               >
-                <Trash className="h-4 w-4 shrink-0" aria-hidden="true" />
-              </Button>
+                <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              </button>
             }
-            title={"Are you sure you want to delete?"}
+            title={`Remove ${name}?`}
             description={
               "This will remove all items for this recipe from your shopping list."
             }
-            confirmText={"Delete"}
+            confirmText={"Remove"}
             cancelText={"Cancel"}
             onConfirm={async () => {
               await handleDeleteRecipe(Number(id));
@@ -38,7 +43,6 @@ export function ShoppingRecipeItem(props: { id: string; name: string }) {
           />
         </span>
       </TooltipButton>
-      <span className="break-words text-base font-semibold">{name}</span>
-    </div>
+    </span>
   );
 }

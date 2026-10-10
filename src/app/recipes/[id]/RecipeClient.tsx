@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRecipeActions } from "~/app/useRecipeActions";
 import { api } from "~/trpc/react";
@@ -109,10 +110,23 @@ export function RecipeClient(props: { id: number }) {
     pendingScrollTarget,
   ]);
 
-  if (isLoading) return <p>Loading recipe...</p>;
-  if (error) return <p role="alert">Could not load recipe: {error.message}</p>;
+  if (isLoading)
+    return <p className="text-sm text-muted-foreground">Loading recipe…</p>;
+  if (error)
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        Could not load recipe: {error.message}
+      </p>
+    );
   if (!recipe) {
-    return <div>Recipe not found</div>;
+    return (
+      <div className="rounded-2xl border border-dashed px-6 py-12 text-center">
+        <p className="font-medium">Recipe not found</p>
+        <Link href="/" className="text-sm text-primary">
+          Back to recipes
+        </Link>
+      </div>
+    );
   }
   const recipeData = recipe;
 
@@ -157,15 +171,14 @@ export function RecipeClient(props: { id: number }) {
       <RecipeHeader recipe={recipe} />
 
       {isEditing ? (
-        <section className="space-y-4 rounded-xl border bg-card/70 p-6 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Editing mode
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Editing ingredients and instructions together. Press Save to
-                apply all changes.
+        <section className="space-y-4 rounded-2xl border bg-card/70 p-5 shadow-sm sm:p-6">
+          <div className="sticky top-14 z-10 -mx-5 -mt-5 flex flex-wrap items-center justify-between gap-3 rounded-t-2xl border-b bg-background/95 px-5 py-3 backdrop-blur sm:-mx-6 sm:-mt-6 sm:px-6">
+            <div className="space-y-0.5">
+              <p className="text-sm font-semibold">Editing recipe</p>
+              <p className="text-xs text-muted-foreground">
+                {hasAnyChanges
+                  ? "You have unsaved changes."
+                  : "Ingredients and instructions save together."}
               </p>
             </div>
 
@@ -179,7 +192,9 @@ export function RecipeClient(props: { id: number }) {
 
           <div className="space-y-6">
             <div className="space-y-3" ref={setIngredientsSectionEl}>
-              <h3 className="text-3xl font-bold tracking-tight">ingredients</h3>
+              <h3 className="text-xl font-semibold tracking-tight">
+                Ingredients
+              </h3>
               <p className="text-sm text-muted-foreground">
                 Ingredients are organized in editable groups.
               </p>
@@ -191,8 +206,8 @@ export function RecipeClient(props: { id: number }) {
             </div>
 
             <div className="space-y-3" ref={setInstructionsSectionEl}>
-              <h3 className="text-3xl font-bold tracking-tight">
-                instructions
+              <h3 className="text-xl font-semibold tracking-tight">
+                Instructions
               </h3>
               <p className="text-sm text-muted-foreground">
                 Steps are organized in editable groups.
@@ -223,14 +238,14 @@ export function RecipeClient(props: { id: number }) {
         </section>
       ) : (
         <>
-          <CardGrid className="lg:grid-cols-[2fr_3fr]">
-            <section className="rounded-xl border bg-card/70 p-6 shadow-sm">
+          <CardGrid className="items-start lg:grid-cols-[2fr_3fr]">
+            <section className="rounded-2xl border bg-card/70 p-5 shadow-sm sm:p-6">
               <IngredientList
                 recipe={recipeData}
                 onStartEditing={() => beginEditing("ingredients")}
               />
             </section>
-            <section className="rounded-xl border bg-card/70 p-6 shadow-sm">
+            <section className="rounded-2xl border bg-card/70 p-5 shadow-sm sm:p-6">
               <StepList
                 recipe={recipeData}
                 onStartEditing={() => beginEditing("instructions")}

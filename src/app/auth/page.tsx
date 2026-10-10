@@ -15,7 +15,7 @@ export default async function AuthPage() {
   const allowRegistration = userCount === 0;
 
   return (
-    <div className="flex w-full justify-center px-4 pt-4">
+    <div className="flex w-full justify-center pt-8 sm:pt-16">
       <div className="w-full max-w-sm">
         <LoginForm allowRegistration={allowRegistration} />
       </div>

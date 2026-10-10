@@ -3,7 +3,6 @@
 import { useRef, useState } from "react";
 import { ImagePlus, Trash } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { Label } from "~/components/ui/label";
 import ImageLightbox from "~/components/ImageLightbox";
 import SimpleAlertDialog from "~/components/SimpleAlertDialog";
 import { getImageUrl } from "~/lib/media";
@@ -69,11 +68,20 @@ export function RecipeImagesSection(props: { recipe: Recipe }) {
   }
 
   return (
-    <section className="rounded-2xl border bg-card/70 p-6 shadow-sm">
-      <Label>Images</Label>
+    <section className="space-y-3 rounded-2xl border bg-card/70 p-5 shadow-sm sm:p-6">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        Photos
+        {recipe.images?.length ? (
+          <span className="ml-1.5 font-normal normal-case tracking-normal">
+            · {recipe.images.length}
+          </span>
+        ) : null}
+      </h3>
       <div
-        className={`group relative flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-dashed p-4 transition-colors ${
-          isDragOver ? "border-primary bg-primary/5" : "border-muted"
+        className={`group relative flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-dashed p-3 transition-colors ${
+          isDragOver
+            ? "border-primary bg-primary/5"
+            : "border-border hover:border-primary/40 hover:bg-primary/5"
         }`}
         onClick={() => fileInputRef.current?.click()}
         onDragEnter={(e) => {
@@ -94,18 +102,23 @@ export function RecipeImagesSection(props: { recipe: Recipe }) {
         }}
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted text-muted-foreground group-hover:bg-primary/10">
-            <ImagePlus className="h-5 w-5" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary">
+            <ImagePlus className="h-4 w-4 shrink-0" />
           </div>
           <div>
-            <div className="text-sm font-medium">Drag & drop images</div>
+            <div className="text-sm font-medium">Add photos</div>
             <div className="text-xs text-muted-foreground">
-              or click to choose files
+              Drop images here or click to browse
             </div>
           </div>
         </div>
-        <Button variant="outline" size="sm" isLoading={isUploading}>
-          {isUploading ? "Uploading..." : "Choose files"}
+        <Button
+          variant="outline"
+          size="sm"
+          className="hidden sm:inline-flex"
+          isLoading={isUploading}
+        >
+          {isUploading ? "Uploading…" : "Choose files"}
         </Button>
         <input
           ref={fileInputRef}
@@ -179,9 +192,7 @@ export function RecipeImagesSection(props: { recipe: Recipe }) {
             );
           })}
         </div>
-      ) : (
-        <div className="text-sm text-muted-foreground">No images yet</div>
-      )}
+      ) : null}
 
       <ImageLightbox
         open={lightboxOpen}

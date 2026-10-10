@@ -55,8 +55,13 @@ function RecipeActionsCompact(props: {
   toggleCookingMode: () => void;
   onDelete: (recipeId: number) => Promise<void>;
 }) {
-  const { recipeId, cookingMode, shouldShowCookingMode, toggleCookingMode, onDelete } =
-    props;
+  const {
+    recipeId,
+    cookingMode,
+    shouldShowCookingMode,
+    toggleCookingMode,
+    onDelete,
+  } = props;
 
   return (
     <>
@@ -73,11 +78,11 @@ function RecipeActionsCompact(props: {
               <SimpleAlertDialog
                 trigger={
                   <Button
-                    variant={"destructive-outline"}
-                    size={"icon"}
+                    variant="ghost-destructive"
+                    size="icon"
                     aria-label="Delete recipe"
                   >
-                    <Trash className="h-4 w-4" />
+                    <Trash className="h-4 w-4 shrink-0" />
                   </Button>
                 }
                 title={"Delete recipe?"}
@@ -120,7 +125,16 @@ function RecipeActionsFull(props: {
   const { recipeId, cookingMode, toggleCookingMode, onDelete } = props;
 
   return (
-    <div className="flex w-full items-start justify-between gap-3">
+    <div className="flex w-full flex-col gap-2">
+      {!cookingMode && (
+        <IconTextButton
+          onClick={toggleCookingMode}
+          className="w-full justify-start"
+          icon={<ChefHat className="h-4 w-4 shrink-0" />}
+          label="Start cooking"
+        />
+      )}
+
       <div className="grid grid-cols-2 gap-2">
         <AddToMealPlanPopover
           recipeId={recipeId}
@@ -133,49 +147,43 @@ function RecipeActionsFull(props: {
           display="text"
           className="w-full justify-start"
         />
-
-        <Link href={`/recipes/${recipeId}/touch-up`}>
-          <IconTextButton
-            variant={"secondary"}
-            className="w-full justify-start"
-            icon={<Sparkles className="h-4 w-4" />}
-            label="Touch up"
-          />
-        </Link>
-
-        {!cookingMode && (
-          <IconTextButton
-            onClick={toggleCookingMode}
-            variant="outline"
-            className="w-full justify-start"
-            icon={<ChefHat className="h-4 w-4" />}
-            label="Cook it"
-          />
-        )}
       </div>
 
-      <SimpleAlertDialog
-        trigger={
-          <Button
-            variant={"destructive-outline"}
-            size="icon"
-            className="shrink-0"
-            aria-label="Delete recipe"
-          >
-            <Trash className="h-4 w-4" />
-          </Button>
-        }
-        title={"Delete recipe?"}
-        description={
-          "This action cannot be undone. This will permanently delete the recipe."
-        }
-        confirmText={"Delete"}
-        cancelText={"Cancel"}
-        confirmVariant="destructive"
-        onConfirm={async () => {
-          await onDelete(recipeId);
-        }}
-      />
+      <div className="flex items-center gap-2">
+        <Button
+          asChild
+          variant="ghost"
+          className="flex-1 justify-start text-muted-foreground hover:no-underline"
+        >
+          <Link href={`/recipes/${recipeId}/touch-up`}>
+            <Sparkles className="h-4 w-4 shrink-0" />
+            <span className="ml-1">Touch up with AI</span>
+          </Link>
+        </Button>
+
+        <SimpleAlertDialog
+          trigger={
+            <Button
+              variant="ghost-destructive"
+              className="shrink-0"
+              aria-label="Delete recipe"
+            >
+              <Trash className="h-4 w-4 shrink-0" />
+              <span className="ml-1">Delete</span>
+            </Button>
+          }
+          title={"Delete recipe?"}
+          description={
+            "This action cannot be undone. This will permanently delete the recipe."
+          }
+          confirmText={"Delete"}
+          cancelText={"Cancel"}
+          confirmVariant="destructive"
+          onConfirm={async () => {
+            await onDelete(recipeId);
+          }}
+        />
+      </div>
     </div>
   );
 }

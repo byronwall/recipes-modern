@@ -1,5 +1,5 @@
-import { formatDistanceToNowStrict } from "date-fns";
-import { CheckCircle2, CircleDashed } from "lucide-react";
+import { format, formatDistanceToNowStrict } from "date-fns";
+import { CircleDashed } from "lucide-react";
 import Link from "next/link";
 import { formatMoney } from "~/app/list/formatMoney";
 import {
@@ -9,14 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
+import { Button } from "~/components/ui/button";
+import { ProductImage } from "~/components/ProductImage";
 import { TooltipButton } from "~/components/ui/tooltip-button";
 import { type RouterOutputs } from "~/trpc/react";
 
@@ -44,113 +38,105 @@ function getItemIdentifier(purchase: PurchaseListItem) {
   return productId.length > 0 ? productId : null;
 }
 
-function PurchaseStatusIcon(props: { wasAddedToCart: boolean }) {
-  const { wasAddedToCart } = props;
-
-  return (
-    <TooltipButton content={wasAddedToCart ? "Added to cart" : "Attempted add"}>
-      <span
-        className={`inline-flex h-6 w-6 items-center justify-center rounded-full ${
-          wasAddedToCart
-            ? "bg-emerald-100 text-emerald-700"
-            : "bg-muted text-muted-foreground"
-        }`}
-        aria-label={wasAddedToCart ? "Added to cart" : "Attempted add"}
-      >
-        {wasAddedToCart ? (
-          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-        ) : (
-          <CircleDashed className="h-3.5 w-3.5 shrink-0" />
-        )}
-      </span>
-    </TooltipButton>
-  );
-}
-
-function PurchaseTableRow(props: { purchase: PurchaseListItem }) {
+function PurchaseRow(props: { purchase: PurchaseListItem }) {
   const { purchase } = props;
   const linkedRecipe = purchase.linkedRecipe;
   const krogerProductHref = getKrogerProductHref(purchase);
   const identifier = getItemIdentifier(purchase);
-  const itemMeta = [purchase.krogerBrand, identifier].filter(Boolean).join(" • ");
+  const category = purchase.krogerCategories?.[0];
+  const itemMeta = [purchase.krogerBrand, purchase.itemSize, category]
+    .filter(Boolean)
+    .join(" · ");
+  const createdAt = new Date(purchase.createdAt);
 
   return (
-    <TableRow key={purchase.id}>
-      <TableCell className="py-3">
-        <div className="flex items-center gap-3">
-          <img
-            src={purchase.imageUrl}
-            alt={purchase.krogerName}
-            className="h-12 w-12 rounded-md object-cover"
-          />
-          <div>
-            {krogerProductHref ? (
-              <a
-                href={krogerProductHref}
-                target="_blank"
-                rel="noreferrer"
-                className="font-semibold underline-offset-2 hover:underline"
+    <li className="grid grid-cols-[3rem_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 px-4 py-3 md:grid-cols-[3rem_minmax(0,1fr)_5rem_7rem_7rem] md:items-center">
+      <ProductImage
+        src={purchase.imageUrl}
+        alt={purchase.krogerName}
+        className="h-12 w-12 rounded-lg"
+      />
+
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          {krogerProductHref ? (
+            <a
+              href={krogerProductHref}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm font-semibold leading-snug hover:text-primary hover:no-underline"
+            >
+              {purchase.krogerName}
+            </a>
+          ) : (
+            <span className="text-sm font-semibold leading-snug">
+              {purchase.krogerName}
+            </span>
+          )}
+          {!purchase.wasAddedToCart && (
+            <TooltipButton content="This item was not sent to your Kroger cart">
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                <CircleDashed className="h-3 w-3 shrink-0" />
+                Not in cart
+              </span>
+            </TooltipButton>
+          )}
+        </div>
+        {itemMeta && (
+          <div className="mt-0.5 text-xs text-muted-foreground">{itemMeta}</div>
+        )}
+        {(purchase.ingredientName || linkedRecipe) && (
+          <div className="mt-0.5 truncate text-xs text-muted-foreground">
+            {purchase.ingredientName ? (
+              <span>For {purchase.ingredientName}</span>
+            ) : null}
+            {purchase.ingredientName && linkedRecipe ? " in " : null}
+            {linkedRecipe ? (
+              <Link
+                href={`/recipes/${linkedRecipe.id}`}
+                className="font-medium text-foreground hover:text-primary hover:no-underline"
               >
-                {purchase.krogerName}
-              </a>
-            ) : (
-              <div className="font-semibold">{purchase.krogerName}</div>
-            )}
-            <div className="text-xs text-muted-foreground">{itemMeta}</div>
-            {purchase.ingredientName && (
-              <div className="text-xs text-muted-foreground">
-                From ingredient: {purchase.ingredientName}
-              </div>
-            )}
-            {linkedRecipe && (
-              <div className="text-xs text-muted-foreground">
-                Recipe:{" "}
-                <Link
-                  href={`/recipes/${linkedRecipe.id}`}
-                  className="font-medium text-foreground underline-offset-2 hover:underline"
-                >
-                  {linkedRecipe.name}
-                </Link>
-              </div>
-            )}
-            {purchase.note && (
-              <div className="text-xs text-destructive">Note: {purchase.note}</div>
-            )}
+                {linkedRecipe.name}
+              </Link>
+            ) : null}
           </div>
-        </div>
-      </TableCell>
-      <TableCell className="py-3 text-center">
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-base font-semibold leading-tight text-foreground">
-            x{purchase.quantity}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {purchase.itemSize ?? "—"}
-          </span>
-        </div>
-      </TableCell>
-      <TableCell className="w-[10rem] py-3 text-right text-sm">
-        <div className="whitespace-nowrap font-semibold">
-          {formatMoney(purchase.price)} / ea
+        )}
+        {purchase.note && (
+          <div className="mt-0.5 text-xs text-destructive">
+            Note: {purchase.note}
+          </div>
+        )}
+        {identifier && (
+          <div className="mt-0.5 hidden font-mono text-[11px] text-muted-foreground/70 md:block">
+            {identifier}
+          </div>
+        )}
+      </div>
+
+      <div className="hidden text-right text-sm tabular-nums md:block">
+        ×{purchase.quantity}
+      </div>
+
+      <div className="text-right tabular-nums">
+        <div className="text-sm font-semibold">
+          {formatMoney(purchase.price * purchase.quantity)}
         </div>
         <div className="text-xs text-muted-foreground">
-          Total {formatMoney(purchase.price * purchase.quantity)}
+          {purchase.quantity > 1
+            ? `${purchase.quantity} × ${formatMoney(purchase.price)}`
+            : "each"}
         </div>
-      </TableCell>
-      <TableCell className="py-3 text-center text-sm">
-        <div className="inline-flex">
-          <PurchaseStatusIcon wasAddedToCart={purchase.wasAddedToCart} />
+        <div className="mt-0.5 text-xs text-muted-foreground md:hidden">
+          {formatDistanceToNowStrict(createdAt, { addSuffix: true })}
         </div>
-      </TableCell>
-      <TableCell className="py-3 text-center text-xs text-muted-foreground">
-        {purchase.krogerCategories?.[0] ?? "—"}
-      </TableCell>
-      <TableCell className="w-[8.5rem] py-3 text-right text-[11px] leading-tight text-muted-foreground">
-        {formatDistanceToNowStrict(new Date(purchase.createdAt), {
-          addSuffix: true,
-        })}
-      </TableCell>
-    </TableRow>
+      </div>
+
+      <TooltipButton content={format(createdAt, "PPp")}>
+        <div className="hidden text-right text-xs text-muted-foreground md:block">
+          {formatDistanceToNowStrict(createdAt, { addSuffix: true })}
+        </div>
+      </TooltipButton>
+    </li>
   );
 }
 
@@ -176,42 +162,21 @@ export function PurchasesTable(props: {
   } = props;
 
   return (
-    <div className="rounded-2xl border bg-card/70 shadow-sm">
-      {/*
-        Sticky header classes live on each th so they stay pinned during scroll.
-      */}
-      <Table containerClassName="overflow-visible">
-        <TableHeader>
-          <TableRow>
-            <TableHead className="sticky top-0 z-10 w-[44%] bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-              Item
-            </TableHead>
-            <TableHead className="sticky top-0 z-10 w-[10rem] bg-card/95 text-center backdrop-blur supports-[backdrop-filter]:bg-card/80">
-              Qty / Size
-            </TableHead>
-            <TableHead className="sticky top-0 z-10 w-[10rem] bg-card/95 text-right backdrop-blur supports-[backdrop-filter]:bg-card/80">
-              Price
-            </TableHead>
-            <TableHead className="sticky top-0 z-10 w-[6rem] bg-card/95 text-center backdrop-blur supports-[backdrop-filter]:bg-card/80">
-              Status
-            </TableHead>
-            <TableHead className="sticky top-0 z-10 w-[11rem] bg-card/95 text-center backdrop-blur supports-[backdrop-filter]:bg-card/80">
-              Category
-            </TableHead>
-            <TableHead className="sticky top-0 z-10 w-[8.5rem] bg-card/95 text-right text-[11px] backdrop-blur supports-[backdrop-filter]:bg-card/80">
-              Time
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {purchases.map((purchase) => (
-            <PurchaseTableRow key={purchase.id} purchase={purchase} />
-          ))}
-        </TableBody>
-      </Table>
+    <div className="overflow-hidden rounded-2xl border bg-card/70 shadow-sm">
+      <div className="hidden grid-cols-[3rem_minmax(0,1fr)_5rem_7rem_7rem] gap-x-3 border-b bg-muted/30 px-4 py-2 text-xs font-medium text-muted-foreground md:grid">
+        <span className="col-span-2">Item</span>
+        <span className="text-right">Qty</span>
+        <span className="text-right">Total</span>
+        <span className="text-right">When</span>
+      </div>
+      <ul className="divide-y">
+        {purchases.map((purchase) => (
+          <PurchaseRow key={purchase.id} purchase={purchase} />
+        ))}
+      </ul>
 
       {filteredCount === 0 && (
-        <div className="border-t p-6 text-sm text-muted-foreground">
+        <div className="p-8 text-center text-sm text-muted-foreground">
           No purchases match your filters.
         </div>
       )}
@@ -219,7 +184,7 @@ export function PurchasesTable(props: {
       {filteredCount > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-2 border-t px-4 py-3 text-sm">
           <div className="text-muted-foreground">
-            Showing {(safePage - 1) * pageSize + 1}–
+            {(safePage - 1) * pageSize + 1}–
             {Math.min(safePage * pageSize, filteredCount)} of {filteredCount}
           </div>
           <div className="flex items-center gap-2">
@@ -227,7 +192,10 @@ export function PurchasesTable(props: {
               value={String(pageSize)}
               onValueChange={(value) => onPageSizeChange(Number(value))}
             >
-              <SelectTrigger className="h-8 w-[110px] text-xs">
+              <SelectTrigger
+                aria-label="Items per page"
+                className="h-8 w-[110px] text-xs"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -238,25 +206,29 @@ export function PurchasesTable(props: {
                 ))}
               </SelectContent>
             </Select>
-            <div className="flex items-center gap-1">
-              <button
-                className="rounded-md border px-2 py-1 text-xs disabled:opacity-50"
-                onClick={onPreviousPage}
-                disabled={safePage === 1}
-              >
-                Prev
-              </button>
-              <span className="px-2 text-xs text-muted-foreground">
-                Page {safePage} of {totalPages}
-              </span>
-              <button
-                className="rounded-md border px-2 py-1 text-xs disabled:opacity-50"
-                onClick={onNextPage}
-                disabled={safePage === totalPages}
-              >
-                Next
-              </button>
-            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onPreviousPage}
+                  disabled={safePage === 1}
+                >
+                  Prev
+                </Button>
+                <span className="px-1 text-xs text-muted-foreground">
+                  {safePage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onNextPage}
+                  disabled={safePage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}

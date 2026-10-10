@@ -83,10 +83,24 @@ export function PurchasesList() {
     safePage * pageSize,
   );
 
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p>Error loading purchases</p>;
+  if (isLoading)
+    return <p className="text-sm text-muted-foreground">Loading purchases…</p>;
+  if (error)
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        Could not load purchases: {error.message}
+      </p>
+    );
 
-  if (!purchases || purchases.length === 0) return <p>No purchases yet.</p>;
+  if (!purchases || purchases.length === 0)
+    return (
+      <div className="flex flex-col items-center gap-1 rounded-2xl border border-dashed px-6 py-12 text-center">
+        <p className="font-medium">No purchases yet</p>
+        <p className="text-sm text-muted-foreground">
+          Items you add to your Kroger cart from the shopping list show up here.
+        </p>
+      </div>
+    );
 
   return (
     <div className="flex flex-col gap-4">

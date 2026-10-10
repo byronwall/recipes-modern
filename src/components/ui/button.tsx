@@ -21,12 +21,15 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         "destructive-outline":
           "border-destructive border bg-background text-red-500 hover:bg-destructive/10",
+        "ghost-destructive":
+          "text-muted-foreground hover:bg-destructive/10 hover:text-destructive",
       },
       size: {
         default: "h-9 px-4 py-0",
         sm: "h-8 rounded-md px-3",
         lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
+        icon: "h-9 w-9",
+        "icon-sm": "h-8 w-8",
       },
     },
     defaultVariants: {
@@ -48,6 +51,19 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
     const { children, isLoading, iconComponent, disabled, ...rest } = props;
+
+    // Slot requires exactly one child, so skip the loading/icon slots.
+    if (asChild) {
+      return (
+        <Comp
+          className={cn(buttonVariants({ variant, size, className }))}
+          ref={ref}
+          {...rest}
+        >
+          {children}
+        </Comp>
+      );
+    }
 
     return (
       <Comp

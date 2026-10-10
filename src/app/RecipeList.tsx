@@ -3,10 +3,8 @@
 import { ImageRole, RecipeType, type Recipe } from "@prisma/client";
 import Link from "next/link";
 import { useDeferredValue, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Clock, Search, X } from "lucide-react";
 import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -24,6 +22,10 @@ import { buildLightboxImages, getImageUrl } from "~/lib/media";
 import { NewRecipeDialog } from "./recipes/new/NewRecipeDialog";
 import { CardGrid } from "~/components/layout/CardGrid";
 import { PageHeaderCard } from "~/components/layout/PageHeaderCard";
+import { PageHeader } from "~/components/layout/PageHeader";
+import { cn } from "~/lib/utils";
+import { formatMinutes } from "~/lib/formatMinutes";
+import { formatRecipeType } from "~/lib/recipeType";
 import {
   urlStateCodecs,
   useReplaceUrlParams,
@@ -92,13 +94,18 @@ export function RecipeList() {
 
   const deferredSearch = useDeferredValue(search);
   // prevent undefined?
-  const filteredRecipes = useMemo(
-    () =>
-      recipes.filter((recipe) =>
-        recipe.name.toLowerCase().includes(deferredSearch.toLowerCase()),
-      ),
-    [recipes, deferredSearch],
-  );
+  const filteredRecipes = useMemo(() => {
+    const query = deferredSearch.trim().toLowerCase();
+    if (!query) return recipes;
+    return recipes.filter(
+      (recipe) =>
+        recipe.name.toLowerCase().includes(query) ||
+        recipe.description.toLowerCase().includes(query) ||
+        (recipe.tags ?? []).some((rt) =>
+          rt.tag.name.toLowerCase().includes(query),
+        ),
+    );
+  }, [recipes, deferredSearch]);
 
   const selectedTags = useMemo(() => {
     const tagsBySlug = new Map(
@@ -118,163 +125,188 @@ export function RecipeList() {
     search.trim().length > 0 || Boolean(type) || tagSlugs.length > 0;
   const showDevActions = process.env.NODE_ENV === "development";
 
+  const typeOptions = ["ALL", ...Object.values(RecipeType)] as const;
+  const moreTags = (allTagsData ?? [])
+    .filter((t) => !(popularData ?? []).some((p) => p.slug === t.slug))
+    .filter((t) => !tagSlugs.includes(t.slug));
+  const extraSelectedTags = selectedTags.filter(
+    (t) => !(popularData ?? []).some((p) => p.slug === t.slug),
+  );
+  const toggleTag = (slug: string) => {
+    setTagSlugs(
+      tagSlugs.includes(slug)
+        ? tagSlugs.filter((s) => s !== slug)
+        : [...tagSlugs, slug],
+    );
+  };
+
   return (
     <>
       {/* Global Add Tag Dialog is mounted in layout */}
 
-      <PageHeaderCard className="mb-6 p-4">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-          <div className="flex flex-col gap-3">
-            <Label className="text-xs uppercase text-muted-foreground">
-              Search
-            </Label>
-            <div className="relative w-full">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search recipes"
-                className="pl-9"
-              />
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Label className="whitespace-nowrap text-xs uppercase text-muted-foreground">
-                Tags
-              </Label>
-              <div className="flex flex-wrap items-center gap-2">
-                {(popularData ?? []).map((t) => {
-                  const selected = tagSlugs.includes(t.slug);
-                  return (
-                    <Button
-                      key={t.slug}
-                      size="sm"
-                      variant={selected ? "default" : "outline"}
-                      onClick={() => {
-                        if (selected) {
-                          setTagSlugs(
-                            tagSlugs.filter((slug) => slug !== t.slug),
-                          );
-                        } else {
-                          setTagSlugs([...tagSlugs, t.slug]);
-                        }
-                      }}
-                    >
-                      {t.name}
-                    </Button>
-                  );
-                })}
-              </div>
-
-              <Select
-                onValueChange={(slug) => {
-                  const exists = tagSlugs.includes(slug);
-                  if (exists) return;
-                  const picked = (allTagsData ?? []).find(
-                    (t) => t.slug === slug,
-                  );
-                  if (picked) setTagSlugs([...tagSlugs, picked.slug]);
-                }}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="More tags" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(allTagsData ?? [])
-                    .filter(
-                      (t) =>
-                        !(popularData ?? []).some((p) => p.slug === t.slug),
-                    )
-                    .filter((t) => !tagSlugs.includes(t.slug))
-                    .map((t) => (
-                      <SelectItem key={t.slug} value={t.slug}>
-                        {t.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-
-              {hasFilters && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    replaceUrlParams({ q: null, type: null, tags: null });
-                  }}
-                  className="text-muted-foreground"
-                >
-                  Clear all
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label className="text-xs uppercase text-muted-foreground">
-              Type
-            </Label>
-            <div className="flex flex-wrap items-center gap-2">
-              <ToggleGroup
-                type="single"
-                variant="outline"
+      <PageHeader
+        title="Recipes"
+        description={
+          _recipes
+            ? hasFilters
+              ? `${filteredRecipes.length} of ${recipes.length} recipes`
+              : `${recipes.length} recipes`
+            : undefined
+        }
+        actions={
+          <>
+            {showDevActions && (
+              <Button
                 size="sm"
-                className="flex flex-wrap gap-2"
-                value={(type ?? "ALL") as string}
-                onValueChange={(v) => {
-                  if (!v || v === "ALL") {
-                    setType(undefined);
-                  } else {
-                    setType(v as RecipeType);
-                  }
-                }}
+                variant="ghost"
+                className="text-muted-foreground"
+                isLoading={seedRecipes.isPending}
+                onClick={() => seedRecipes.mutate({ count: 10 })}
               >
-                <ToggleGroupItem value="ALL">All</ToggleGroupItem>
-                {Object.values(RecipeType).map((t) => (
-                  <ToggleGroupItem key={t} value={t}>
-                    {t}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-              {showDevActions && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  isLoading={seedRecipes.isPending}
-                  onClick={() => seedRecipes.mutate({ count: 10 })}
-                >
-                  Seed 10 Recipes
-                </Button>
-              )}
-            </div>
-          </div>
+                Seed 10 (dev)
+              </Button>
+            )}
+            <NewRecipeDialog />
+          </>
+        }
+      />
+
+      <PageHeaderCard className="flex flex-col gap-3 p-3 sm:p-4">
+        <div className="relative w-full">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 shrink-0 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, description, or tag"
+            aria-label="Search recipes"
+            className="pl-9"
+          />
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t pt-3">
-          <div className="flex flex-wrap gap-2">
-            {selectedTags.map((t) => (
-              <span
+        <div className="-mx-1 flex items-center gap-1 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {typeOptions.map((t) => {
+            const isActive = (type ?? "ALL") === t;
+            return (
+              <button
+                key={t}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() =>
+                  setType(t === "ALL" ? undefined : (t as RecipeType))
+                }
+                className={cn(
+                  "shrink-0 rounded-full px-3 py-1 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+              >
+                {t === "ALL" ? "All types" : formatRecipeType(t)}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5 border-t pt-3">
+          <span className="mr-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Tags
+          </span>
+          {(popularData ?? []).map((t) => {
+            const selected = tagSlugs.includes(t.slug);
+            return (
+              <button
                 key={t.slug}
-                className="rounded-full bg-muted px-3 py-1 text-xs"
+                type="button"
+                aria-pressed={selected}
+                onClick={() => toggleTag(t.slug)}
+                className={cn(
+                  "rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors",
+                  selected
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-transparent bg-accent/60 hover:bg-accent",
+                )}
               >
                 {t.name}
-                <button
-                  className="ml-1"
-                  onClick={() =>
-                    setTagSlugs(tagSlugs.filter((slug) => slug !== t.slug))
-                  }
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <NewRecipeDialog />
-          </div>
+              </button>
+            );
+          })}
+          {extraSelectedTags.map((t) => (
+            <button
+              key={t.slug}
+              type="button"
+              aria-pressed
+              aria-label={`Remove ${t.name} filter`}
+              onClick={() => toggleTag(t.slug)}
+              className="flex items-center gap-1 rounded-full border border-primary bg-primary px-2.5 py-0.5 text-xs font-medium text-primary-foreground"
+            >
+              {t.name}
+              <X className="h-3 w-3 shrink-0" />
+            </button>
+          ))}
+
+          {moreTags.length > 0 && (
+            <Select
+              value=""
+              onValueChange={(slug) => {
+                if (!tagSlugs.includes(slug)) setTagSlugs([...tagSlugs, slug]);
+              }}
+            >
+              <SelectTrigger className="h-6 w-auto gap-1 rounded-full border-dashed px-2.5 py-0 text-xs text-muted-foreground">
+                <SelectValue placeholder="More tags" />
+              </SelectTrigger>
+              <SelectContent className="max-h-72">
+                {moreTags.map((t) => (
+                  <SelectItem key={t.slug} value={t.slug}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          {hasFilters && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                replaceUrlParams({ q: null, type: null, tags: null });
+              }}
+              className="ml-auto h-6 px-2 text-xs text-muted-foreground"
+            >
+              Clear filters
+            </Button>
+          )}
         </div>
       </PageHeaderCard>
 
-      <CardGrid className="md:grid-cols-2 xl:grid-cols-3">
+      {_recipes && filteredRecipes.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed px-6 py-12 text-center">
+          <p className="font-medium">
+            {hasFilters ? "No recipes match these filters" : "No recipes yet"}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {hasFilters
+              ? search.trim()
+                ? `Nothing found for “${search.trim()}”.`
+                : "Try a different type or tag."
+              : "Create your first recipe to get started."}
+          </p>
+          {hasFilters && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2"
+              onClick={() =>
+                replaceUrlParams({ q: null, type: null, tags: null })
+              }
+            >
+              Clear filters
+            </Button>
+          )}
+        </div>
+      ) : null}
+
+      <CardGrid className="sm:grid-cols-2 lg:grid-cols-3">
         {filteredRecipes.map((recipe) => {
           const primaryImage =
             (recipe.images ?? []).find((ri) => ri.role === ImageRole.HERO) ??
@@ -289,9 +321,9 @@ export function RecipeList() {
           return (
             <div
               key={recipe.id}
-              className="flex h-full flex-col rounded-2xl border bg-card shadow-sm transition-shadow hover:shadow-md"
+              className="group flex h-full flex-col rounded-2xl border bg-card shadow-sm transition-shadow hover:shadow-md"
             >
-              <div className="flex items-start gap-3 p-3">
+              <div className="flex items-start gap-3 p-4 pb-3">
                 {imageUrl ? (
                   <button
                     type="button"
@@ -319,15 +351,13 @@ export function RecipeList() {
                   </button>
                 ) : null}
 
-                <div className="flex w-full flex-col gap-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <Link
-                      href={`/recipes/${recipe.id}`}
-                      className="text-base font-semibold leading-tight hover:underline"
-                    >
-                      {recipe.name}
-                    </Link>
-                  </div>
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <Link
+                    href={`/recipes/${recipe.id}`}
+                    className="text-base font-semibold leading-snug hover:text-primary hover:no-underline"
+                  >
+                    {recipe.name}
+                  </Link>
                   {recipe.description &&
                   recipe.description.trim().toLowerCase() !== "desc" ? (
                     <p className="line-clamp-2 text-sm text-muted-foreground">
@@ -337,56 +367,60 @@ export function RecipeList() {
                 </div>
               </div>
 
-              <div className="px-3 pb-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Select
-                    value={recipe.type}
-                    onValueChange={(v) =>
-                      updateType.mutate({
-                        id: recipe.id,
-                        type: v as RecipeType,
-                      })
-                    }
+              <div className="flex flex-wrap items-center gap-1.5 px-4 pb-4">
+                {recipe.cookMinutes ? (
+                  <span className="inline-flex h-6 items-center gap-1 rounded-full bg-muted px-2.5 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3 shrink-0" />
+                    {formatMinutes(recipe.cookMinutes)}
+                  </span>
+                ) : null}
+                <Select
+                  value={recipe.type}
+                  onValueChange={(v) =>
+                    updateType.mutate({
+                      id: recipe.id,
+                      type: v as RecipeType,
+                    })
+                  }
+                >
+                  <SelectTrigger
+                    aria-label="Recipe type"
+                    className="h-6 w-auto gap-1 rounded-full border px-2.5 py-0 text-xs"
                   >
-                    <SelectTrigger className="h-7 w-auto rounded-full border px-3 py-0 text-xs">
-                      <SelectValue placeholder={recipe.type} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.values(RecipeType).map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <SelectValue>{formatRecipeType(recipe.type)}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(RecipeType).map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {formatRecipeType(t)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-                  <RecipeTagEditor
-                    recipeId={recipe.id}
-                    tags={tagList.map((rt) => rt.tag)}
-                    allTags={allTagsData ?? []}
-                    displayLimit={2}
-                    chipClassName="bg-muted"
-                    confirmRemove
-                    onAddTag={async (slug) => {
-                      await addTagToRecipe.mutateAsync({
-                        recipeId: recipe.id,
-                        tagSlug: slug,
-                      });
-                    }}
-                    onRemoveTag={async (slug) => {
-                      await removeTagFromRecipe.mutateAsync({
-                        recipeId: recipe.id,
-                        tagSlug: slug,
-                      });
-                    }}
-                  />
-                </div>
+                <RecipeTagEditor
+                  recipeId={recipe.id}
+                  tags={tagList.map((rt) => rt.tag)}
+                  allTags={allTagsData ?? []}
+                  displayLimit={2}
+                  confirmRemove
+                  onAddTag={async (slug) => {
+                    await addTagToRecipe.mutateAsync({
+                      recipeId: recipe.id,
+                      tagSlug: slug,
+                    });
+                  }}
+                  onRemoveTag={async (slug) => {
+                    await removeTagFromRecipe.mutateAsync({
+                      recipeId: recipe.id,
+                      tagSlug: slug,
+                    });
+                  }}
+                />
               </div>
 
               <div className="mt-auto border-t px-3 py-2">
-                <div className="flex w-full">
-                  <RecipeActions recipeId={recipe.id} variant="compact" />
-                </div>
+                <RecipeActions recipeId={recipe.id} variant="compact" />
               </div>
             </div>
           );

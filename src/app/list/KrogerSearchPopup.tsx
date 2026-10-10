@@ -20,6 +20,8 @@ import { KrogerItemDisplay } from "./KrogerItemDisplay";
 import { Search } from "lucide-react";
 import { Switch } from "~/components/ui/switch";
 import { IconTextButton } from "~/components/ui/icon-text-button";
+import { TooltipButton } from "~/components/ui/tooltip-button";
+import { Button } from "~/components/ui/button";
 
 type Props = {
   ingredient?: string;
@@ -147,15 +149,19 @@ export function KrogerSearchPopup({
       open={isModalOpen}
     >
       {!hideTrigger ? (
-        <DialogTrigger asChild>
-          <IconTextButton
-            onClick={() => setModalOpen(true)}
-            size="sm"
-            variant="secondary"
-            icon={<Search className="h-4 w-4 shrink-0" />}
-            label="Search Kroger"
-          />
-        </DialogTrigger>
+        <TooltipButton content="Search Kroger">
+          <DialogTrigger asChild>
+            <Button
+              onClick={() => setModalOpen(true)}
+              size="icon-sm"
+              variant="ghost"
+              aria-label="Search Kroger"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Search className="h-4 w-4 shrink-0" />
+            </Button>
+          </DialogTrigger>
+        </TooltipButton>
       ) : null}
       <DialogContent className="max-h-[85vh] max-w-5xl shrink-0 overflow-y-auto p-0">
         <div className="flex flex-col gap-4 p-5">

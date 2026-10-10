@@ -20,12 +20,15 @@ export function useRadioList<T extends string>(
       onValueChange={(value) => {
         if (value) setGroupMode(value as T);
       }}
-      variant="outline"
       size="sm"
-      className="flex flex-wrap justify-start gap-2"
+      className="flex justify-start gap-0.5 rounded-full bg-muted p-0.5"
     >
       {items.map((mode) => (
-        <ToggleGroupItem key={mode} value={mode} className="capitalize">
+        <ToggleGroupItem
+          key={mode}
+          value={mode}
+          className="h-7 rounded-full px-3 text-xs capitalize data-[state=on]:bg-background data-[state=on]:shadow-sm"
+        >
           {mode}
         </ToggleGroupItem>
       ))}

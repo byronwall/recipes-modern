@@ -1,5 +1,7 @@
 "use client";
 
+import { formatRecipeType } from "~/lib/recipeType";
+import { TooltipButton } from "~/components/ui/tooltip-button";
 import { useState } from "react";
 import { RecipeType } from "@prisma/client";
 import { Pencil } from "lucide-react";
@@ -58,21 +60,28 @@ export function RecipeEditDialog(props: { recipe: Recipe }) {
               ? recipe.cookMinutes
               : undefined,
           );
-          setTags(
-            (recipe.tags ?? []).map((rt) => rt.tag.name).filter(Boolean),
-          );
+          setTags((recipe.tags ?? []).map((rt) => rt.tag.name).filter(Boolean));
         }
       }}
     >
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Edit recipe">
-          <Pencil className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
+      <TooltipButton content="Edit details">
+        <DialogTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Edit recipe details"
+            className="shrink-0 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+          >
+            <Pencil className="h-4 w-4 shrink-0" />
+          </Button>
+        </DialogTrigger>
+      </TooltipButton>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Edit recipe</DialogTitle>
-          <DialogDescription>Update recipe details.</DialogDescription>
+          <DialogDescription>
+            Name, description, type, cook time, and tags.
+          </DialogDescription>
         </DialogHeader>
 
         <form
@@ -134,9 +143,9 @@ export function RecipeEditDialog(props: { recipe: Recipe }) {
                     <label
                       key={t}
                       htmlFor={`edit-type-${t}`}
-                      className={`flex items-center gap-2 rounded-full border px-3 py-1 text-sm capitalize transition ${
+                      className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 text-sm transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring ${
                         selected
-                          ? "bg-muted"
+                          ? "border-primary bg-primary text-primary-foreground"
                           : "bg-background hover:bg-muted/60"
                       }`}
                     >
@@ -145,7 +154,7 @@ export function RecipeEditDialog(props: { recipe: Recipe }) {
                         id={`edit-type-${t}`}
                         className="sr-only"
                       />
-                      <span>{t.toLowerCase()}</span>
+                      <span>{formatRecipeType(t)}</span>
                     </label>
                   );
                 })}
@@ -153,9 +162,7 @@ export function RecipeEditDialog(props: { recipe: Recipe }) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="recipe-cook-minutes">
-                Cooking time (minutes)
-              </Label>
+              <Label htmlFor="recipe-cook-minutes">Cook time (minutes)</Label>
               <Input
                 id="recipe-cook-minutes"
                 type="number"
@@ -176,7 +183,11 @@ export function RecipeEditDialog(props: { recipe: Recipe }) {
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" isLoading={updateMutation.isPending}>

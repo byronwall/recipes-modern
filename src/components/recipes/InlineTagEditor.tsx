@@ -90,11 +90,11 @@ export function InlineTagEditor(props: {
             <Button
               variant="outline"
               size="sm"
-              aria-label="Add tag"
-              className={cn(addButtonClassName)}
+              aria-label="Browse existing tags"
+              className={cn("h-9 shrink-0", addButtonClassName)}
             >
-              <ChevronDown className="h-4 w-4" />
-              Add tag
+              Browse
+              <ChevronDown className="ml-1 h-4 w-4 shrink-0" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-56 p-1">

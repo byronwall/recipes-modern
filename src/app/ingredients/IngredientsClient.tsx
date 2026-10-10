@@ -13,7 +13,6 @@ import {
   CommandList,
 } from "~/components/ui/command";
 import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -23,17 +22,12 @@ import {
 } from "~/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "~/components/ui/hover-card";
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { api } from "~/trpc/react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Search } from "lucide-react";
 import { cn } from "~/lib/utils";
 import {
   urlStateCodecs,
@@ -144,29 +138,34 @@ export function IngredientsClient() {
     [filteredIngredients, pageSize, safePage],
   );
 
-  if (isLoading) return <p>Loading ingredients...</p>;
-  if (error) return <p>Error loading ingredients.</p>;
+  if (isLoading)
+    return (
+      <p className="text-sm text-muted-foreground">Loading ingredients…</p>
+    );
+  if (error)
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        Could not load ingredients.
+      </p>
+    );
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="rounded-2xl border bg-card/70 p-4 shadow-sm">
-        <div className="grid gap-3 lg:grid-cols-4">
-          <div className="flex flex-col gap-2 lg:col-span-2">
-            <Label className="text-xs uppercase text-muted-foreground">
-              Search
-            </Label>
+      <section className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-3 shadow-sm sm:p-4">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="relative sm:col-span-2 lg:col-span-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 shrink-0 -translate-y-1/2 text-muted-foreground" />
             <Input
+              aria-label="Search ingredients"
+              className="pl-9"
               value={search}
               onChange={(event) =>
                 replaceUrlParams({ q: event.target.value, page: null })
               }
-              placeholder="Filter ingredients, recipes, or aisles"
+              placeholder="Search ingredients, recipes, or aisles"
             />
           </div>
-          <div className="flex flex-col gap-2">
-            <Label className="text-xs uppercase text-muted-foreground">
-              Recipe
-            </Label>
+          <div>
             <Popover open={recipeFilterOpen} onOpenChange={setRecipeFilterOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -179,7 +178,10 @@ export function IngredientsClient() {
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[360px] p-0" align="start">
+              <PopoverContent
+                className="w-[min(360px,calc(100vw-2rem))] p-0"
+                align="start"
+              >
                 <Command>
                   <CommandInput placeholder="Filter recipes..." />
                   <CommandList>
@@ -228,10 +230,7 @@ export function IngredientsClient() {
               </PopoverContent>
             </Popover>
           </div>
-          <div className="flex flex-col gap-2">
-            <Label className="text-xs uppercase text-muted-foreground">
-              Aisle
-            </Label>
+          <div>
             <Select
               value={aisleFilter}
               onValueChange={(value) =>
@@ -241,7 +240,7 @@ export function IngredientsClient() {
                 })
               }
             >
-              <SelectTrigger className="h-9">
+              <SelectTrigger aria-label="Aisle" className="h-9">
                 <SelectValue placeholder="All aisles" />
               </SelectTrigger>
               <SelectContent>
@@ -256,7 +255,7 @@ export function IngredientsClient() {
           </div>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <ToggleGroup
             type="single"
             value={purchaseFilter}
@@ -268,98 +267,95 @@ export function IngredientsClient() {
                 });
               }
             }}
-            variant="outline"
             size="sm"
-            className="flex flex-wrap justify-start gap-2"
+            className="flex justify-start gap-0.5 rounded-full bg-muted p-0.5"
           >
-            <ToggleGroupItem value="all">All</ToggleGroupItem>
-            <ToggleGroupItem value="with">With purchases</ToggleGroupItem>
-            <ToggleGroupItem value="without">No purchases yet</ToggleGroupItem>
+            {(
+              [
+                ["all", "All"],
+                ["with", "Purchased"],
+                ["without", "Never purchased"],
+              ] as const
+            ).map(([value, label]) => (
+              <ToggleGroupItem
+                key={value}
+                value={value}
+                className="h-7 rounded-full px-3 text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm"
+              >
+                {label}
+              </ToggleGroupItem>
+            ))}
           </ToggleGroup>
           <span className="text-xs text-muted-foreground">
-            {filteredIngredients.length} ingredients
+            {filteredIngredients.length}{" "}
+            {filteredIngredients.length === 1 ? "ingredient" : "ingredients"}
           </span>
         </div>
       </section>
 
-      <CardGrid className="md:grid-cols-2 xl:grid-cols-3">
-        {pagedIngredients.map((ingredient) => (
-          <section
-            key={ingredient.id}
-            className="flex min-h-[220px] flex-col rounded-2xl border bg-card/70 p-3.5 shadow-sm"
-          >
-            <p className="text-base font-semibold">{ingredient.ingredient}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-              <span className="rounded-full bg-background/80 px-2 py-0.5 text-muted-foreground">
-                {ingredient.aisle?.trim() ?? "Unknown aisle"}
-              </span>
-              <span className="rounded-full bg-background/80 px-2 py-0.5 text-muted-foreground">
-                {ingredient.purchaseCount} purchases
-              </span>
-            </div>
-
-            <div className="mt-3 flex-1 pb-2">
-              <IngredientPurchaseHistory
-                purchases={ingredient.recentPurchases}
-                compact
-                hideEmpty
-              />
-            </div>
-
-            <div className="mt-auto min-h-[96px] border-t border-border/60 pt-3.5">
-              <div className="space-y-1.5">
-                {ingredient.recipes.slice(0, 2).map((recipe) => (
-                  <Link
-                    key={recipe.id}
-                    href={`/recipes/${recipe.id}`}
-                    className="block rounded-md bg-accent/50 px-2 py-1 text-sm font-medium hover:bg-accent/70"
-                    title={recipe.name}
-                  >
-                    <span className="block truncate">{recipe.name}</span>
-                  </Link>
-                ))}
-                {ingredient.recipes.length > 2 ? (
-                  <HoverCard openDelay={90}>
-                    <HoverCardTrigger className="rounded-full bg-background/80 px-2 py-0.5 text-xs text-muted-foreground">
-                      +{ingredient.recipes.length - 2} more recipes
-                    </HoverCardTrigger>
-                    <HoverCardContent
-                      align="start"
-                      className="w-64 rounded-2xl border bg-card p-3 shadow-xl"
-                    >
-                      <p className="mb-2 text-xs uppercase text-muted-foreground">
-                        Other recipes
-                      </p>
-                      <div className="flex flex-col gap-1.5">
-                        {ingredient.recipes.slice(2).map((recipe) => (
-                          <Link
-                            key={recipe.id}
-                            href={`/recipes/${recipe.id}`}
-                            className="truncate rounded-md px-2 py-1 text-sm hover:bg-accent/40"
-                            title={recipe.name}
-                          >
-                            {recipe.name}
-                          </Link>
-                        ))}
-                      </div>
-                    </HoverCardContent>
-                  </HoverCard>
+      <CardGrid className="gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {pagedIngredients.map((ingredient) => {
+          const aisle = ingredient.aisle?.trim();
+          return (
+            <section
+              key={ingredient.id}
+              className="flex flex-col gap-2 rounded-2xl border bg-card/70 p-3.5 shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <p className="min-w-0 font-semibold leading-snug">
+                  {ingredient.ingredient}
+                </p>
+                {aisle ? (
+                  <span className="shrink-0 rounded-full bg-accent/60 px-2 py-0.5 text-xs">
+                    {aisle}
+                  </span>
                 ) : null}
               </div>
-            </div>
-          </section>
-        ))}
+
+              {ingredient.recentPurchases.length > 0 ? (
+                <div className="flex items-center gap-2">
+                  <IngredientPurchaseHistory
+                    purchases={ingredient.recentPurchases}
+                    compact
+                    hideEmpty
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {ingredient.purchaseCount}{" "}
+                    {ingredient.purchaseCount === 1 ? "purchase" : "purchases"}
+                  </span>
+                </div>
+              ) : null}
+
+              {ingredient.recipes.length > 0 ? (
+                <p className="line-clamp-2 text-xs text-muted-foreground">
+                  <span className="mr-1">Used in</span>
+                  {ingredient.recipes.map((recipe, index) => (
+                    <span key={recipe.id}>
+                      {index > 0 ? ", " : null}
+                      <Link
+                        href={`/recipes/${recipe.id}`}
+                        className="font-medium text-foreground hover:text-primary hover:no-underline"
+                      >
+                        {recipe.name}
+                      </Link>
+                    </span>
+                  ))}
+                </p>
+              ) : null}
+            </section>
+          );
+        })}
       </CardGrid>
 
       {pagedIngredients.length === 0 ? (
-        <section className="rounded-2xl border bg-card/70 p-6 text-sm text-muted-foreground shadow-sm">
+        <section className="rounded-2xl border border-dashed p-8 text-center text-sm text-muted-foreground">
           No ingredients match your filters.
         </section>
       ) : null}
       {filteredIngredients.length > 0 ? (
         <section className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border bg-card/70 px-4 py-3 text-sm shadow-sm">
           <span className="text-muted-foreground">
-            Showing {(safePage - 1) * pageSize + 1}–
+            {(safePage - 1) * pageSize + 1}–
             {Math.min(safePage * pageSize, filteredIngredients.length)} of{" "}
             {filteredIngredients.length}
           </span>
@@ -387,23 +383,25 @@ export function IngredientsClient() {
                 ))}
               </SelectContent>
             </Select>
-            <button
-              className="rounded-md border px-2 py-1 text-xs disabled:opacity-50"
+            <Button
+              variant="outline"
+              size="sm"
               disabled={safePage === 1}
               onClick={() => setPage(Math.max(1, safePage - 1))}
             >
               Prev
-            </button>
+            </Button>
             <span className="text-xs text-muted-foreground">
-              Page {safePage} of {totalPages}
+              {safePage} / {totalPages}
             </span>
-            <button
-              className="rounded-md border px-2 py-1 text-xs disabled:opacity-50"
+            <Button
+              variant="outline"
+              size="sm"
               disabled={safePage === totalPages}
               onClick={() => setPage(Math.min(totalPages, safePage + 1))}
             >
               Next
-            </button>
+            </Button>
           </div>
         </section>
       ) : null}

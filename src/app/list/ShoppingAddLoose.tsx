@@ -1,77 +1,94 @@
 "use client";
 
-import { Button } from "~/components/ui/button";
-import { SimpleAlertDialog } from "~/components/SimpleAlertDialog";
-import { useShoppingListActions } from "../useShoppingListActions";
+import { useState } from "react";
 import { Plus } from "lucide-react";
-import { IconTextButton } from "~/components/ui/icon-text-button";
-import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { SimpleAlertDialog } from "~/components/SimpleAlertDialog";
+import { api } from "~/trpc/react";
+import { useShoppingListActions } from "../useShoppingListActions";
 
-export function ShoppingListActions(props: {
-  className?: string;
-  layout?: "row" | "column";
-}) {
-  const { className, layout = "row" } = props;
-  const { handleAddLooseItem, handleDeleteAll, handleDeleteBought } =
-    useShoppingListActions();
-  const isColumn = layout === "column";
+/** Inline "add an item" field for loose (non-recipe) shopping list items. */
+export function ShoppingAddLooseForm() {
+  const [value, setValue] = useState("");
+  const utils = api.useUtils();
+  const addLooseItem = api.shoppingList.addLooseItemToShoppingList.useMutation({
+    onSuccess: async () => {
+      await utils.shoppingList.getShoppingList.invalidate();
+    },
+  });
 
   return (
-    <div
-      className={cn(
-        "flex gap-2",
-        isColumn ? "flex-col items-stretch" : "flex-wrap",
-        className,
-      )}
+    <form
+      className="flex w-full items-center gap-2"
+      onSubmit={async (event) => {
+        event.preventDefault();
+        const ingredient = value.trim();
+        if (!ingredient) return;
+        await addLooseItem.mutateAsync({ ingredient });
+        setValue("");
+      }}
     >
-      <IconTextButton
-        onClick={async () => {
-          await handleAddLooseItem();
-        }}
-        icon={<Plus className="h-4 w-4 shrink-0" />}
-        label="Add loose item"
-        className={cn(isColumn && "w-full justify-start")}
+      <Input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Add an item, e.g. paper towels"
+        aria-label="Add an item to the shopping list"
+        className="flex-1"
       />
+      <Button
+        type="submit"
+        disabled={!value.trim()}
+        isLoading={addLooseItem.isPending}
+        className="shrink-0"
+      >
+        {!addLooseItem.isPending && <Plus className="h-4 w-4 shrink-0" />}
+        <span className="ml-1">Add</span>
+      </Button>
+    </form>
+  );
+}
 
+export function ShoppingListActions(props: { hasBought: boolean }) {
+  const { hasBought } = props;
+  const { handleDeleteAll, handleDeleteBought } = useShoppingListActions();
+
+  return (
+    <>
       <SimpleAlertDialog
         trigger={
-          <Button
-            variant="destructive-outline"
-            className={cn(isColumn && "w-full justify-start")}
-          >
-            Delete all
+          <Button variant="ghost" size="sm" disabled={!hasBought}>
+            Clear bought
           </Button>
         }
-        title={"Are you sure you want to delete all?"}
-        description={
-          "This will remove all items from your shopping list. This cannot be undone."
-        }
-        confirmText={"Delete all"}
-        cancelText={"Cancel"}
-        onConfirm={async () => {
-          await handleDeleteAll();
-        }}
-      />
-
-      <SimpleAlertDialog
-        trigger={
-          <Button
-            variant="destructive-outline"
-            className={cn(isColumn && "w-full justify-start")}
-          >
-            Delete bought
-          </Button>
-        }
-        title={"Are you sure you want to delete bought items?"}
+        title={"Clear bought items?"}
         description={
           "This will remove all items marked as bought from your shopping list."
         }
-        confirmText={"Delete bought"}
+        confirmText={"Clear bought"}
         cancelText={"Cancel"}
         onConfirm={async () => {
           await handleDeleteBought();
         }}
       />
-    </div>
+
+      <SimpleAlertDialog
+        trigger={
+          <Button variant="ghost-destructive" size="sm">
+            Clear all
+          </Button>
+        }
+        title={"Clear the whole list?"}
+        description={
+          "This will remove all items from your shopping list. This cannot be undone."
+        }
+        confirmText={"Clear all"}
+        cancelText={"Cancel"}
+        confirmVariant="destructive"
+        onConfirm={async () => {
+          await handleDeleteAll();
+        }}
+      />
+    </>
   );
 }
