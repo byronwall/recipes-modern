@@ -24,6 +24,9 @@ A modern Next.js 14 app for creating and managing recipes, planning meals, and m
   - The `-d` is critical to detach once deployed. Otherwise, Coolify will keep the container "In Progress" indefinitely.
 - Ensure the `Escape special characters in labels?` is **UNCHECKED**. We need to expand an ENV in the label
 
+Compose builds MinIO from the fixed upstream release in `Dockerfile.minio`. MinIO no longer publishes community images.
+The first build compiles Go dependencies and takes longer. Later builds use Docker's cache. The existing `minio-data` volume stays attached.
+
 There are hard coded traefik labels in the docker-compose.yaml file. These are set to work with Coolify's Traefik setup. Specifically, the `endPoints` are `http` and `https` for the app.
 
 ## Sandbox database (UI work and screenshots)
