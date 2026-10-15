@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   Dialog,
   DialogContent,
@@ -232,7 +233,12 @@ export function KrogerSearchPopup({
 
           {searchMutation.error && (
             <p className="text-sm text-destructive">
-              Error searching: {searchMutation.error.message}
+              Error searching: {searchMutation.error.message}{" "}
+              {searchMutation.error.data?.code === "PRECONDITION_FAILED" && (
+                <Link href="/kroger" className="underline">
+                  Reconnect Kroger
+                </Link>
+              )}
             </p>
           )}
 
