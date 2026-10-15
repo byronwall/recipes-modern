@@ -14,6 +14,7 @@ import { type KrogerProduct } from "../kroger/model";
 import {
   MAX_KROGER_SEARCH_TERMS,
   getKrogerSearchTerms,
+  getKrogerIngredientQuery,
   normalizeKrogerSearchTerm,
 } from "../kroger/searchQuery";
 import { KrogerItemDisplay } from "./KrogerItemDisplay";
@@ -38,7 +39,9 @@ export function KrogerSearchPopup({
   onOpenChange,
   hideTrigger = false,
 }: Props) {
-  const defaultSearchIngredient = ingredient ?? "";
+  const defaultSearchIngredient = ingredient
+    ? getKrogerIngredientQuery(ingredient)
+    : "";
   const [searchIngredient, setSearchIngredient] = useState<string>(
     defaultSearchIngredient,
   );
@@ -124,7 +127,7 @@ export function KrogerSearchPopup({
     }
     previousModalOpenRef.current = true;
 
-    const query = ingredient?.trim();
+    const query = defaultSearchIngredient;
     if (!query) return;
 
     const autoSearchKey = `${query.toLowerCase()}::${isControlled ? "controlled" : "internal"}`;

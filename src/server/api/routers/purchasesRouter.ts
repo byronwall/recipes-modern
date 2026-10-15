@@ -4,6 +4,7 @@ import { type Prisma } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { krogerPurchaseNote } from "~/lib/krogerPurchaseNote";
+import { getKrogerIngredientQuery } from "~/app/kroger/searchQuery";
 
 const LONG_PURCHASE_NAMES = [
   "Simple Truth Organic Fire Roasted Diced Tomatoes with Green Chilies Family Size",
@@ -81,29 +82,46 @@ export const purchasesRouter = createTRPCRouter({
         return { ingredientPurchases: [] as const };
       }
 
+      const ingredients = await db.ingredient.findMany({
+        where: { group: { Recipe: { userId } } },
+        select: { id: true, ingredient: true },
+      });
+      const nameById = new Map(
+        ingredients.map((ingredient) => [
+          ingredient.id,
+          getKrogerIngredientQuery(ingredient.ingredient).toLowerCase(),
+        ]),
+      );
+      const names = new Set(ingredientIds.map((id) => nameById.get(id)));
+      const relatedIds = ingredients
+        .filter((ingredient) => names.has(nameById.get(ingredient.id)))
+        .map((ingredient) => ingredient.id);
+
       const purchases = await db.krogerPurchase.findMany({
         where: {
           userId,
-          ingredientId: { in: ingredientIds },
+          ingredientId: { in: relatedIds },
         },
         include: purchaseInclude,
         orderBy: { createdAt: "desc" },
       });
 
-      const grouped = new Map<number, ReturnType<typeof toDisplayPurchase>[]>();
+      const grouped = new Map<string, ReturnType<typeof toDisplayPurchase>[]>();
       for (const purchase of purchases) {
         if (!purchase.ingredientId) continue;
-        const group = grouped.get(purchase.ingredientId) ?? [];
+        const name = nameById.get(purchase.ingredientId);
+        if (!name) continue;
+        const group = grouped.get(name) ?? [];
         if (group.length < limit) {
           group.push(toDisplayPurchase(purchase));
-          grouped.set(purchase.ingredientId, group);
+          grouped.set(name, group);
         }
       }
 
       return {
         ingredientPurchases: ingredientIds.map((ingredientId) => ({
           ingredientId,
-          purchases: grouped.get(ingredientId) ?? [],
+          purchases: grouped.get(nameById.get(ingredientId) ?? "") ?? [],
         })),
       };
     }),

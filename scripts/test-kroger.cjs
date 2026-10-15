@@ -86,6 +86,13 @@ const {
 } = require("../src/server/krogerAuth.ts");
 const { krogerRouter } = require("../src/server/api/routers/krogerRouter.ts");
 const { doKrogerSearch } = require("../src/server/kroger.ts");
+const {
+  purchasesRouter,
+} = require("../src/server/api/routers/purchasesRouter.ts");
+const {
+  getKrogerIngredientQuery,
+  normalizeKrogerSearchTerm,
+} = require("../src/app/kroger/searchQuery.ts");
 const { krogerPurchaseNote } = require("../src/lib/krogerPurchaseNote.ts");
 const originalFetch = global.fetch;
 const originalConsole = {
@@ -144,6 +151,71 @@ const input = {
   },
 };
 (async () => {
+  for (const [ingredient, query] of [
+    ["2 cups short pasta (about 160 grams)", "pasta"],
+    ["4 cups low sodium chicken broth", "low sodium chicken broth"],
+    ["½ cup roasted red peppers", "roasted red peppers"],
+    ["¾ cup light cream or whole milk", "light cream"],
+    ["1 tablespoons corn starch", "corn starch"],
+    ["1 cup fresh spinach finely chopped", "fresh spinach"],
+    ["⅓ cup Parmesan cheese shredded", "Parmesan cheese"],
+    ["1 1/3 cup balsamic vinegar", "balsamic vinegar"],
+    ["2% milk", "2% milk"],
+    ["7UP Zero Sugar", "7UP Zero Sugar"],
+    [
+      "Kroger® Vitamin D Whole Milk Half Gallon",
+      "Kroger® Vitamin D Whole Milk Half Gallon",
+    ],
+    ["salt, to taste", "salt"],
+    ["cloves", "cloves"],
+    ["14 oz diced tomatoes", "diced tomatoes"],
+    ["2 tbsp minced garlic", "minced garlic"],
+  ]) {
+    assert.equal(getKrogerIngredientQuery(ingredient), query);
+  }
+  assert.equal(normalizeKrogerSearchTerm("2% milk"), "2% milk");
+  assert.equal(
+    getKrogerIngredientQuery("one two three four five six seven eight nine"),
+    "one two three four five six seven eight nine",
+  );
+
+  db.ingredient = {
+    findMany: async ({ where }) => {
+      assert.equal(where.group.Recipe.userId, "test-user");
+      return [
+        { id: 1, ingredient: "Parmesan cheese" },
+        { id: 2, ingredient: "⅓ cup Parmesan cheese shredded" },
+        { id: 3, ingredient: "pasta sauce" },
+      ];
+    },
+  };
+  db.krogerPurchase.findMany = async ({ where, orderBy }) => {
+    assert.equal(where.userId, "test-user");
+    assert.deepEqual(where.ingredientId.in, [1, 2, 3]);
+    assert.deepEqual(orderBy, { createdAt: "desc" });
+    return [10, 9].map((id) => ({
+      id,
+      ingredientId: 1,
+      note: null,
+      ingredient: {
+        ingredient: "Parmesan cheese",
+        group: { Recipe: { id: 20, name: "Another recipe" } },
+      },
+      Recipe: null,
+    }));
+  };
+  const history = await purchasesRouter
+    .createCaller(ctx)
+    .recentByIngredientIds({
+      ingredientIds: [2, 3, 999],
+      limit: 1,
+    });
+  assert.equal(history.ingredientPurchases[0].purchases[0].id, 10);
+  assert.equal(history.ingredientPurchases[0].purchases.length, 1);
+  assert.equal(history.ingredientPurchases[0].purchases[0].linkedRecipe.id, 20);
+  assert.deepEqual(history.ingredientPurchases[1].purchases, []);
+  assert.deepEqual(history.ingredientPurchases[2].purchases, []);
+
   reset();
   mockFetch(async (url) => {
     if (url.includes("oauth2")) {

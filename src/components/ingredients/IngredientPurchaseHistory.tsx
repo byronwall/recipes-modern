@@ -87,9 +87,7 @@ export function IngredientPurchaseHistory(props: Props) {
           {groups.flatMap((group) =>
             group.items.map((purchase) => {
               const recipeIdForQuickAdd =
-                typeof purchase.linkedRecipe?.id === "number"
-                  ? purchase.linkedRecipe.id
-                  : currentRecipeId ?? undefined;
+                currentRecipeId ?? purchase.linkedRecipe?.id ?? undefined;
 
               return (
                 <HoverCard key={purchase.id} openDelay={80} closeDelay={120}>
@@ -196,9 +194,7 @@ export function IngredientPurchaseHistory(props: Props) {
           <div className="space-y-1.5">
             {group.items.map((purchase) => {
               const recipeIdForQuickAdd =
-                typeof purchase.linkedRecipe?.id === "number"
-                  ? purchase.linkedRecipe.id
-                  : currentRecipeId ?? undefined;
+                currentRecipeId ?? purchase.linkedRecipe?.id ?? undefined;
 
               return (
                 <div
