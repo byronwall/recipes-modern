@@ -329,6 +329,33 @@ const input = {
   assert.ok(!JSON.stringify(logs).includes("sensitive raw upstream"));
 
   reset();
+  mockFetch(() =>
+    Response.json(
+      { error: "invalid_request", error_description: "invalid refresh_token" },
+      { status: 400 },
+    ),
+  );
+  await assert.rejects(
+    doKrogerSearch({ filterTerm: "milk" }, "test-user"),
+    (e) => e.code === "PRECONDITION_FAILED",
+  );
+  assert.equal(user.krogerUserRefreshToken, "");
+  assert.deepEqual(await cart.getKrogerStatus(), { connected: false });
+
+  reset();
+  mockFetch(() =>
+    Response.json(
+      { error: "invalid_request", error_description: "missing parameter" },
+      { status: 400 },
+    ),
+  );
+  await assert.rejects(
+    doKrogerSearch({ filterTerm: "milk" }, "test-user"),
+    (e) => e.code === "INTERNAL_SERVER_ERROR",
+  );
+  assert.equal(user.krogerUserRefreshToken, "old-refresh");
+
+  reset();
   mockFetch(() => Response.json({ error: "invalid_grant" }, { status: 400 }));
   assert.equal(await doOAuth("test-user", "bad-code"), false);
   assert.equal(

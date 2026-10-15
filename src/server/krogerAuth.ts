@@ -17,7 +17,7 @@ const expiryMargin = 60_000;
 function reconnectError() {
   return new TRPCError({
     code: "PRECONDITION_FAILED",
-    message: "Reconnect Kroger on the Kroger page, then add this item again.",
+    message: "Reconnect Kroger on the Kroger page, then try again.",
   });
 }
 
@@ -67,11 +67,18 @@ async function exchangeToken(userId: string, accessCode?: string) {
     // Log only the allowlisted OAuth error code, never the response body.
     const body = (await response.json().catch(() => null)) as {
       error?: string;
+      error_description?: string;
     } | null;
-    const oauthError =
-      ["invalid_grant", "invalid_client", "invalid_scope"].find(
-        (code) => code === body?.error,
-      ) ?? "unknown";
+    // Kroger reports revoked refresh tokens as invalid_request.
+    const invalidRefresh =
+      !accessCode &&
+      body?.error === "invalid_request" &&
+      body.error_description === "invalid refresh_token";
+    const oauthError = invalidRefresh
+      ? "invalid_grant"
+      : ["invalid_grant", "invalid_client", "invalid_scope"].find(
+          (code) => code === body?.error,
+        ) ?? "unknown";
     logKroger("error", "Kroger token exchange rejected", {
       userId,
       grant,
