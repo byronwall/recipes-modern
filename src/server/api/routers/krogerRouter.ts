@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { Prisma } from "@prisma/client";
 import { type API_KrogerAddCart } from "~/app/kroger/model";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
@@ -86,94 +87,104 @@ export const krogerRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const userId = ctx.session.user.id;
-      const listItem =
-        input.listItemId === undefined
-          ? null
-          : await db.shoppingList.findUniqueOrThrow({
-              where: { id: input.listItemId, userId },
-              select: { ingredientId: true, recipeId: true },
-            });
-      if (input.ingredientId !== undefined)
-        await db.ingredient.findUniqueOrThrow({
-          where: { id: input.ingredientId, group: { Recipe: { userId } } },
-        });
-      if (input.recipeId !== undefined)
-        await db.recipe.findUniqueOrThrow({
-          where: { id: input.recipeId, userId },
-        });
-      const postData = { items: input.items } as API_KrogerAddCart;
-      const url = `https://api.kroger.com/v1/cart/add`;
-
-      // Pre-create a purchase record so attempts are tracked even if API fails
-      let createdPurchaseId: number | null = null;
-      if (input.purchaseDetails) {
-        const userId = ctx.session.user.id;
-
-        let ingredientId: number | null = input.ingredientId ?? null;
-        let recipeId: number | null = input.recipeId ?? null;
-        if (input.listItemId) {
-          ingredientId = listItem?.ingredientId ?? null;
-          recipeId = listItem?.recipeId ?? null;
-        }
-        if (ingredientId && !recipeId) {
-          const ingredient = await db.ingredient.findUnique({
-            where: { id: ingredientId },
-            select: {
-              group: {
-                select: {
-                  recipeId: true,
-                },
-              },
-            },
-          });
-          recipeId = ingredient?.group.recipeId ?? null;
-        }
-
-        const created = await db.krogerPurchase.create({
-          data: {
-            userId,
-            ingredientId: ingredientId ?? undefined,
-            recipeId: recipeId ?? undefined,
-            krogerSku: input.purchaseDetails.sku,
-            krogerProductId: input.purchaseDetails.productId,
-            krogerName: input.purchaseDetails.name,
-            krogerBrand: input.purchaseDetails.brand,
-            krogerCategories: input.purchaseDetails.categories ?? [],
-            krogerItemId: input.purchaseDetails.itemId,
-            krogerSoldBy: input.purchaseDetails.soldBy,
-            krogerPriceRegular: input.purchaseDetails.priceRegular,
-            krogerPricePromo: input.purchaseDetails.pricePromo,
-            price: input.purchaseDetails.price ?? 0,
-            quantity: input.purchaseDetails.quantity,
-            itemSize: input.purchaseDetails.size,
-            imageUrl: input.purchaseDetails.imageUrl ?? "",
-            // wasAddedToCart defaults false; note left empty initially
-          },
-          select: { id: true },
-        });
-        createdPurchaseId = created.id;
-      }
-
-      // If we are configured to skip adding to cart, add note and return success
-      if (env.NEXT_SKIP_ADD_TO_CART === "true") {
-        if (createdPurchaseId) {
-          await db.krogerPurchase.update({
-            where: { id: createdPurchaseId },
-            data: { note: "Skipped due to SKIP_ADD_TO_CART=true" },
-          });
-        }
-        return { result: true };
-      }
-
       const requestId = crypto.randomUUID();
-      logKroger("info", "Kroger cart attempt started", {
+      const attempt = {
         requestId,
         userId,
-        purchaseId: createdPurchaseId,
         listItemId: input.listItemId,
+        ingredientId: input.ingredientId,
+        recipeId: input.recipeId,
+        productName: input.purchaseDetails?.name,
+        productId: input.purchaseDetails?.productId,
+        sku: input.purchaseDetails?.sku,
+        items: input.items,
         itemCount: input.items.length,
-      });
+      };
+      let createdPurchaseId: number | null = null;
+      let stage = "validate_references";
+      logKroger("info", "Kroger cart attempt started", attempt);
       try {
+        const listItem =
+          input.listItemId === undefined
+            ? null
+            : await db.shoppingList.findUniqueOrThrow({
+                where: { id: input.listItemId, userId },
+                select: { ingredientId: true, recipeId: true },
+              });
+        if (input.ingredientId !== undefined)
+          await db.ingredient.findUniqueOrThrow({
+            where: { id: input.ingredientId, group: { Recipe: { userId } } },
+          });
+        if (input.recipeId !== undefined)
+          await db.recipe.findUniqueOrThrow({
+            where: { id: input.recipeId, userId },
+          });
+        const postData = { items: input.items } as API_KrogerAddCart;
+        const url = `https://api.kroger.com/v1/cart/add`;
+
+        // Pre-create a purchase record so attempts are tracked even if API fails
+        if (input.purchaseDetails) {
+          stage = "resolve_purchase";
+
+          let ingredientId: number | null = input.ingredientId ?? null;
+          let recipeId: number | null = input.recipeId ?? null;
+          if (input.listItemId) {
+            ingredientId = listItem?.ingredientId ?? null;
+            recipeId = listItem?.recipeId ?? null;
+          }
+          if (ingredientId && !recipeId) {
+            const ingredient = await db.ingredient.findUnique({
+              where: { id: ingredientId },
+              select: {
+                group: {
+                  select: {
+                    recipeId: true,
+                  },
+                },
+              },
+            });
+            recipeId = ingredient?.group.recipeId ?? null;
+          }
+
+          stage = "create_purchase";
+          const created = await db.krogerPurchase.create({
+            data: {
+              userId,
+              ingredientId: ingredientId ?? undefined,
+              recipeId: recipeId ?? undefined,
+              krogerSku: input.purchaseDetails.sku,
+              krogerProductId: input.purchaseDetails.productId,
+              krogerName: input.purchaseDetails.name,
+              krogerBrand: input.purchaseDetails.brand,
+              krogerCategories: input.purchaseDetails.categories ?? [],
+              krogerItemId: input.purchaseDetails.itemId,
+              krogerSoldBy: input.purchaseDetails.soldBy,
+              krogerPriceRegular: input.purchaseDetails.priceRegular,
+              krogerPricePromo: input.purchaseDetails.pricePromo,
+              price: input.purchaseDetails.price ?? 0,
+              quantity: input.purchaseDetails.quantity,
+              itemSize: input.purchaseDetails.size,
+              imageUrl: input.purchaseDetails.imageUrl ?? "",
+              // wasAddedToCart defaults false; note left empty initially
+            },
+            select: { id: true },
+          });
+          createdPurchaseId = created.id;
+        }
+
+        // If we are configured to skip adding to cart, add note and return success
+        if (env.NEXT_SKIP_ADD_TO_CART === "true") {
+          stage = "record_skipped_purchase";
+          if (createdPurchaseId) {
+            await db.krogerPurchase.update({
+              where: { id: createdPurchaseId },
+              data: { note: "Skipped due to SKIP_ADD_TO_CART=true" },
+            });
+          }
+          return { result: true };
+        }
+
+        stage = "add_to_cart";
         const addResponse = await krogerRequest(
           userId,
           url,
@@ -202,6 +213,7 @@ export const krogerRouter = createTRPCRouter({
 
         // if things went well and we have an item id, mark it as bought
         if (input.listItemId) {
+          stage = "mark_list_item_bought";
           await db.shoppingList.update({
             where: {
               id: input.listItemId,
@@ -215,6 +227,7 @@ export const krogerRouter = createTRPCRouter({
 
         // Mark the pre-created purchase as successfully added
         if (createdPurchaseId) {
+          stage = "mark_purchase_added";
           await db.krogerPurchase.update({
             where: { id: createdPurchaseId },
             data: { wasAddedToCart: true },
@@ -230,12 +243,26 @@ export const krogerRouter = createTRPCRouter({
         return { result: true };
       } catch (error: unknown) {
         logKroger("error", "Kroger cart attempt failed", {
-          requestId,
-          userId,
+          ...attempt,
           purchaseId: createdPurchaseId,
-          listItemId: input.listItemId,
+          stage,
           code:
             error instanceof TRPCError ? error.code : "INTERNAL_SERVER_ERROR",
+          errorName: error instanceof Error ? error.name : "UnknownError",
+          // Prisma messages can include connection details and query values.
+          databaseCode:
+            error instanceof Prisma.PrismaClientKnownRequestError
+              ? error.code
+              : error instanceof Prisma.PrismaClientInitializationError
+                ? error.errorCode
+                : undefined,
+          constraintFields:
+            error instanceof Prisma.PrismaClientKnownRequestError &&
+            Array.isArray(error.meta?.target)
+              ? error.meta.target.filter(
+                  (field): field is string => typeof field === "string",
+                )
+              : undefined,
         });
         if (createdPurchaseId) {
           const message =

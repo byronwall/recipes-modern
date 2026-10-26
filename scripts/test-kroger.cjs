@@ -5,6 +5,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const Module = require("node:module");
 const ts = require("typescript");
+const { Prisma } = require("@prisma/client");
 const root = path.resolve(__dirname, "..");
 const resolve = Module._resolveFilename;
 Module._resolveFilename = function (name, ...args) {
@@ -215,6 +216,70 @@ const input = {
   assert.equal(history.ingredientPurchases[0].purchases[0].linkedRecipe.id, 20);
   assert.deepEqual(history.ingredientPurchases[1].purchases, []);
   assert.deepEqual(history.ingredientPurchases[2].purchases, []);
+
+  reset();
+  const createPurchase = db.krogerPurchase.create;
+  db.krogerPurchase.create = async () => {
+    assert.equal(JSON.parse(logs[0][0]).event, "Kroger cart attempt started");
+    throw new Prisma.PrismaClientKnownRequestError(
+      "Sensitive query values and connection details",
+      { code: "P2002", clientVersion: "5", meta: { target: ["id"] } },
+    );
+  };
+  try {
+    await assert.rejects(
+      cart.addToCart(input),
+      (e) =>
+        e.code === "INTERNAL_SERVER_ERROR" && !e.message.includes("Sensitive"),
+    );
+    const [started, failed] = logs.map(([line]) => JSON.parse(line));
+    assert.equal(failed.event, "Kroger cart attempt failed");
+    assert.equal(failed.requestId, started.requestId);
+    assert.equal(failed.productName, "Test item");
+    assert.equal(failed.productId, "123");
+    assert.equal(failed.sku, "123");
+    assert.deepEqual(failed.items, input.items);
+    assert.equal(failed.listItemId, 1);
+    assert.equal(failed.purchaseId, null);
+    assert.equal(failed.stage, "create_purchase");
+    assert.equal(failed.databaseCode, "P2002");
+    assert.deepEqual(failed.constraintFields, ["id"]);
+    assert.equal(
+      requests.length,
+      0,
+      "Do not contact Kroger after insert failure",
+    );
+    assert.equal(purchases.length, 0);
+    assert.equal(bought, false);
+    assert.ok(!JSON.stringify(logs).includes("Sensitive"));
+  } finally {
+    db.krogerPurchase.create = createPurchase;
+  }
+
+  reset();
+  const findListItem = db.shoppingList.findUniqueOrThrow;
+  db.shoppingList.findUniqueOrThrow = async () => {
+    throw new Prisma.PrismaClientKnownRequestError("Sensitive query values", {
+      code: "P2025",
+      clientVersion: "5",
+    });
+  };
+  try {
+    await assert.rejects(cart.addToCart({ items: input.items, listItemId: 1 }));
+    const failed = JSON.parse(logs.at(-1)[0]);
+    assert.equal(failed.stage, "validate_references");
+    assert.equal(failed.databaseCode, "P2025");
+    assert.deepEqual(
+      failed.items,
+      input.items,
+      "Keep UPCs without purchase details",
+    );
+    assert.equal(failed.purchaseId, null);
+    assert.equal(requests.length, 0);
+    assert.equal(purchases.length, 0);
+  } finally {
+    db.shoppingList.findUniqueOrThrow = findListItem;
+  }
 
   reset();
   mockFetch(async (url) => {
