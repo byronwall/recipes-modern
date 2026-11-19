@@ -23,7 +23,8 @@ services:
   web-app:
     build: .
     profiles: ["prod"]
-    ports:
+    # Traefik reaches this service on the internal network. No host port in production.
+    expose:
       - "3000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
@@ -135,7 +136,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 60
-    ports:
+    # Traefik reaches this service on the internal network. No host port in production.
+    expose:
       - "9000"
       - "9001"
     labels:
